@@ -1,0 +1,10 @@
+*
+!.gitignore
+!*.c
+!*.h
+!Makefile
+!*.txt
+!orex.ld
+!*.sh
+!*/
+!*.md
