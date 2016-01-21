@@ -6,15 +6,15 @@
 
 //#include <assert.h>
 
-void pq_init(struct PQueue* buffer) {
+void pq_init(PQueue* buffer) {
 	pq_clear(buffer);
 }
 
-void* pq_first(struct PQueue* pq) {
+void* pq_first(PQueue* pq) {
 	return pq->buffer[pq->first];
 }
 
-void* pq_pop(struct PQueue* q) {
+void* pq_pop(PQueue* q) {
 	//assert(q->size > 0);
 	void* p = q->buffer[q->first];
 	q->first = (q->first + 1) % PQCAPACITY;
@@ -22,12 +22,12 @@ void* pq_pop(struct PQueue* q) {
 	return p;
 }
 
-void* pq_pop_back(struct PQueue* q) {
+void* pq_pop_back(PQueue* q) {
 	q->size--;
 	return q->buffer[q->first + q->size];
 }
 
-int pq_push(struct PQueue* q, void* p) {
+int pq_push(PQueue* q, void* p) {
 	//assert(size < capacity);
 	if (q->size >= PQCAPACITY) {
 		return -1;
@@ -38,11 +38,11 @@ int pq_push(struct PQueue* q, void* p) {
 	return 0;
 }
 
-int pq_empty(struct PQueue* q) {
+int pq_empty(PQueue* q) {
 	return q->size == 0;
 }
 
-void pq_clear(struct PQueue* buffer) {
+void pq_clear(PQueue* buffer) {
 	buffer->size = 0;
 	buffer->first = 0;
 }

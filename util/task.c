@@ -17,7 +17,7 @@ void init_task_pool(Task* tasks, int size) {
     }
 }
 
-int get_free_task(Task* tasks, int size, Task** free_task, int* tid) {
+int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid) {
     int i;
     for (i = 0; i < size; i++) {
         if (tasks[i].state == T_ZOMBIE) {

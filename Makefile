@@ -14,7 +14,7 @@ INCLUDE = include
 BIN = bin
 KER_DIR = kernel
 UTIL_DIR = util
-TASK_DIR = task
+TASK_DIR = user
 
 USER = czgu
 FILE = kernel
@@ -71,7 +71,7 @@ $(KER_DIR)/$(FILE).elf: $(CBUILD) $(ARMBUILD)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 copy_ftp:
-	cp $(KER_DIR)/$(FILE).elf /u/cs452/tftp/ARM/czgu/a0.elf
+	cp $(KER_DIR)/$(FILE).elf /u/cs452/tftp/ARM/$(USER)/$(FILE).elf
 
 clean:
 	rm -f $(KER_DIR)/*.s

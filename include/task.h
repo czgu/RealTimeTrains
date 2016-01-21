@@ -32,6 +32,6 @@ unsigned int merge_tid(unsigned short index, unsigned short generation);
 #define TASK_POOL_SIZE 60
 
 void init_task_pool(Task* tasks, int size);
-int get_free_task(Task* tasks, int size, Task** free_task, int* tid);
+int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid);
 
 #endif
