@@ -13,7 +13,6 @@ void first_task() {
     bwprintf(COM2, "I'm a barbie girl\n\r");
 }
 
-
 int main() {
     Task task_pool[TASK_POOL_SIZE];
     // TODO: create a queue for each priority
@@ -23,6 +22,9 @@ int main() {
 
     FOREVER {
         Task* active = schedule(&task_queue);
+        if (active == 0) {
+            break;
+        }
         kernel_exit(active);
         // handle( tds, req );
     }
@@ -63,9 +65,8 @@ void kernel_init(Task* task_pool, PQueue* task_queue) {
 
 Task* schedule(PQueue* task_queue) {
     if (!pq_empty(task_queue)) {
-        return (Task*)pq_pop(task_queue);
+        return (Task*) pq_pop(task_queue);
     }
-
     return 0;
 }
 
