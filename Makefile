@@ -16,7 +16,7 @@ KER_DIR = kernel
 UTIL_DIR = util
 TASK_DIR = user
 
-USER = czgu
+USER = $(shell whoami)
 FILE = kernel
 
 CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float
