@@ -1,25 +1,82 @@
-LIB_SRC = src
-CODE_DIR = term
+#
+# Makefile REALTIME Kernel
+#
 
-all: lib_make copy code_make copy_ftp
+XCC     = /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/gcc
+AS	= /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/as
+AR	= /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/ar
+ARFLAGS = rcs
+
+
+INCLUDE = include
+BIN = bin
+KER_DIR = kernel
+UTIL_DIR = util
+TASK_DIR = task
+
+USER = czgu
+FILE = kernel
+
+CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float
+# -g: include hooks for gdb
+# -c: only compile
+# -mcpu=arm920t: generate code for the 920t architecture
+# -fpic: emit position-independent code
+# -Wall: report all warnings
+# -msoft-float: use software for floating point
+
+ASFLAGS	= -mcpu=arm920t -mapcs-32
+# -mapcs-32: always create a complete stack frame
+
+LDFLAGS = -init main -Map $(FILE).map -N -T $(BIN)/orex.ld -L/u/wbcowan/gnuarm-4.0.2/lib/gcc/arm-elf/4.0.2 -L../lib
+
+
+# UTIL
+UTIL_C_SRC = $(wildcard $(UTIL_DIR)/*.c)
+UTIL_ARM_SRC = $(wildcard $(UTIL_DIR)/*.asm)
+UTIL_C_BUILD = $(UTIL_C_SRC:.c=.o)
+UTIL_ARM_BUILD = $(UTIL_ARM_SRC:.asm=.o)
+
+# TASK
+TASK_C_SRC = $(wildcard $(TASK_DIR)/*.c)
+TASK_ARM_SRC = $(wildcard $(TASK_DIR)/*.asm)
+TASK_C_BUILD = $(TASK_C_SRC:.c=.o)
+TASK_ARM_BUILD = $(TASK_ARM_SRC:.asm=.o)
+
+# ker
+KER_C_SRC = $(wildcard $(KER_DIR)/*.c)
+KER_ARM_SRC = $(wildcard $(KER_DIR)/*.asm)
+KER_C_BUILD = $(KER_C_SRC:.c=.o)
+KER_ARM_BUILD = $(UTIL_ARM_SRC:.asm=.o)
+
+
+CBUILD = $(UTIL_C_BUILD) $(TASK_C_BUILD) $(KER_C_BUILD)
+ARMBUILD = $(UTIL_ARM_BUILD) $(TASK_ARM_BUILD) $(KER_ARM_BUILD)
+ASMFILES = $(CBUILD:.o=.s) $(ARMBUILD:.o=.s)
+
+all: $(ASMFILES) $(KER_DIR)/$(FILE).elf copy_ftp
 
 .PHONY:
-	lib_code
+	copy_ftp
+	clean
 
-lib_make:
-	$(MAKE) -C $(LIB_SRC)
+$(KER_DIR)/$(FILE).elf: $(CBUILD) $(ARMBUILD)
+	$(LD) $(LDFLAGS) -o $@ $(CBUILD) $(ARMBUILD) -lgcc
 
-code_make:
-	$(MAKE) -C $(CODE_DIR)
+%.s:%.c
+	$(XCC) -S $(CFLAGS) -o $@ $<
 
-copy:
-	cp -f $(LIB_SRC)/io.a lib/libio.a
-	cp -f $(LIB_SRC)/structs.a lib/libstructs.a
-	cp -f $(LIB_SRC)/string.a lib/libstring.a
+%.o:%.s
+	$(AS) $(ASFLAGS) -o $@ $<
 
 copy_ftp:
-	cp $(CODE_DIR)/a0.elf /u/cs452/tftp/ARM/czgu/a0.elf
+	cp $(KER_DIR)/$(FILE).elf /u/cs452/tftp/ARM/czgu/a0.elf
 
 clean:
-	$(MAKE) -C $(LIB_SRC) clean
-	$(MAKE) -C $(CODE_DIR) clean
+	rm -f $(KER_DIR)/*.s
+	rm -f $(KER_DIR)/*.o
+	rm -f $(KER_DIR)/$(FILE).map
+	rm -f $(TASK_DIR)/*.s
+	rm -f $(TASK_DIR)/*.o
+	rm -f $(UTIL_DIR)/*.s
+	rm -f $(UTIL_DIR)/*.o

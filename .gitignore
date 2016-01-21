@@ -4,7 +4,8 @@
 !*.h
 !Makefile
 !*.txt
-!orex.ld
+!*.ld
 !*.sh
 !*/
 !*.md
+!*.asm
