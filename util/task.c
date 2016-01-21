@@ -12,18 +12,25 @@ unsigned int merge_tid(unsigned short index, unsigned short generation) {
 void init_task_pool(Task* tasks, int size) {
     int i;
     for (i = 0; i < size; i++) {
+        tasks[i].tid = i + 1;
+        tasks[i].pid = 0;           // need to be set later
+
+        tasks[i].sp = TASK_BASE_SP + i * TASK_STACK_SIZE;
+        tasks[i].spsr = 0x10;
+
         tasks[i].state = T_ZOMBIE;
-        tasks[i].tid = 0;
+        tasks[i].priority = LOW;
     }
 }
 
 int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid) {
     int i;
+    // TODO: replace linear search for free task with list of free tasks
     for (i = 0; i < size; i++) {
         if (tasks[i].state == T_ZOMBIE) {
             unsigned short index, gen;
             split_tid(tasks[i].tid, &index, &gen);
-            *tid = merge_tid(index, gen);
+            *tid = merge_tid(index, gen + 1);
             
             *free_task = &tasks[i];
 
