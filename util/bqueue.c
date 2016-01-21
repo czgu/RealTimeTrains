@@ -6,15 +6,15 @@
 
 //#include <assert.h>
 
-void init(struct BQueue* buffer) {
-	clear(buffer);
+void bq_init(struct BQueue* buffer) {
+	bq_clear(buffer);
 }
 
-char first(struct BQueue* bq) {
+char bq_first(struct BQueue* bq) {
 	return bq->buffer[bq->first];
 }
 
-char pop(struct BQueue* q) {
+char bq_pop(struct BQueue* q) {
 	//assert(q->size > 0);
 	char c = q->buffer[q->first];
 	q->first = (q->first + 1) % CAPACITY;
@@ -22,12 +22,12 @@ char pop(struct BQueue* q) {
 	return c;
 }
 
-char pop_back(struct BQueue* q) {
+char bq_pop_back(struct BQueue* q) {
 	q->size--;
 	return q->buffer[q->first + q->size];
 }
 
-int push(struct BQueue* q, char c) {
+int bq_push(struct BQueue* q, char c) {
 	//assert(size < capacity);
 	if (q->size >= CAPACITY) {
 		return -1;
@@ -38,11 +38,11 @@ int push(struct BQueue* q, char c) {
 	return 0;
 }
 
-int empty(struct BQueue* q) {
+int bq_empty(struct BQueue* q) {
 	return q->size == 0;
 }
 
-void clear(struct BQueue* buffer) {
+void bq_clear(struct BQueue* buffer) {
 	buffer->size = 0;
 	buffer->first = 0;
 }
