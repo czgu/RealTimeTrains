@@ -10,14 +10,20 @@ typedef enum {
     MED,
     HIGH,
     TOP,
-} PRIORITY;
+} TASK_PRIORITY;
+
+typedef enum {
+    READY = 0,
+    ACTIVE,
+    ZOMBIE,
+} TASK_STATE;
 
 typedef struct Task {
     unsigned int tid, pid;
     unsigned int sp, lr, spsr;
     int ret;
-    int state;
-    PRIORITY priority;
+    TASK_STATE state;
+    TASK_PRIORITY priority;
 } Task;
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation);

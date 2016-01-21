@@ -22,7 +22,7 @@ int main() {
     return 0;
 }
 
-init_kernel(Task* task_pool) {
+void init_kernel(Task* task_pool) {
     init_task_pool(task_pool, TASK_POOL_SIZE);
     
     // add first task
