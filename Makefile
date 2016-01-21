@@ -2,6 +2,8 @@
 # Makefile REALTIME Kernel
 #
 
+PATH := /u/wbcowan/gnuarm-4.0.2/arm-elf/bin:/u/wbcowan/gnuarm-4.0.2/libexec/gcc/arm-elf/4.0.2:$(PATH)
+
 XCC     = /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/gcc
 AS	= /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/as
 AR	= /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/ar
@@ -48,7 +50,6 @@ KER_C_SRC = $(wildcard $(KER_DIR)/*.c)
 KER_ARM_SRC = $(wildcard $(KER_DIR)/*.asm)
 KER_C_BUILD = $(KER_C_SRC:.c=.o)
 KER_ARM_BUILD = $(UTIL_ARM_SRC:.asm=.o)
-
 
 CBUILD = $(UTIL_C_BUILD) $(TASK_C_BUILD) $(KER_C_BUILD)
 ARMBUILD = $(UTIL_ARM_BUILD) $(TASK_ARM_BUILD) $(KER_ARM_BUILD)
