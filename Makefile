@@ -30,30 +30,30 @@ CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs-32: always create a complete stack frame
 
-LDFLAGS = -init main -Map $(FILE).map -N -T $(BIN)/orex.ld -L/u/wbcowan/gnuarm-4.0.2/lib/gcc/arm-elf/4.0.2 -L../lib
+LDFLAGS = -init main -Map $(KER_DIR)/$(FILE).map -N -T $(BIN)/orex.ld -L/u/wbcowan/gnuarm-4.0.2/lib/gcc/arm-elf/4.0.2 -L../lib
 
 
 # UTIL
 UTIL_C_SRC = $(wildcard $(UTIL_DIR)/*.c)
-UTIL_ARM_SRC = $(wildcard $(UTIL_DIR)/*.asm)
+UTIL_ASM_SRC = $(wildcard $(UTIL_DIR)/*.asm)
 UTIL_C_BUILD = $(UTIL_C_SRC:.c=.o)
-UTIL_ARM_BUILD = $(UTIL_ARM_SRC:.asm=.o)
+UTIL_ASM_BUILD = $(UTIL_ASM_SRC:.asm=.o)
 
 # TASK
 TASK_C_SRC = $(wildcard $(TASK_DIR)/*.c)
-TASK_ARM_SRC = $(wildcard $(TASK_DIR)/*.asm)
+TASK_ASM_SRC = $(wildcard $(TASK_DIR)/*.asm)
 TASK_C_BUILD = $(TASK_C_SRC:.c=.o)
-TASK_ARM_BUILD = $(TASK_ARM_SRC:.asm=.o)
+TASK_ASM_BUILD = $(TASK_ASM_SRC:.asm=.o)
 
 # ker
 KER_C_SRC = $(wildcard $(KER_DIR)/*.c)
-KER_ARM_SRC = $(wildcard $(KER_DIR)/*.asm)
+KER_ASM_SRC = $(wildcard $(KER_DIR)/*.asm)
 KER_C_BUILD = $(KER_C_SRC:.c=.o)
-KER_ARM_BUILD = $(UTIL_ARM_SRC:.asm=.o)
+KER_ASM_BUILD = $(UTIL_ASM_SRC:.asm=.o)
 
 CBUILD = $(UTIL_C_BUILD) $(TASK_C_BUILD) $(KER_C_BUILD)
-ARMBUILD = $(UTIL_ARM_BUILD) $(TASK_ARM_BUILD) $(KER_ARM_BUILD)
-ASMFILES = $(CBUILD:.o=.s) $(ARMBUILD:.o=.s)
+ASMBUILD = $(UTIL_ASM_BUILD) $(TASK_ASM_BUILD) $(KER_ASM_BUILD)
+ASMFILES = $(CBUILD:.o=.s) $(ASMBUILD:.o=.s)
 
 all: $(ASMFILES) $(KER_DIR)/$(FILE).elf copy_ftp
 
@@ -61,8 +61,8 @@ all: $(ASMFILES) $(KER_DIR)/$(FILE).elf copy_ftp
 	copy_ftp
 	clean
 
-$(KER_DIR)/$(FILE).elf: $(CBUILD) $(ARMBUILD)
-	$(LD) $(LDFLAGS) -o $@ $(CBUILD) $(ARMBUILD) -lgcc
+$(KER_DIR)/$(FILE).elf: $(CBUILD) $(ASMBUILD)
+	$(LD) $(LDFLAGS) -o $@ $(CBUILD) $(ASMBUILD) -lgcc
 
 %.s:%.c
 	$(XCC) -S $(CFLAGS) -o $@ $<
