@@ -9,7 +9,7 @@ swi_kern_exit:
     msr     CPSR_c, #31; # change to system mode
 
     # load TD
-    ldr r3, [fp, #-20] 
+    ldr r3, [fp, #-16] 
     
     # put the return value
     ldr r2, [r3, #20];
@@ -60,7 +60,7 @@ swi_kern_entry:
     ldmfd sp!, {r4-r12, lr};
 
     #Get TD
-    ldr r3, [fp, #-20]; 
+    ldr r3, [fp, #-16]; 
 
     # save sp
     str r2, [r3, #8];
@@ -72,10 +72,8 @@ swi_kern_entry:
     # save lr
     str r1, [r3, #12];
 
-    #TODO: Fill Request
-
-    #Get Request
-    ldr r3, [fp, #-24];
+    #Fill Request
+    ldr r3, [fp, #-20];
     str r0, [r3, #0];
 
     mov pc, lr;

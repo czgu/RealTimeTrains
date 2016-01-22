@@ -31,14 +31,14 @@ void scheduler_init(Task_Scheduler* scheduler) {
 }
 
 Task* scheduler_next(Task_Scheduler* scheduler) {
+    scheduler->active = (void*)0;
     int i;
     for (i = TOP; i >= LOW ; i--) {
         if (!pq_empty(scheduler->ready_queue + i)) {
-            scheduler->active = (Task*) pq_pop(scheduler->ready_queue + i);
-            return scheduler->active;
+            return scheduler->active = (Task*) pq_pop(scheduler->ready_queue + i);
         }
     }
-    return (void*)0;
+    return scheduler->active;
 }
 
 int scheduler_push(Task_Scheduler* scheduler, Task* task) {

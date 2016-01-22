@@ -9,7 +9,7 @@
 #define FOREVER for(;;)
 
 void kernel_init(Task_Scheduler* scheduler);
-void kernel_activate(Task* active, Request* request);
+void kernel_activate(Task* active, Request** request);
 
 // ASM
 extern void swi_kern_entry();
@@ -17,23 +17,23 @@ extern void swi_kern_exit();
 
 int main() {
     Task_Scheduler task_scheduler;
-    Request request;
+    Request* request;
 
     kernel_init(&task_scheduler);
-    bwprintf(COM2, "Before Loop\n\r");
+    //bwprintf(COM2, "Before Loop\n\r");
 
     FOREVER {
-        bwprintf(COM2, "Top Of Loop\n\r");
+        //bwprintf(COM2, "Top Of Loop\n\r");
 
-        Task* active = scheduler_next(&task_scheduler);
-        if (active == 0) {
+        scheduler_next(&task_scheduler);
+        if (task_scheduler.active == 0) {
             break;
         }
 
-        bwprintf(COM2, "Active Task %d\n\r", active->lr);
+        //bwprintf(COM2, "Active Task %d\n\r", task_scheduler.active->lr);
 
-        kernel_activate(active, &request);
-        handle(&request, &task_scheduler);
+        kernel_activate(task_scheduler.active, &request);
+        handle(request, &task_scheduler);
     }
     
     return 0;
@@ -58,9 +58,8 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     k_create(MED, code, task_scheduler, 0);
 }
 
-void kernel_activate(Task* active, Request* request) {
-    request->opcode = NONE;
-    bwprintf(COM2, "check point 4 %d\n\r", active->lr);
+void kernel_activate(Task* active, Request** request) {
+    //bwprintf(COM2, "kernel activate %d\n\r", active->tid);
     swi_kern_exit();
-    bwprintf(COM2, "check point 5\n\r");
+    //bwprintf(COM2, "check point 5\n\r");
 }

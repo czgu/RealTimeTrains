@@ -7,7 +7,7 @@
 void handle(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
 
-    bwprintf(COM2, "handle syscall %d \n\r", request->opcode);
+    // bwprintf(COM2, "handle syscall %d \n\r", request->opcode);
     switch (request->opcode) {
     case CREATE:
         task_scheduler->active->ret =
@@ -58,6 +58,7 @@ int k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_schedu
     
     scheduler_push(task_scheduler, new_task);
 
+    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
     return 0;
 }
 
@@ -74,5 +75,5 @@ void k_pass(Task_Scheduler* task_scheduler) {
 }
 
 void k_exit(Task_Scheduler* task_scheduler) {
-    // do nothing
+    scheduler_push_free_task(task_scheduler, task_scheduler->active);
 }
