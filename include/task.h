@@ -41,9 +41,9 @@ int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid);
 
 #include <pqueue.h>
 
-void scheduler_init(PQueue* priorities);
-Task* scheduler_next(PQueue* priorities);
-int scheduler_push(PQueue* priorities, Task*);
-int scheduler_empty(PQueue* priorities);
+void scheduler_init(PQueue* ready_task_table);
+Task* scheduler_next(PQueue* ready_task_table);
+int scheduler_push(PQueue* ready_tasks_table, Task*);
+int scheduler_empty(PQueue* ready_tasks_table);
 
 #endif

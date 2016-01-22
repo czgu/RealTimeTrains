@@ -6,7 +6,6 @@
 #define FOREVER for(;;)
 
 void kernel_init();
-Task* schedule(PQueue* task_queue);
 void kernel_exit(Task* active);
 void handle();
 
@@ -28,28 +27,29 @@ void first_task() {
 int main() {
     Task task_pool[TASK_POOL_SIZE];
     // TODO: create a queue for each priority
-    PQueue task_queue;
+    PQueue ready_task_table[TASK_NPRIORITIES];
 
-    kernel_init(task_pool, &task_queue);
+    kernel_init(task_pool, ready_task_table);
     bwprintf(COM2, "Before Loop\n\r");
 
     FOREVER {
         bwprintf(COM2, "Top Of Loop\n\r");
-        Task* active = schedule(&task_queue);
+        Task* active = scheduler_next(ready_task_table);
         if (active == 0) {
             break;
         }
         bwprintf(COM2, "Active Task %d\n\r", active->lr);
         kernel_exit(active);
 
-        pq_push(&task_queue, (void*)active);
+        // TODO: conditionally push task in handler function
+        scheduler_push(ready_task_table, active);
         // handle( tds, req );
     }
     
     return 0;
 }
 
-void kernel_init(Task* task_pool, PQueue* task_queue) {
+void kernel_init(Task* task_pool, PQueue* ready_task_table) {
     // initialize io
     bwsetfifo(COM2, OFF);
     bwsetspeed(COM2, 115200);
@@ -62,7 +62,7 @@ void kernel_init(Task* task_pool, PQueue* task_queue) {
 
     // initialize task
     init_task_pool(task_pool, TASK_POOL_SIZE);
-    pq_init(task_queue);
+    scheduler_init(ready_task_table);
 
     // find space for first task
     Task* td = 0;
@@ -79,14 +79,7 @@ void kernel_init(Task* task_pool, PQueue* task_queue) {
     td->state = READY;
     td->priority = LOW;
     
-    pq_push(task_queue, (void*)td);
-}
-
-Task* schedule(PQueue* task_queue) {
-    if (!pq_empty(task_queue)) {
-        return (Task*) pq_pop(task_queue);
-    }
-    return 0;
+    scheduler_push(ready_task_table, td);
 }
 
 void kernel_exit(Task* active) {
@@ -94,6 +87,4 @@ void kernel_exit(Task* active) {
     //dummy();
     swi_kern_exit();
     bwprintf(COM2, "check point 5\n\r");
-
-    
 }
