@@ -1,4 +1,5 @@
 #include <task.h>
+#include <memory.h>
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation) {
     *index = (unsigned short) tid;

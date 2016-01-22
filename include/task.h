@@ -19,19 +19,21 @@ typedef enum {
 } TASK_STATE;
 
 typedef struct Task {
-    unsigned int tid, pid;      // kernel has tid = 0; all other tid's start at 1
-    unsigned int sp, lr, spsr;
-    int ret;
-    TASK_STATE state;
-    TASK_PRIORITY priority;
+    // kernel has tid = 0; all other tid's start at 1
+    unsigned int tid; // #0
+    unsigned int pid; // #4
+    unsigned int sp;  // #8
+    unsigned int lr;  // #12
+    unsigned int spsr; // #16
+    int ret; // #20
+    TASK_STATE state; // #24
+    TASK_PRIORITY priority; // #28
 } Task;
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation);
 unsigned int merge_tid(unsigned short index, unsigned short generation);
 
 #define TASK_POOL_SIZE  60
-#define TASK_BASE_SP    0x00300000
-#define TASK_STACK_SIZE 524288      // 0.5 MB
 
 void init_task_pool(Task* tasks, int size);
 int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid);

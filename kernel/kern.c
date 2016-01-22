@@ -1,6 +1,7 @@
 #include <bwio.h>
 #include <task.h>
 #include <pqueue.h>
+#include <memory.h>
 
 #define FOREVER for(;;)
 
@@ -9,8 +10,18 @@ Task* schedule(PQueue* task_queue);
 void kernel_exit(Task* active);
 void handle();
 
+// ASM
+extern void dummy();
+extern void swi_kern_entry();
+extern void swi_kern_exit();
+extern void swi_jump();
+
 void first_task() {
-    bwprintf(COM2, "I'm a barbie girl\n\r");
+    register int r0 asm("r0");
+
+    bwprintf(COM2, "~~~I'm a barbie girl with %d teddy bears <3\n\r", r0);
+
+    swi_jump();
 }
 
 int main() {
@@ -19,13 +30,18 @@ int main() {
     PQueue task_queue;
 
     kernel_init(task_pool, &task_queue);
+    bwprintf(COM2, "check point 1\n\r");
 
     FOREVER {
+        bwprintf(COM2, "check point 2\n\r");
         Task* active = schedule(&task_queue);
         if (active == 0) {
             break;
         }
+        bwprintf(COM2, "check point 3\n\r");
         kernel_exit(active);
+
+        pq_push(&task_queue, (void*)active);
         // handle( tds, req );
     }
     
@@ -38,6 +54,8 @@ void kernel_init(Task* task_pool, PQueue* task_queue) {
     bwsetspeed(COM2, 115200);
     
     // initialize low memory
+    unsigned int* swi_jump_table = (unsigned int*)SWI_JUMP_TABLE;
+    *swi_jump_table = (unsigned int)&swi_kern_entry;
 
     // initialize ICU
 
@@ -51,12 +69,12 @@ void kernel_init(Task* task_pool, PQueue* task_queue) {
     get_free_task(task_pool, TASK_POOL_SIZE, &td, &tid);
 
     // initialize first task
-    void (*code)() = first_task;
+    void (*code)() = &first_task;
 
     td->tid = tid;
     td->pid = 0;
     td->lr = (unsigned int)code;
-    td->ret = 0;
+    td->ret = 23;
     td->state = READY;
     td->priority = LOW;
     
@@ -71,5 +89,10 @@ Task* schedule(PQueue* task_queue) {
 }
 
 void kernel_exit(Task* active) {
+    bwprintf(COM2, "check point 4 %d\n\r", active->lr);
+    //dummy();
+    swi_kern_exit();
+    bwprintf(COM2, "check point 5\n\r");
+
     
 }
