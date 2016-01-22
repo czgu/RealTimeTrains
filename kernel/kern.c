@@ -11,7 +11,6 @@ void kernel_exit(Task* active);
 void handle();
 
 // ASM
-extern void dummy();
 extern void swi_kern_entry();
 extern void swi_kern_exit();
 extern void swi_jump();
@@ -22,6 +21,8 @@ void first_task() {
     bwprintf(COM2, "~~~I'm a barbie girl with %d teddy bears <3\n\r", r0);
 
     swi_jump();
+
+    bwprintf(COM2, "~~~in the barbie world, life is fantastic\n\r", r0);
 }
 
 int main() {
@@ -30,15 +31,15 @@ int main() {
     PQueue task_queue;
 
     kernel_init(task_pool, &task_queue);
-    bwprintf(COM2, "check point 1\n\r");
+    bwprintf(COM2, "Before Loop\n\r");
 
     FOREVER {
-        bwprintf(COM2, "check point 2\n\r");
+        bwprintf(COM2, "Top Of Loop\n\r");
         Task* active = schedule(&task_queue);
         if (active == 0) {
             break;
         }
-        bwprintf(COM2, "check point 3\n\r");
+        bwprintf(COM2, "Active Task %d\n\r", active->lr);
         kernel_exit(active);
 
         pq_push(&task_queue, (void*)active);

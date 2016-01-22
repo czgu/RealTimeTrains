@@ -74,7 +74,7 @@ swi_kern_entry:
     ldmfd sp!, {r4-r12, lr};
 
     #Get TD
-    ldr r3, [fp, #-16]; 
+    ldr r3, [fp, #-20]; 
 
     # save sp
     str r2, [r3, #8];
