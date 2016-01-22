@@ -1,6 +1,8 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
+#include <pqueue.h>
+
 #define T_READY  0
 #define T_ACTIVE 1
 #define T_ZOMBIE 2
@@ -36,14 +38,20 @@ unsigned int merge_tid(unsigned short index, unsigned short generation);
 
 #define TASK_POOL_SIZE  60
 
-void init_task_pool(Task* tasks, int size);
-int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid);
+typedef struct Task_Scheduler {
+    Task task_pool[TASK_POOL_SIZE];
+    PQueue free_list;
+    PQueue ready_queue[TASK_NPRIORITIES];
+    Task* active;
+} Task_Scheduler;
 
-#include <pqueue.h>
+// get a new task from scheduler
+int scheduler_get_free_task(Task_Scheduler* scheduler, Task** free_task, int* pid);
 
-void scheduler_init(PQueue* ready_task_table);
-Task* scheduler_next(PQueue* ready_task_table);
-int scheduler_push(PQueue* ready_tasks_table, Task*);
-int scheduler_empty(PQueue* ready_tasks_table);
+void scheduler_init(Task_Scheduler* scheduler);
+Task* scheduler_next(Task_Scheduler* scheduler);
+int scheduler_push(Task_Scheduler* scheduler, Task* task);
+int scheduler_empty(Task_Scheduler* scheduler);
+
 
 #endif
