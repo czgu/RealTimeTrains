@@ -75,6 +75,7 @@ $(KER_DIR)/$(FILE).elf: $(CBUILD) $(ASMBUILD)
 
 copy_ftp:
 	cp $(KER_DIR)/$(FILE).elf /u/cs452/tftp/ARM/$(USER)/$(FILE).elf
+	chmod 777 /u/cs452/tftp/ARM/$(USER)/$(FILE).elf
 
 clean:
 	rm -f $(KER_DIR)/*.s
