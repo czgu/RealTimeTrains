@@ -9,10 +9,10 @@
 
 #define TASK_NPRIORITIES 4
 typedef enum {
-    TOP = 0,
-    HIGH,
+    LOW = 0,
     MED,
-    LOW,
+    HIGH,
+    TOP,
 } TASK_PRIORITY;
 
 typedef enum {
@@ -45,13 +45,13 @@ typedef struct Task_Scheduler {
     Task* active;
 } Task_Scheduler;
 
-// get a new task from scheduler
-int scheduler_get_free_task(Task_Scheduler* scheduler, Task** free_task, int* pid);
-
 void scheduler_init(Task_Scheduler* scheduler);
 Task* scheduler_next(Task_Scheduler* scheduler);
 int scheduler_push(Task_Scheduler* scheduler, Task* task);
 int scheduler_empty(Task_Scheduler* scheduler);
+int scheduler_pop_free_task(Task_Scheduler* scheduler, Task** free_task);
+int scheduler_push_free_task(Task_Scheduler* scheduler, Task* task);
+
 
 
 #endif

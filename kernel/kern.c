@@ -3,53 +3,43 @@
 #include <pqueue.h>
 #include <memory.h>
 
+#include <k_syscall.h>
+#include <user_task.h>
+
 #define FOREVER for(;;)
 
-void kernel_init();
-void kernel_exit(Task* active);
-void handle();
+void kernel_init(Task_Scheduler* scheduler);
+void kernel_activate(Task* active, Request* request);
 
 // ASM
 extern void swi_kern_entry();
 extern void swi_kern_exit();
-extern void swi_jump();
-
-void first_task() {
-    register int r0 asm("r0");
-
-    bwprintf(COM2, "~~~I'm a barbie girl with %d teddy bears <3\n\r", r0);
-
-    swi_jump();
-
-    bwprintf(COM2, "~~~in the barbie world, life is fantastic\n\r", r0);
-}
 
 int main() {
-    Task task_pool[TASK_POOL_SIZE];
-    // TODO: create a queue for each priority
-    PQueue ready_task_table[TASK_NPRIORITIES];
+    Task_Scheduler task_scheduler;
+    Request request;
 
-    kernel_init(task_pool, ready_task_table);
+    kernel_init(&task_scheduler);
     bwprintf(COM2, "Before Loop\n\r");
 
     FOREVER {
         bwprintf(COM2, "Top Of Loop\n\r");
-        Task* active = scheduler_next(ready_task_table);
+
+        Task* active = scheduler_next(&task_scheduler);
         if (active == 0) {
             break;
         }
-        bwprintf(COM2, "Active Task %d\n\r", active->lr);
-        kernel_exit(active);
 
-        // TODO: conditionally push task in handler function
-        scheduler_push(ready_task_table, active);
-        // handle( tds, req );
+        bwprintf(COM2, "Active Task %d\n\r", active->lr);
+
+        kernel_activate(active, &request);
+        handle(&request, &task_scheduler);
     }
     
     return 0;
 }
 
-void kernel_init(Task* task_pool, PQueue* ready_task_table) {
+void kernel_init(Task_Scheduler* task_scheduler) {
     // initialize io
     bwsetfifo(COM2, OFF);
     bwsetspeed(COM2, 115200);
@@ -60,31 +50,17 @@ void kernel_init(Task* task_pool, PQueue* ready_task_table) {
 
     // initialize ICU
 
-    // initialize task
-    init_task_pool(task_pool, TASK_POOL_SIZE);
-    scheduler_init(ready_task_table);
-
-    // find space for first task
-    Task* td = 0;
-    unsigned int tid;
-    get_free_task(task_pool, TASK_POOL_SIZE, &td, &tid);
+    // initialize scheduler
+    scheduler_init(task_scheduler);
 
     // initialize first task
     void (*code)() = &first_task;
-
-    td->tid = tid;
-    td->pid = 0;
-    td->lr = (unsigned int)code;
-    td->ret = 23;
-    td->state = READY;
-    td->priority = LOW;
-    
-    scheduler_push(ready_task_table, td);
+    k_create(MED, code, task_scheduler, 0);
 }
 
-void kernel_exit(Task* active) {
+void kernel_activate(Task* active, Request* request) {
+    request->opcode = NONE;
     bwprintf(COM2, "check point 4 %d\n\r", active->lr);
-    //dummy();
     swi_kern_exit();
     bwprintf(COM2, "check point 5\n\r");
 }

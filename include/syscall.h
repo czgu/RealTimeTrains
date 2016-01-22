@@ -3,7 +3,8 @@ typedef enum {
     TID,
     PID,
     PASS,
-    EXIT
+    EXIT,
+    NONE
 } SYSCALL;
 
 int Create(int priority, void (*code)());

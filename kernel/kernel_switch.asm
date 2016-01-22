@@ -1,20 +1,6 @@
 	.file	"kernel_switch.c"
 	.text
 	.align	2
-	.global	dummy
-	.type   dummy, %function
-dummy:
-    stmfd   sp!, {r4-r12};
-
-    # SYSTEM MODE
-    msr     CPSR_c, #31; # change to system mode
-    # SUPERVISOR MODE
-    msr     CPSR_c, #19; # change to svc mode
-
-    #restore kernel register
-    ldmfd sp!, {r4-r12};
-    mov pc, lr;
-
 	.global	swi_kern_exit
 	.type	swi_kern_exit, %function
 swi_kern_exit:
@@ -87,6 +73,10 @@ swi_kern_entry:
     str r1, [r3, #12];
 
     #TODO: Fill Request
+
+    #Get Request
+    ldr r3, [fp, #-24];
+    str r0, [r3, #0];
 
     mov pc, lr;
 

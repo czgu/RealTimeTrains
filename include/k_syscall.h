@@ -1,14 +1,14 @@
 #include <syscall.h>
 #include <task.h>
 
-struct Request {
+typedef struct Request {
     SYSCALL opcode;
     unsigned int param[10];
-};
+} Request;
 
-void handle(Request* request, Task* task, PQueue* ready_task_table, Task* task_pool);
-int k_create(TASK_PRIORITY priority, void (*code)(), Task* task, PQueue* ready_task_table);
-int k_tid(Task* task, PQueue* ready_task_table);
-int k_pid(Task* task, PQueue* ready_task_table);
-void k_pass(Task* task, PQueue* ready_task_table);
-void k_exit(Task* task, PQueue* ready_task_table);
+void handle(Request* request, Task_Scheduler* task_scheduler);
+int k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_scheduler, unsigned int pid);
+int k_tid(Task_Scheduler* task_scheduler);
+int k_pid(Task_Scheduler* task_scheduler);
+void k_pass(Task_Scheduler* task_scheduler);
+void k_exit(Task_Scheduler* task_scheduler);
