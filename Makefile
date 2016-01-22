@@ -49,11 +49,11 @@ TASK_ASM_BUILD = $(TASK_ASM_SRC:.asm=.o)
 KER_C_SRC = $(wildcard $(KER_DIR)/*.c)
 KER_ASM_SRC = $(wildcard $(KER_DIR)/*.asm)
 KER_C_BUILD = $(KER_C_SRC:.c=.o)
-KER_ASM_BUILD = $(UTIL_ASM_SRC:.asm=.o)
+KER_ASM_BUILD = $(KER_ASM_SRC:.asm=.o)
 
 CBUILD = $(UTIL_C_BUILD) $(TASK_C_BUILD) $(KER_C_BUILD)
 ASMBUILD = $(UTIL_ASM_BUILD) $(TASK_ASM_BUILD) $(KER_ASM_BUILD)
-ASMFILES = $(CBUILD:.o=.s) $(ASMBUILD:.o=.s)
+ASMFILES = $(CBUILD:.o=.s) $(ASMBUILD:.o=.asm)
 
 all: $(ASMFILES) $(KER_DIR)/$(FILE).elf copy_ftp
 
@@ -66,6 +66,9 @@ $(KER_DIR)/$(FILE).elf: $(CBUILD) $(ASMBUILD)
 
 %.s:%.c
 	$(XCC) -S $(CFLAGS) -o $@ $<
+
+%.o:%.asm
+	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o:%.s
 	$(AS) $(ASFLAGS) -o $@ $<
