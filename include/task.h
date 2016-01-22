@@ -5,11 +5,12 @@
 #define T_ACTIVE 1
 #define T_ZOMBIE 2
 
+#define TASK_NPRIORITIES 4
 typedef enum {
-    LOW = 0,
-    MED,
+    TOP = 0,
     HIGH,
-    TOP,
+    MED,
+    LOW,
 } TASK_PRIORITY;
 
 typedef enum {
@@ -37,5 +38,12 @@ unsigned int merge_tid(unsigned short index, unsigned short generation);
 
 void init_task_pool(Task* tasks, int size);
 int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid);
+
+#include <pqueue.h>
+
+void scheduler_init(PQueue* priorities);
+Task* scheduler_next(PQueue* priorities);
+int scheduler_push(PQueue* priorities, Task*);
+int scheduler_empty(PQueue* priorities);
 
 #endif

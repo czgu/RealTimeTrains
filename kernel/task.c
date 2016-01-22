@@ -40,3 +40,38 @@ int get_free_task(Task* tasks, int size, Task** free_task, unsigned int* tid) {
     }
     return -1;
 }
+
+void scheduler_init(PQueue* priorities) {
+    int i;
+    for (i = 0; i < TASK_NPRIORITIES; i++) {
+        pq_init(priorities + i);
+    }
+}
+
+Task* scheduler_next(PQueue* priorities) {
+    int i;
+    for (i = 0; i < TASK_NPRIORITIES; i++) {
+        if (!pq_empty(priorities + i)) {
+            return (Task*) pq_pop(priorities + i);
+        }
+    }
+    return 0;
+}
+
+int scheduler_push(PQueue* priorities, Task* task) {
+    if (task == 0) {
+        return -1;
+    }
+    PQueue* pq = priorities + task->priority;
+    return pq_push(pq, (void*) task);
+}
+
+int scheduler_empty(PQueue* priorities) {
+    int i;
+    for (i = 0; i < TASK_NPRIORITIES; i++) {
+        if (!pq_empty(priorities + i)) {
+            return 0;
+        }
+    }
+    return 1;
+}
