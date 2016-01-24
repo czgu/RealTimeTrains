@@ -20,17 +20,12 @@ int main() {
     Request* request;
 
     kernel_init(&task_scheduler);
-    //bwprintf(COM2, "Before Loop\n\r");
 
     FOREVER {
-        //bwprintf(COM2, "Top Of Loop\n\r");
-
         scheduler_next(&task_scheduler);
         if (task_scheduler.active == 0) {
             break;
         }
-
-        //bwprintf(COM2, "Active Task %d\n\r", task_scheduler.active->lr);
 
         kernel_activate(task_scheduler.active, &request);
         handle(request, &task_scheduler);
@@ -54,12 +49,9 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     scheduler_init(task_scheduler);
 
     // initialize first task
-    void (*code)() = &first_task;
-    k_create(MED, code, task_scheduler, 0);
+    k_create(MED, (void *)first_task, task_scheduler, 0);
 }
 
 void kernel_activate(Task* active, Request** request) {
-    //bwprintf(COM2, "kernel activate %d\n\r", active->tid);
     swi_kern_exit(active, request);
-    //bwprintf(COM2, "check point 5\n\r");
 }
