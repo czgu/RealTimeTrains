@@ -13,7 +13,7 @@ void kernel_activate(Task* active, Request** request);
 
 // ASM
 extern void swi_kern_entry();
-extern void swi_kern_exit();
+extern void swi_kern_exit(Task* active, Request** request);
 
 int main() {
     Task_Scheduler task_scheduler;
@@ -60,6 +60,6 @@ void kernel_init(Task_Scheduler* task_scheduler) {
 
 void kernel_activate(Task* active, Request** request) {
     //bwprintf(COM2, "kernel activate %d\n\r", active->tid);
-    swi_kern_exit();
+    swi_kern_exit(active, request);
     //bwprintf(COM2, "check point 5\n\r");
 }

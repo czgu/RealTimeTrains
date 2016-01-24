@@ -6,11 +6,15 @@
 swi_kern_exit:
     # store kernel registers
     stmfd   sp!, {r4-r12, lr};
+
+    # store TD and Request, r0 = TD, r1 = Request
+    stmfd sp!, {r0, r1};
+
     msr     CPSR_c, #31; # change to system mode
 
-    # load TD
-    ldr r3, [fp, #-16] 
-    
+    # move TD to r3
+    mov r3, r0;
+
     # put the return value
     ldr r2, [r3, #20];
     mov r0, r2; 
@@ -19,7 +23,7 @@ swi_kern_exit:
     ldr r2, [r3, #8];
     mov sp, r2;
 
-    ldmfd sp!, {r4-r12}; # restore user space registers
+    ldmfd sp!, {r4-r12, lr}; # restore user space registers
 
     msr CPSR_c, #19; # change to supervisor mode
   
@@ -27,40 +31,31 @@ swi_kern_exit:
     ldr r2, [r3, #16];
     msr spsr, r2;
 
-    # set lr_svc = lr_user
+    # set lr_svc = pc_before_swi
     ldr r2, [r3, #12];
     mov lr, r2;
 
     # exit to user space
     movs pc, lr;
-    #b swi_kern_entry;
-
 
 	.size	swi_kern_exit, .-swi_kern_exit
 	.align	2
 	.global	swi_kern_entry
 	.type	swi_kern_entry, %function
 swi_kern_entry:
-    #mov r0, #1;
-    #mov r1, sp;
-    #bl bwputr;
-
-    mov r1, lr; # 2nd line of swi_jump
+    mov r1, lr; # pc when we go back to user
 
     MSR     CPSR_c, #31; # change to system mode
 
     # store user registers
-    stmfd sp!, {r4-r12};
+    stmfd sp!, {r4-r12, lr};
 
     mov r2, sp; # acqure sp of the active task
 
     msr CPSR_c, #19; # change to supervisor mode
 
-    #restore kernel register
-    ldmfd sp!, {r4-r12, lr};
-
     #Get TD
-    ldr r3, [fp, #-16]; 
+    ldr r3, [sp, #0];
 
     # save sp
     str r2, [r3, #8];
@@ -73,11 +68,16 @@ swi_kern_entry:
     str r1, [r3, #12];
 
     #Fill Request
-    ldr r3, [fp, #-20];
+    ldr r3, [sp, #4];
     str r0, [r3, #0];
 
-    mov pc, lr;
+    #pop TD and request
+    ldmfd sp!, {r0, r1}
 
+    #restore kernel register
+    ldmfd sp!, {r4-r12, lr};
+
+    mov pc, lr;
 	.size	swi_kern_entry, .-swi_kern_entry
 	.align	2
 	.global	swi_jump

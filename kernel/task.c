@@ -21,7 +21,7 @@ void scheduler_init(Task_Scheduler* scheduler) {
         scheduler->task_pool[i].tid = i;
         scheduler->task_pool[i].pid = 0;           // need to be set later
 
-        scheduler->task_pool[i].state = T_ZOMBIE;
+        scheduler->task_pool[i].state = ZOMBIE;
         scheduler->task_pool[i].priority = LOW;
 
         pq_push(&scheduler->free_list, (void*)(scheduler->task_pool + i));

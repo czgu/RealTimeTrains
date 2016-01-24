@@ -1,8 +1,8 @@
 #include <k_syscall.h>
 
 #include <bwio.h>
-#include <task.h>
 #include <memory.h>
+#include <task.h>
 
 void handle(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
@@ -54,11 +54,22 @@ int k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_schedu
     new_task->state = READY;
     new_task->priority = priority;
     new_task->spsr = 0x10;
-    new_task->sp = TASK_BASE_SP + index * TASK_STACK_SIZE;
+
+    // Initialize program memory
+    unsigned int *sp = (int*)TASK_BASE_SP + index * TASK_STACK_SIZE;
+    sp[0] = (unsigned int)Exit; // lr
+    sp[-2] = (unsigned int)sp; // fp
+
+    int i;
+    for(i = -3; i >= -9; i--) {
+        sp[i] = 0;
+    }
+
+    new_task->sp = (int) (sp - 9); // {r4-r12, lr}
     
     scheduler_push(task_scheduler, new_task);
 
-    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
+    bwprintf(COM2, "Created: %d %d\n\r", new_task->tid, sp[0]);
     return 0;
 }
 

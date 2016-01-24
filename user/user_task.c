@@ -23,8 +23,8 @@ void first_task() {
     Create(HIGH, a1_task);
     Create(HIGH, a1_task);
 
-    bwprintf(COM2, "First: exiting\n\r");
-    Exit();
+    bwprintf(COM2, "FirstUserTask: exiting\n\r");
     
+    Exit();
 }   
 

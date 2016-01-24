@@ -3,10 +3,6 @@
 
 #include <pqueue.h>
 
-#define T_READY  0
-#define T_ACTIVE 1
-#define T_ZOMBIE 2
-
 #define TASK_NPRIORITIES 4
 typedef enum {
     LOW = 0,
@@ -19,6 +15,9 @@ typedef enum {
     READY = 0,
     ACTIVE,
     ZOMBIE,
+    SEND_BLOCKED,
+    RECEIVE_BLOCKED,
+    REPLY_BLOCKED
 } TASK_STATE;
 
 typedef struct Task {
