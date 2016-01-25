@@ -69,7 +69,7 @@ int k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_schedu
     
     scheduler_push(task_scheduler, new_task);
 
-    bwprintf(COM2, "Created: %d %d\n\r", new_task->tid, sp[0]);
+    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
     return 0;
 }
 
