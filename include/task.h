@@ -35,7 +35,7 @@ typedef struct Task {
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation);
 unsigned int merge_tid(unsigned short index, unsigned short generation);
 
-#define TASK_POOL_SIZE  60
+#define TASK_POOL_SIZE  40
 
 typedef struct Task_Scheduler {
     Task task_pool[TASK_POOL_SIZE];
