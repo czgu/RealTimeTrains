@@ -1,14 +1,12 @@
 	.file	"kernel_switch.c"
 	.text
 	.align	2
-	.global	swi_kern_exit
-	.type	swi_kern_exit, %function
-swi_kern_exit:
+	.global	asm_kern_exit
+	.type	asm_kern_exit, %function
+asm_kern_exit:
     # store kernel registers
-    stmfd   sp!, {r4-r12, lr};
-
     # store TD and Request, r0 = TD, r1 = Request
-    stmfd sp!, {r0, r1};
+    stmfd   sp!, {r0, r1, r4-r12, lr};
 
     msr     CPSR_c, #31; # change to system mode
 
@@ -38,11 +36,11 @@ swi_kern_exit:
     # exit to user space
     movs pc, lr;
 
-	.size	swi_kern_exit, .-swi_kern_exit
+	.size	asm_kern_exit, .-asm_kern_exit
 	.align	2
-	.global	swi_kern_entry
-	.type	swi_kern_entry, %function
-swi_kern_entry:
+	.global	asm_kern_entry
+	.type	asm_kern_entry, %function
+asm_kern_entry:
     mov r1, lr; # pc when we go back to user
 
     MSR     CPSR_c, #31; # change to system mode
@@ -72,13 +70,11 @@ swi_kern_entry:
     str r0, [r3, #0];
 
     #pop TD and request
-    ldmfd sp!, {r0, r1}
-
     #restore kernel register
-    ldmfd sp!, {r4-r12, lr};
+    ldmfd sp!, {r0, r1, r4-r12, lr};
 
     mov pc, lr;
-	.size	swi_kern_entry, .-swi_kern_entry
+	.size	asm_kern_entry, .-asm_kern_entry
 	.align	2
 	.global	swi_jump
 	.type	swi_jump, %function

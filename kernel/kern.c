@@ -9,11 +9,10 @@
 #define FOREVER for(;;)
 
 void kernel_init(Task_Scheduler* scheduler);
-void kernel_activate(Task* active, Request** request);
 
 // ASM
-extern void swi_kern_entry();
-extern void swi_kern_exit(Task* active, Request** request);
+extern void asm_kern_entry();
+extern void asm_kern_exit(Task* active, Request** request);
 
 int main() {
     Task_Scheduler task_scheduler;
@@ -27,7 +26,8 @@ int main() {
             break;
         }
 
-        kernel_activate(task_scheduler.active, &request);
+        asm_kern_exit(task_scheduler.active, &request);
+
         handle(request, &task_scheduler);
     }
     
@@ -41,7 +41,7 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     
     // initialize low memory
     unsigned int* swi_jump_table = (unsigned int*)SWI_JUMP_TABLE;
-    *swi_jump_table = (unsigned int)&swi_kern_entry;
+    *swi_jump_table = (unsigned int)&asm_kern_entry;
 
     // initialize ICU
 
@@ -50,8 +50,4 @@ void kernel_init(Task_Scheduler* task_scheduler) {
 
     // initialize first task
     k_create(MED, (void *)first_task, task_scheduler, 0);
-}
-
-void kernel_activate(Task* active, Request** request) {
-    swi_kern_exit(active, request);
 }
