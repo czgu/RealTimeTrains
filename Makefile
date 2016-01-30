@@ -17,9 +17,11 @@ UTIL_DIR = util
 TASK_DIR = user
 
 USER = $(shell whoami)
-FILE = kernel
+FILE = kernel2
 
-CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O2
+DEBUGFLAGS = ASSERT
+CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O2 -D $(DEBUGFLAGS)
+
 # -g: include hooks for gdb
 # -c: only compile
 # -mcpu=arm920t: generate code for the 920t architecture
@@ -80,6 +82,7 @@ copy_ftp:
 clean:
 	rm -f $(KER_DIR)/*.s
 	rm -f $(KER_DIR)/*.o
+	rm -f $(KER_DIR)/*.elf
 	rm -f $(KER_DIR)/$(FILE).map
 	rm -f $(TASK_DIR)/*.s
 	rm -f $(TASK_DIR)/*.o

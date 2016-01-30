@@ -255,3 +255,10 @@ void bwprintf( int channel, char *fmt, ... ) {
         va_end(va);
 }
 
+void assert(int cond, char* msg) {
+    if (cond == 0 && ASSERT) {
+        bwputstr(COM2, "ASERTION FAILED: ");
+        bwputstr(COM2, msg);
+    }
+}
+

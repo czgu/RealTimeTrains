@@ -1,21 +1,23 @@
-#include <task.h>
+#ifndef SYSCALL_H
+#define SYSCALL_H
 
-typedef enum {
-    CREATE = 0,
-    TID,
-    PID,
-    PASS,
-    EXIT,
-    NONE
-} SYSCALL;
+#include <task_type.h>
 
-typedef struct Request {
-    SYSCALL opcode;
-    unsigned int param[10];
-} Request;
-
+// K1
 int Create(TASK_PRIORITY priority, void (*code)());
 int MyTid();
 int MyParentTid();
 void Pass();
 void Exit();
+
+// K2
+int Send(int tid,void *message,int mslen,void *reply,int rplen);
+int Receive(int *tid,void *msg,int msglen);
+int Reply(int tid,void *reply,int replylen);
+
+int RegisterAs(char *name);
+int WhoIs(char *name);
+
+// K3
+
+#endif
