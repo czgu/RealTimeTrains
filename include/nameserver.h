@@ -1,12 +1,33 @@
 #ifndef _NAMESERVER_H_
 #define _NAMESERVER_H_
 
-#define NAMESERVER_SIZE 40
-typedef struct NameServer {
-    char name[NAMESERVER_SIZE];
-    unsigned int pid;
-} NameServer;
+#include <task_type.h>
 
-void nameserver_init(NameServer* ns);
+#define MAXNAMESIZE 20
+#define DICTIONARYSIZE 100
+
+typedef struct NSbinding {
+    unsigned int tid;
+    char name[MAXNAMESIZE];
+} NSbinding;
+
+typedef struct NSmsg {
+    SYSCALL opcode;
+    NSbinding binding;
+    int err;
+} NSmsg;
+
+typedef struct Dictionary {
+    NSbinding data[DICTIONARYSIZE];
+    unsigned int size;
+} Dictionary;
+
+void dictionary_init(Dictionary*);
+int dictionary_add(Dictionary*, NSbinding);
+int dictionary_find(Dictionary*, char*);
+int dictionary_update(Dictionary* dic, NSbinding bnd, int index);
+
+// Server task
+void nameserver_task();
 
 #endif

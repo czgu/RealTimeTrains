@@ -35,6 +35,8 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
     case REPLY:
         k_reply(param[0], task_scheduler);
         break;
+    case REGISTERAS:
+    case WHOIS:
     default:
         bwprintf(COM2, "Invalid syscall");
         break;
