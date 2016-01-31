@@ -8,6 +8,6 @@ void i2a( int num, char *bf );
 int strcmp(char* a, char* b);
 int substrcmp(char* a, char* b, int a_start, int b_start, int len);
 int strlen(const char* a);
+int memory_copy(void* src, int src_len, void* dest, int dest_len);
 char* strcpy (char * destination,const char * source);
-
 #endif

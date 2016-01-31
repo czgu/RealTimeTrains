@@ -98,18 +98,34 @@ int substrcmp(char* a, char* b, int a_start, int b_start, int len) {
 }
 
 int strlen(const char* a) {
-    char* p = a;
     int i = 0;
-    while (*p ++ != 0)
-        i++;
+    while (a[i++] != 0);
     return i + 1;
 }
 
 char* strcpy (char * destination,const char * source) {
     int copy_len = strlen(source);
-    char* s = (char*)source, *d = (char*)destination;
-    while (copy_len --> 0) {
-        *d ++ = *s ++;
-    }
+
+    memory_copy(source, copy_len, destination, copy_len);
+
     return destination;
+}
+
+int memory_copy(void* src, int src_len, void* dest, int dest_len) {
+    int copy_len = src_len < dest_len ? src_len : dest_len;
+    int copy_int = copy_len >> 2; // div 4
+    int copy_extra = copy_len & 0x3; // mod 4
+
+    int* s = (int*)src, *d = (int*)dest;
+    while (copy_int-- > 0)
+        *d ++ = *s ++;
+
+    if (copy_extra > 0) {
+        char* sc = (char*)s, * dc = (char*)d;
+        while (copy_extra-- > 0) {
+            *dc ++ = *sc ++;
+        }
+    }
+
+    return copy_len;
 }

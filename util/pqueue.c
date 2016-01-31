@@ -2,7 +2,7 @@
  * pqueue.c - pointer queue, implemented through bounded circular buffer
  */
 
-#include "pqueue.h"
+#include <pqueue.h>
 
 //#include <assert.h>
 

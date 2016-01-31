@@ -2,6 +2,8 @@
 #include <string.h>
 #include <syscall.h>
 
+#include <bwio.h>
+
 void dictionary_init(Dictionary* dic) {
     dic->size = 0;
 }
@@ -44,16 +46,19 @@ void nameserver_task() {
         NSmsg msg;
         int sz = Receive(&sender, &msg, sizeof(NSmsg));
         if (sz != sizeof(NSmsg)) {
-            msg.err = -2;
+            msg.err = -2; 
         } else {
             switch(msg.opcode) {
                 case REGISTERAS: {
+                    msg.binding.tid = sender;
                     int index = dictionary_find(&dict, msg.binding.name);
+
                     if (index >= 0) {
                         msg.err = dictionary_update(&dict, msg.binding, index);
                     } else {
                         msg.err = dictionary_add(&dict, msg.binding);
                     }
+
                     break;
                 }
                 case WHOIS: {
@@ -74,6 +79,7 @@ void nameserver_task() {
                     break;
             }
         }
+        // the error will be -2, if msg.err != 0
         Reply(sender, (void*) &msg, sizeof(NSmsg));
     }
 }

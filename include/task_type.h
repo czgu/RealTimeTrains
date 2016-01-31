@@ -22,13 +22,13 @@ typedef enum {
 // SYSCALL
 typedef enum {
     CREATE = 0,
-    TID,
-    PID,
-    PASS,
-    EXIT,
-    SEND,
-    RECEIVE,
-    REPLY,
+    TID, // 1
+    PID, // 2
+    PASS, // 3
+    EXIT, // 4
+    SEND, // 5
+    RECEIVE, // 6
+    REPLY, // 7
     NONE
 } SYSCALL;
 

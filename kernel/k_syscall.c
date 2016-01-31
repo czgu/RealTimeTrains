@@ -2,6 +2,7 @@
 
 #include <bwio.h>
 #include <memory.h>
+#include <string.h>
 #include <task.h>
 
 void handle(Request* request, Task_Scheduler* task_scheduler) {
@@ -108,30 +109,12 @@ void k_exit(Task_Scheduler* task_scheduler) {
 }
 
 // helpers ----------------------------------------
-int message_copy(void* src, int src_len, void* dest, int dest_len) {
-    int copy_len = src_len < dest_len ? src_len : dest_len;
-    int copy_int = copy_len >> 2; // div 4
-    int copy_extra = copy_len & 0x3; // mod 4
-
-    int* s = (int*)src, *d = (int*)dest;
-    while (copy_int-- > 0)
-        *d ++ = *s ++;
-
-    if (copy_extra > 0) {
-        char* sc = (char*)s, * dc = (char*)d;
-        while (copy_extra-- > 0) {
-            *dc ++ = *sc ++;
-        }
-    }
-
-    return copy_len;
-}
 
 void send_message(Task* receiver, Task* sender, Task_Scheduler* task_scheduler) {
     Request* sender_request = sender->last_request;
     Request* receiver_request = receiver->last_request;
 
-    int size_copied = message_copy(
+    int size_copied = memory_copy(
         (void *)sender_request->param[1],
         sender_request->param[2],
         (void *)receiver_request->param[1],
@@ -220,7 +203,7 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
         RETURN_ACTIVE(-4);
     }
 
-    int size_copied = message_copy(
+    int size_copied = memory_copy(
         (void *)receiver_request->param[1],
         receiver_request->param[2],
         (void *)sender_request->param[3],
