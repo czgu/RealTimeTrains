@@ -43,34 +43,36 @@ void nameserver_task() {
         int sender;
         NSmsg msg;
         int sz = Receive(&sender, &msg, sizeof(NSmsg));
-        // TODO: check sz
-
-        switch(msg.opcode) {
-            case REGISTERAS: {
-                int index = dictionary_find(&dict, msg.binding.name);
-                if (index >= 0) {
-                    msg.err = dictionary_update(&dict, msg.binding, index);
-                } else {
-                    msg.err = dictionary_add(&dict, msg.binding);
+        if (sz != sizeof(NSmsg)) {
+            msg.err = -2;
+        } else {
+            switch(msg.opcode) {
+                case REGISTERAS: {
+                    int index = dictionary_find(&dict, msg.binding.name);
+                    if (index >= 0) {
+                        msg.err = dictionary_update(&dict, msg.binding, index);
+                    } else {
+                        msg.err = dictionary_add(&dict, msg.binding);
+                    }
+                    break;
                 }
-                break;
-            }
-            case WHOIS: {
-                int index = dictionary_find(&dict, msg.binding.name);
-                if (index >= 0) {
-                    msg.binding.tid = dict.data[index].tid;
-                    msg.err = 0;
-                } else {
-                    // name not found
-                    msg.binding.tid = 0;
-                    msg.err = -1;
+                case WHOIS: {
+                    int index = dictionary_find(&dict, msg.binding.name);
+                    if (index >= 0) {
+                        msg.binding.tid = dict.data[index].tid;
+                        msg.err = 0;
+                    } else {
+                        // name not found
+                        msg.binding.tid = 0;
+                        msg.err = -1;
+                    }
+                    break;
                 }
-                break;
+                // TODO: add method to exit nameserver_task?
+                default:
+                    // TODO: throw error
+                    break;
             }
-            // TODO: add method to exit nameserver_task?
-            default:
-                // TODO: throw error
-                break;
         }
         Reply(sender, (void*) &msg, sizeof(NSmsg));
     }
