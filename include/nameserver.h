@@ -6,13 +6,20 @@
 #define MAXNAMESIZE 20
 #define DICTIONARYSIZE 100
 
+#define NAMESERVER_TID 65537 //TODO: find a better way to get tid
+
 typedef struct NSbinding {
     unsigned int tid;
     char name[MAXNAMESIZE];
 } NSbinding;
 
+typedef enum {
+    REGISTERAS = 0,
+    WHOIS
+} NSOP;
+
 typedef struct NSmsg {
-    SYSCALL opcode;
+    NSOP opcode;
     NSbinding binding;
     int err;
 } NSmsg;

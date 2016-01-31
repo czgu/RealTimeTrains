@@ -29,8 +29,6 @@ typedef enum {
     SEND,
     RECEIVE,
     REPLY,
-    REGISTERAS,
-    WHOIS,
     NONE
 } SYSCALL;
 

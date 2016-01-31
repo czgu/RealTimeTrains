@@ -103,4 +103,13 @@ int strlen(const char* a) {
     while (*p ++ != 0)
         i++;
     return i + 1;
-} 
+}
+
+char* strcpy (char * destination,const char * source) {
+    int copy_len = strlen(source);
+    char* s = (char*)source, *d = (char*)destination;
+    while (copy_len --> 0) {
+        *d ++ = *s ++;
+    }
+    return destination;
+}

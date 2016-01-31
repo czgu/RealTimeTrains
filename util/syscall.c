@@ -1,4 +1,6 @@
 #include <syscall.h>
+#include <nameserver.h>
+#include <string.h>
 
 int swi_jump(Request* request);
 
@@ -72,17 +74,33 @@ int Reply(int tid, void *reply, int replylen ) {
 }
 
 int RegisterAs(char *name) {
-    Request request;
-    request.opcode = REGISTERAS;
-    request.param[0] = (unsigned int)name;
+    NSmsg msg;
+    msg.opcode = REGISTERAS;
 
-    return swi_jump(&request);
+    strcpy(msg.binding.name, name);
+
+    int ret = Send(NAMESERVER_TID, &msg, sizeof(msg), &msg, sizeof(msg));
+
+    if (ret < 0) {
+        return -1;    
+    }
+
+    // -2: error happened during register
+    return (msg.err < 0? -2: 0);
 }
 
 int WhoIs(char *name) {
-    Request request;
-    request.opcode = WHOIS;
-    request.param[0] = (unsigned int)name;
+    NSmsg msg;
+    msg.opcode = WHOIS;
 
-    return swi_jump(&request);
+    strcpy(msg.binding.name, name);
+
+    int ret = Send(NAMESERVER_TID, &msg, sizeof(msg), &msg, sizeof(msg));
+
+    if (ret < 0) {
+        return -1;
+    }
+
+    // -2: error happened during register
+    return (msg.err < 0? -2: msg.binding.tid);
 }

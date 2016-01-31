@@ -1,4 +1,5 @@
 #include <user_task.h>
+#include <nameserver.h>
 
 #include <bwio.h>
 #include <syscall.h>
@@ -30,6 +31,8 @@ void a2_task() {
 }
 
 void first_task() {
+    Create(TOP, nameserver_task);
+
     int j;
     for(j = 0; j < 2; j++) {
 
