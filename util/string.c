@@ -95,4 +95,12 @@ int substrcmp(char* a, char* b, int a_start, int b_start, int len) {
     if (*c > *d)
         return 1;
     return -1;
+}
+
+int strlen(const char* a) {
+    char* p = a;
+    int i = 0;
+    while (*p ++ != 0)
+        i++;
+    return i + 1;
 } 

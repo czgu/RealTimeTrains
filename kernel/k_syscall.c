@@ -8,6 +8,8 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
     task_scheduler->active->last_request = request;
 
+    //bwprintf(COM2, "handle syscall: %d\n\r", request->opcode);
+
     switch (request->opcode) {
     case CREATE:
         k_create(param[0], (void (*)())param[1], task_scheduler);
@@ -113,12 +115,13 @@ int message_copy(void* src, int src_len, void* dest, int dest_len) {
 
     int* s = (int*)src, *d = (int*)dest;
     while (copy_int-- > 0)
-        *s ++ = *d ++;
+        *d ++ = *s ++;
 
     if (copy_extra > 0) {
         char* sc = (char*)s, * dc = (char*)d;
-        while (copy_extra-- > 0)
-            *sc ++ = *dc ++;
+        while (copy_extra-- > 0) {
+            *dc ++ = *sc ++;
+        }
     }
 
     return copy_len;
@@ -134,6 +137,7 @@ void send_message(Task* receiver, Task* sender, Task_Scheduler* task_scheduler) 
         (void *)receiver_request->param[1],
         receiver_request->param[2]
     );
+
     *((int *)receiver_request->param[0]) = sender->tid;
 
     // sender is replied block
@@ -197,17 +201,23 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
 
     Task* sender = &task_scheduler->task_pool[sender_index];
 
-    // task replaced or not yet created, or not reply blocked
-    if (receiver->tid != tid || receiver->state != REPLY_BLOCKED) {
+    // task replaced or not yet created
+    if (sender->tid != tid) {
         RETURN_ACTIVE(-2);
     }
 
     Request* sender_request = sender->last_request;
     Request* receiver_request = receiver->last_request;
 
-    // sender isn't waiting on reply from this receiver
-    if (receiver_request->param[0] != sender->tid) {
-        RETURN_ACTIVE(-2); 
+    // sender isn't reply blocked or waiting on reply from this receiver
+    if (sender->state != REPLY_BLOCKED || 
+        sender_request->param[0] != receiver->tid) {
+        RETURN_ACTIVE(-3); 
+    }
+
+    // if insufficient copy space
+    if (receiver_request->param[2] > sender_request->param[4]) {
+        RETURN_ACTIVE(-4);
     }
 
     int size_copied = message_copy(
@@ -216,12 +226,9 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
         (void *)sender_request->param[3],
         sender_request->param[4]
     );
-    *((int *)receiver_request->param[0]) = sender->tid;
 
     // sender is made ready again (it's made ready first)
     return_to_task(size_copied, sender, task_scheduler);    
     // receiver is made ready again (not sure what return value yet)
-    return_to_task(0 , receiver, task_scheduler);    
-
-
+    RETURN_ACTIVE(0);
 }

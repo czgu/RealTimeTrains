@@ -25,7 +25,6 @@ int main() {
         if (task_scheduler.active == 0) {
             break;
         }
-
         asm_kern_exit(task_scheduler.active, &request);
 
         handle(request, &task_scheduler);
@@ -40,8 +39,8 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     bwsetspeed(COM2, 115200);
     
     // initialize low memory
-    unsigned int* swi_jump_table = (unsigned int*)SWI_JUMP_TABLE;
-    *swi_jump_table = (unsigned int)&asm_kern_entry;
+    *((unsigned int*)SWI_JUMP_TABLE) = (unsigned int)&asm_kern_entry;
+    *((unsigned int*)SWI_FIRST_INSTRUCTION_LOCATION) = SWI_JUMP_INSTRUCTION;
 
     // initialize ICU
 

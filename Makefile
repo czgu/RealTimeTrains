@@ -20,7 +20,8 @@ USER = $(shell whoami)
 FILE = kernel2
 
 DEBUGFLAGS = ASSERT
-CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O2 -D $(DEBUGFLAGS)
+OPTIMIZATION = 0
+CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) -D $(DEBUGFLAGS)
 
 # -g: include hooks for gdb
 # -c: only compile

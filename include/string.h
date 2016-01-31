@@ -7,5 +7,6 @@ void ui2a( unsigned int num, unsigned int base, char *bf );
 void i2a( int num, char *bf );
 int strcmp(char* a, char* b);
 int substrcmp(char* a, char* b, int a_start, int b_start, int len);
+int strlen(const char* a);
 
 #endif

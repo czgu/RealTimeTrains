@@ -39,7 +39,7 @@ void Exit() {
     swi_jump(&request);
 }
 
-int Send(int tid,void *message,int mslen,void *reply,int rplen) {
+int Send(int tid, void *message, int mslen, void *reply, int rplen) {
     Request request;
     request.opcode = SEND;
     request.param[0] = tid;
@@ -51,7 +51,7 @@ int Send(int tid,void *message,int mslen,void *reply,int rplen) {
     return swi_jump(&request);
 }
 
-int Receive(int *tid,void *msg,int msglen) {
+int Receive(int *tid, void *msg, int msglen) {
     Request request;
     request.opcode = RECEIVE;
     request.param[0] = (unsigned int)tid;
@@ -61,7 +61,7 @@ int Receive(int *tid,void *msg,int msglen) {
     return swi_jump(&request);
 }
 
-int Reply(int tid,void *reply,int replylen ) {
+int Reply(int tid, void *reply, int replylen ) {
     Request request;
     request.opcode = REPLY;
     request.param[0] = tid;
