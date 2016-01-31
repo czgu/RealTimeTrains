@@ -19,9 +19,9 @@ TASK_DIR = user
 USER = $(shell whoami)
 FILE = kernel2
 
-DEBUGFLAGS = ASSERT
+DEBUGFLAGS = -D_DEBUG -D_ASSERT
 OPTIMIZATION = 0
-CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) -D $(DEBUGFLAGS)
+CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
 
 # -g: include hooks for gdb
 # -c: only compile

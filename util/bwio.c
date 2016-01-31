@@ -256,9 +256,11 @@ void bwprintf( int channel, char *fmt, ... ) {
 }
 
 void assert(int cond, char* msg) {
-    if (cond == 0 && ASSERT) {
+    #ifdef _ASSERT
+    if (cond == 0) {
         bwputstr(COM2, "ASERTION FAILED: ");
         bwputstr(COM2, msg);
     }
+    #endif
 }
 

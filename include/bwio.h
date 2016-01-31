@@ -5,6 +5,13 @@
 #ifndef _BWIO_H
 #define _BWIO_H
 
+#ifdef _DEBUG
+#define DEBUG_MSG(...) do { bwprintf(1, __VA_ARGS__); } while( 0 )
+#else
+#define DEBUG_MSG(...) do { } while( 0 )
+#endif
+
+
 typedef char *va_list;
 
 #define __va_argsiz(t)	\

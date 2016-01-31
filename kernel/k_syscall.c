@@ -8,7 +8,7 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
     task_scheduler->active->last_request = request;
 
-    //bwprintf(COM2, "handle syscall: %d\n\r", request->opcode);
+    DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
 
     switch (request->opcode) {
     case CREATE:
