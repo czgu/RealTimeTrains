@@ -1,9 +1,9 @@
 	.file	"cache.c"
 	.text
 	.align	2
-	.global	cache_on
-	.type	cache_on, %function
-cache_on:
+	.global	asm_cache_on
+	.type	asm_cache_on, %function
+asm_cache_on:
     # Read Control Register
     mrc p15, 0, r0, c1, c0, 0;
 
@@ -15,7 +15,10 @@ cache_on:
     mcr p15, 0, r0, c1, c0, 0;
 
     mov pc, lr;
-cache_off:
+
+	.global	asm_cache_off
+	.type	asm_cache_off, %function
+asm_cache_off:
     # Read Control Register
     mrc p15, 0, r0, c1, c0, 0;
 

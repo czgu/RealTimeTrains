@@ -11,7 +11,7 @@
 #include <syscall.h>
 #include <string.h>
 
-#define MSG_SIZE 4
+#define MSG_SIZE 64
 
 #define TIMER_INIT_VAL (0x1 << 20)
 
@@ -43,10 +43,10 @@ void test_time_sender() {
 
     *timer_control |= ENABLE_MASK;
 
-    int ret = *((int*)(timer_base + VAL_OFFSET));
-    //ret = Send(65539, msg, MSG_SIZE, msg, MSG_SIZE);
+    int ret;
+    ret = Send(65539, msg, MSG_SIZE, msg, MSG_SIZE);
 
-    //*timer_control &= ~ENABLE_MASK;
+    *timer_control &= ~ENABLE_MASK;
 
     int time_passed = TIMER_INIT_VAL - *((int*)(timer_base + VAL_OFFSET));
 

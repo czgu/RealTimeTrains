@@ -41,8 +41,6 @@ asm_kern_exit:
 	.global	asm_kern_entry
 	.type	asm_kern_entry, %function
 asm_kern_entry:
-    mov r1, lr; # pc when we go back to user
-
     MSR     CPSR_c, #31; # change to system mode
 
     # store user registers
@@ -52,26 +50,27 @@ asm_kern_entry:
 
     msr CPSR_c, #19; # change to supervisor mode
 
-    #Get TD
-    ldr r3, [sp, #0];
+    mov r3, r0; # move request value to r3
 
-    # save sp
-    str r2, [r3, #8];
+    #Get TD and Request
+    ldmfd sp!, {r0, r1};
 
-    # save spsr
+    # save sp to TD
+    str r2, [r0, #8];
+
+    # save spsr to TD
     mrs r2, spsr;
-    str r2, [r3, #16];
+    str r2, [r0, #16];
 
-    # save lr
-    str r1, [r3, #12];
+    # save lr to TD
+    str lr, [r0, #12];
 
     #Fill Request
-    ldr r3, [sp, #4];
-    str r0, [r3, #0];
+    str r3, [r1, #0];
 
     #pop TD and request
     #restore kernel register
-    ldmfd sp!, {r0, r1, r4-r12, lr};
+    ldmfd sp!, {r4-r12, lr};
 
     mov pc, lr;
 	.size	asm_kern_entry, .-asm_kern_entry
@@ -82,11 +81,11 @@ asm_kern_entry:
 
 swi_jump:
     mov ip, sp;
-    stmfd sp!, {fp, ip, lr, pc};
+    stmfd sp!, {ip, lr};
     #r0 holds value of syscall
     swi;
 
-    ldmfd sp, {fp, sp, pc};
+    ldmfd sp, {sp, pc};
 
 	.size	swi_jump, .-swi_jump
 	.ident	"GCC: (GNU) 4.0.2"

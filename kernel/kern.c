@@ -11,6 +11,8 @@
 void kernel_init(Task_Scheduler* scheduler);
 
 // ASM
+extern void asm_cache_on();
+extern void asm_cache_off();
 extern void asm_kern_entry();
 extern void asm_kern_exit(Task* active, Request** request);
 
@@ -34,6 +36,9 @@ int main() {
 }
 
 void kernel_init(Task_Scheduler* task_scheduler) {
+    // turn cache on
+    asm_cache_off();
+
     // initialize io
     bwsetfifo(COM2, OFF);
     bwsetspeed(COM2, 115200);
