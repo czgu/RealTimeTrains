@@ -7,7 +7,7 @@
 
 //#include <assert.h>
 
-void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned unit_size) {
+void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned int unit_size) {
     q->max_size = max_size;
     q->unit_size = unit_size;
     q->buffer = (unsigned int)buffer;
