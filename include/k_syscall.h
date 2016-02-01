@@ -1,3 +1,6 @@
+#ifndef _K_SYSCALL_H_
+#define _K_SYSCALL_H_
+
 #include <syscall.h>
 #include <task.h>
 
@@ -17,3 +20,4 @@ void k_exit(Task_Scheduler* task_scheduler);
 void k_send(unsigned int tid, Task_Scheduler* task_scheduler);
 void k_receive(Task_Scheduler* task_scheduler);
 void k_reply(unsigned int tid, Task_Scheduler* task_scheduler);
+#endif
