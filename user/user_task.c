@@ -33,7 +33,7 @@ void test_time_sender() {
     *timer_control |= CLKSEL_MASK | MODE_MASK;
     *timer_loader = TIMER_INIT_VAL;
 
-    Create(LOW, test_time_receiver);
+    Create(TOP, test_time_receiver);
 
     char msg[MSG_SIZE];
     int i;
@@ -52,16 +52,16 @@ void test_time_sender() {
 
     int ms_passed = time_passed / 0.508469;
 
-    bwprintf(COM2, "reply (%d): %s, time passed: %dns\n\r", ret, msg, ms_passed);
+    bwprintf(COM2, "reply (%d): %s, time passed: %dus\n\r", ret, msg, ms_passed);
 
 }
 
 void first_task() {
     Create(TOP, nameserver_task);
 
-    Create(HIGH, test_time_sender);
+    //Create(HIGH, test_time_sender);
 
-    //Create(HIGH, rps_server);
+    Create(HIGH, rps_server);
     
     return;
 
