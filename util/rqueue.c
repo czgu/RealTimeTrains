@@ -44,7 +44,7 @@ int rq_push_front(RQueue* q, void* p) {
     q->first = (q->first - 1) % q->max_size;
 
     unsigned int destination = q->buffer + q->first * q->unit_size;
-    memory_copy(p, q->unit_size, destination, q->unit_size);
+    memory_copy(p, q->unit_size, (void *)destination, q->unit_size);
 
 	q->size++;
 	return 0;
@@ -56,7 +56,7 @@ int rq_push_back(RQueue* q, void* p) {
 	}
 
     unsigned int destination = q->buffer + ((q->size + q->first) % q->max_size) * q->unit_size;
-    memory_copy(p, q->unit_size, destination, q->unit_size);
+    memory_copy(p, q->unit_size, (void *)destination, q->unit_size);
 
 	q->size++;
 	return 0;

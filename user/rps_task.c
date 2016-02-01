@@ -81,7 +81,10 @@ void rps_server() {
     
     // create clients
     bwprintf(COM2, "(Server) How many players (0-9)?");
-    int num_player = a2d(bwgetc(COM2));
+    int ch = bwgetc(COM2);
+    bwputc(COM2, ch);
+    
+    int num_player = a2d(ch);
     bwprintf(COM2, "\n\r");
     
     if (num_player < 0 || num_player > 9) {
@@ -160,6 +163,7 @@ void rps_client() {
         if (playing == 0) {
             bwprintf(COM2, "[%d] Do you want to sign up? (y/n)", tid);
             char ans = bwgetc(COM2);
+            bwputc(COM2, ans);
             bwprintf(COM2, "\n\r");
 
             if (ans == 'y' || ans == 'Y') {
@@ -174,6 +178,7 @@ void rps_client() {
         } else {
             bwprintf(COM2, "[%d] What move are you going to make? Press other key to quit\n\r(R:rock, P:paper: S:scissor)", tid);
             char ans = bwgetc(COM2);
+            bwputc(COM2, ans);
             bwprintf(COM2, "\n\r");
 
             if (ans == 'R' || ans == 'P' || ans == 'S') {

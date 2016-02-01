@@ -1,6 +1,7 @@
 // std
 #include <user_task.h>
 #include <nameserver.h>
+#include <ts7200.h>
 
 // user
 #include "rps_task.h"
@@ -10,84 +11,59 @@
 #include <syscall.h>
 #include <string.h>
 
-void a1_task() {
-    int tid = MyTid();
-    int pid = MyParentTid();
+#define MSG_SIZE 4
 
-    bwprintf(COM2, "Tid: %d Parent Tid: %d\n\r", tid, pid);
+#define TIMER_INIT_VAL (0x1 << 20)
 
-    Pass();
-    
-    bwprintf(COM2, "Tid: %d Parent Tid: %d\n\r", tid, pid);
+void test_time_receiver() {
+    char msg[MSG_SIZE];
 
-    Exit();
-}
-
-void a2_task() {
-    char* msg = "send to task";
-    char reply[80];
-    
-    int ret;
-
-    //bwprintf(COM2, "Send: %s %d\n\r", msg, strlen(msg));
-    ret = Send( 65536, msg, strlen(msg), reply, 80);
-    
-    bwprintf(COM2, "reply (status: %d): %s\n\r", ret, reply);
-}
-
-void a2_taska() {
     int tid;
-    char msg[80];
-    RegisterAs("coolest guy");
-    RegisterAs("ugliest guy");
-    int ret = Receive( &tid, msg, 80);
+    Receive( &tid, msg, MSG_SIZE);
+    Reply(tid, msg, MSG_SIZE);
+
 }
 
-void a2_taskb() {
-    int id = WhoIs("coolest guy");
-    DEBUG_MSG("coolest guy is %d\n\r", id); 
+void test_time_sender() {
+    unsigned int timer_base = TIMER3_BASE;
+    volatile int* timer_loader = (int*)timer_base;
+    volatile int* timer_control = (int*)(timer_base + CTRL_OFFSET);
 
-    id = WhoIs("ugliest guy");
+    *timer_control = 0;
+    *timer_control |= CLKSEL_MASK | MODE_MASK;
+    *timer_loader = TIMER_INIT_VAL;
 
-    DEBUG_MSG("ugliest guy is %d\n\r", id); 
+    Create(LOW, test_time_receiver);
+
+    char msg[MSG_SIZE];
+    int i;
+    for (i = 0; i < MSG_SIZE - 1; i++)
+        msg[i] = 'a';
+    msg[MSG_SIZE - 1] = 0;
+
+    *timer_control |= ENABLE_MASK;
+
+    int ret = *((int*)(timer_base + VAL_OFFSET));
+    //ret = Send(65539, msg, MSG_SIZE, msg, MSG_SIZE);
+
+    //*timer_control &= ~ENABLE_MASK;
+
+    int time_passed = TIMER_INIT_VAL - *((int*)(timer_base + VAL_OFFSET));
+
+    int ms_passed = time_passed / 0.508469;
+
+    bwprintf(COM2, "reply (%d): %s, time passed: %dns\n\r", ret, msg, ms_passed);
+
 }
 
 void first_task() {
     Create(TOP, nameserver_task);
 
-    Create(HIGH, rps_server);
+    Create(HIGH, test_time_sender);
+
+    //Create(HIGH, rps_server);
     
     return;
-    Create(HIGH, a2_taska);
-    Create(LOW, a2_taskb);
-    
 
-    int j;
-    for(j = 0; j < 2; j++) {
-
-        Create(LOW, a2_task);
-        Create(HIGH, a2_task);
-        Create(HIGH, a2_task);
-        Create(HIGH, a2_task);
-
-        char msg[80];
-        int tid;
-        int ret;
-
-        int i = 0;
-        while (i < 4) {
-            ret = Receive( &tid, msg, 80);
-
-            char* reply = "reply to task  ";
-            reply[14] = '0' + i;
-            bwprintf(COM2, "received from %d (status %d): %s\n\r", tid, ret, msg);
-
-            ret = Reply(tid, reply, strlen(reply));
-
-            // bwprintf(COM2, "Sent reply (status %d)\n\r", ret);
-
-            i++;
-        }
-    }
 }   
 

@@ -19,7 +19,7 @@ TASK_DIR = user
 USER = $(shell whoami)
 FILE = kernel2
 
-DEBUGFLAGS = -D_DEBUG -D_ASSERT
+DEBUGFLAGS = -D_ASSERT -DNDEBUG
 OPTIMIZATION = 0
 CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
 

@@ -1,3 +1,5 @@
+#include <string.h>
+
 int a2d( char ch ) {
     if( ch >= '0' && ch <= '9' ) return ch - '0';
     if( ch >= 'a' && ch <= 'f' ) return ch - 'a' + 10;
@@ -111,11 +113,12 @@ char* strcpy (char * destination,const char * source) {
     return destination;
 }
 
-int memory_copy(void* src, int src_len, void* dest, int dest_len) {
+int memory_copy(const void* src, int src_len, void* dest, int dest_len) {
     int copy_len = src_len < dest_len ? src_len : dest_len;
     int copy_int = copy_len >> 2; // div 4
     int copy_extra = copy_len & 0x3; // mod 4
 
+    // int is 4 bytes
     int* s = (int*)src, *d = (int*)dest;
     while (copy_int-- > 0)
         *d ++ = *s ++;
