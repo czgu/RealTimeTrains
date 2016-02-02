@@ -24,7 +24,7 @@ void* pq_pop(PQueue* q) {
 
 void* pq_pop_back(PQueue* q) {
 	q->size--;
-	return q->buffer[q->first + q->size];
+	return q->buffer[(q->first + q->size) % PQCAPACITY];
 }
 
 int pq_push(PQueue* q, void* p) {

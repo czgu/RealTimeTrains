@@ -24,7 +24,7 @@ char bq_pop(struct BQueue* q) {
 
 char bq_pop_back(struct BQueue* q) {
 	q->size--;
-	return q->buffer[q->first + q->size];
+	return q->buffer[(q->first + q->size) % CAPACITY];
 }
 
 int bq_push(struct BQueue* q, char c) {
