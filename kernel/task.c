@@ -2,7 +2,7 @@
 #include <task.h>
 #include <memory.h>
 
-unsigned int ctz(unsigned int v) {
+inline unsigned int ctz(unsigned int v) {
     unsigned int c;     // c will be the number of zero bits on the right,
                         // so if v is 1101000 (base 2), then c will be 3
     // NOTE: if 0 == v, then c = 31.
@@ -149,7 +149,7 @@ int scheduler_push(Task_Scheduler* scheduler, Task* task) {
     return 0;
 }
 
-int scheduler_empty(Task_Scheduler* scheduler) {
+inline int scheduler_empty(Task_Scheduler* scheduler) {
     return scheduler->priority_bitmap == 0;
 }
 
