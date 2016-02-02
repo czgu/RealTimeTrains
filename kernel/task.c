@@ -2,6 +2,43 @@
 #include <task.h>
 #include <memory.h>
 
+unsigned int ctz(unsigned int v) {
+    unsigned int c;     // c will be the number of zero bits on the right,
+                        // so if v is 1101000 (base 2), then c will be 3
+    // NOTE: if 0 == v, then c = 31.
+    if (v & 0x1) 
+    {
+      // special case for odd v (assumed to happen half of the time)
+      c = 0;
+    }
+    else
+    {
+      c = 1;
+      if ((v & 0xffff) == 0) 
+      {  
+        v >>= 16;  
+        c += 16;
+      }
+      if ((v & 0xff) == 0) 
+      {  
+        v >>= 8;  
+        c += 8;
+      }
+      if ((v & 0xf) == 0) 
+      {  
+        v >>= 4;
+        c += 4;
+      }
+      if ((v & 0x3) == 0) 
+      {  
+        v >>= 2;
+        c += 2;
+      }
+      c -= v & 0x1;
+    }
+    return c;
+}
+
 // TASK STRUCT
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation) {
@@ -55,7 +92,8 @@ int send_queue_pop(Task* receiver, Task** sender) {
 
 void scheduler_init(Task_Scheduler* scheduler) {
     int i;
-    for (i = LOW; i <= TOP; i++) {
+    scheduler->priority_bitmap = 0;
+    for (i = 0; i < TASK_NPRIORITIES; i++) {
         pq_init(scheduler->ready_queue + i);
     }
 
@@ -65,7 +103,7 @@ void scheduler_init(Task_Scheduler* scheduler) {
         scheduler->task_pool[i].pid = 0;           // need to be set later
 
         scheduler->task_pool[i].state = ZOMBIE;
-        scheduler->task_pool[i].priority = LOW;
+        scheduler->task_pool[i].priority = 30;
 
         scheduler->task_pool[i].send_queue_next = 0;
         scheduler->task_pool[i].send_queue_last = 0;
@@ -80,16 +118,19 @@ void scheduler_init(Task_Scheduler* scheduler) {
 
 Task* scheduler_next(Task_Scheduler* scheduler) {
     scheduler->active = (void*)0;
-    int i;
-    for (i = TOP; i >= LOW ; i--) {
-        if (!pq_empty(scheduler->ready_queue + i)) {
-            scheduler->active = (Task*) pq_pop(scheduler->ready_queue + i);
-            scheduler->active->state = ACTIVE;
-
-            return scheduler->active;
-        }
+    if (scheduler_empty(scheduler)) {
+        return 0;
     }
-    return 0;
+    unsigned int priority = ctz(scheduler->priority_bitmap);
+
+    scheduler->active = (Task*) pq_pop(scheduler->ready_queue + priority);
+    scheduler->active->state = ACTIVE;
+
+    if (pq_empty(scheduler->ready_queue + priority)) {
+        scheduler->priority_bitmap &= ~(0x1u << priority);
+    }
+
+    return scheduler->active;
 }
 
 int scheduler_push(Task_Scheduler* scheduler, Task* task) {
@@ -100,17 +141,16 @@ int scheduler_push(Task_Scheduler* scheduler, Task* task) {
     task->state = READY;
 
     PQueue* pq = scheduler->ready_queue + task->priority;
-    return pq_push(pq, (void*) task);
+    int err = pq_push(pq, (void*) task);
+    if (err) {
+        return err;
+    }
+    scheduler->priority_bitmap |= 0x1u << task->priority;
+    return 0;
 }
 
 int scheduler_empty(Task_Scheduler* scheduler) {
-    int i;
-    for (i = LOW; i <= TOP; i++) {
-        if (!pq_empty(scheduler->ready_queue + i)) {
-            return 0;
-        }
-    }
-    return 1;
+    return scheduler->priority_bitmap == 0;
 }
 
 int scheduler_pop_free_task(Task_Scheduler* scheduler, Task** free_task) {

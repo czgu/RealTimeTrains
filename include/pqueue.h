@@ -2,7 +2,7 @@
 #define PQUEUE_H
 
 // Capacity size is completely arbitrary
-#define PQCAPACITY 500
+#define PQCAPACITY 50
 
 typedef struct PQueue {
 	unsigned int size;		// size of buffer

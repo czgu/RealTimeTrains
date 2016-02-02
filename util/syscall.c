@@ -4,7 +4,7 @@
 
 int swi_jump(Request* request);
 
-int Create(TASK_PRIORITY priority, void (*code)()) {
+int Create(int priority, void (*code)()) {
     Request request;
     request.opcode = CREATE;
     request.param[0] = priority;

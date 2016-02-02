@@ -53,5 +53,5 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     scheduler_init(task_scheduler);
 
     // initialize first task
-    k_create(LOW, (void *)first_task, task_scheduler);
+    k_create(15, (void *)first_task, task_scheduler);
 }

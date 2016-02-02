@@ -33,7 +33,7 @@ void test_time_sender() {
     *timer_control |= CLKSEL_MASK | MODE_MASK;
     *timer_loader = TIMER_INIT_VAL;
 
-    Create(TOP, test_time_receiver);
+    Create(0, test_time_receiver);
 
     char msg[MSG_SIZE];
     int i;
@@ -57,11 +57,11 @@ void test_time_sender() {
 }
 
 void first_task() {
-    Create(TOP, nameserver_task);
+    Create(1, nameserver_task);
 
     //Create(HIGH, test_time_sender);
 
-    Create(HIGH, rps_server);
+    Create(10, rps_server);
     
     return;
 

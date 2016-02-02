@@ -52,8 +52,8 @@ void return_to_task(int ret, Task* task, Task_Scheduler* task_scheduler) {
 }
 
 
-void k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_scheduler) {
-    if (priority > TOP || priority < LOW) {
+void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_scheduler) {
+    if (priority >= TASK_NPRIORITIES) {
         RETURN_ACTIVE(-1);
     }
 

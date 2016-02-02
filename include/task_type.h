@@ -2,13 +2,7 @@
 #define _TASK_TYPE_H_
 
 // TASK
-#define TASK_NPRIORITIES 4
-typedef enum {
-    LOW = 0,
-    MED,
-    HIGH,
-    TOP,
-} TASK_PRIORITY;
+#define TASK_NPRIORITIES 32
 
 typedef enum {
     READY = 0,

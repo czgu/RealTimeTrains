@@ -4,7 +4,7 @@
 #include <task_type.h>
 
 // K1
-int Create(TASK_PRIORITY priority, void (*code)());
+int Create(int priority, void (*code)());
 int MyTid();
 int MyParentTid();
 void Pass();

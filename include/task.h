@@ -13,7 +13,7 @@ typedef struct Task {
     unsigned int spsr; // #16
     int ret; // #20
     TASK_STATE state; // #24
-    TASK_PRIORITY priority; // #28
+    unsigned int priority; // #28
 
     // all task in the linked list should be receive blocked except head
     struct Task* send_queue_next;
@@ -33,6 +33,7 @@ typedef struct Task_Scheduler {
     Task task_pool[TASK_POOL_SIZE];
     PQueue free_list;
     PQueue ready_queue[TASK_NPRIORITIES];
+    unsigned int priority_bitmap;
     Task* active;
 } Task_Scheduler;
 

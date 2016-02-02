@@ -28,8 +28,8 @@ void test_whois_task() {
 }
 
 void test_name_server_task() {
-    Create(HIGH, test_registeras_task);
-    Create(LOW, test_whois_task);
+    Create(10, test_registeras_task);
+    Create(30, test_whois_task);
 }
 
 void test_send_receive_task() {
@@ -49,10 +49,10 @@ void test_send_receive_reply_task() {
     int j;
     for(j = 0; j < 2; j++) {
 
-        Create(LOW, test_send_receive_task);
-        Create(HIGH, test_send_receive_task);
-        Create(HIGH, test_send_receive_task);
-        Create(HIGH, test_send_receive_task);
+        Create(30, test_send_receive_task);
+        Create(10, test_send_receive_task);
+        Create(10, test_send_receive_task);
+        Create(10, test_send_receive_task);
 
         char msg[80];
         int tid;

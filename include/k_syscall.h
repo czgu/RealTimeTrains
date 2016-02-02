@@ -10,7 +10,7 @@ void handle(Request* request, Task_Scheduler* task_scheduler);
 void return_to_task(int ret,Task* task, Task_Scheduler* task_scheduler);
 
 // K1
-void k_create(TASK_PRIORITY priority, void (*code)(), Task_Scheduler* task_scheduler);
+void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_scheduler);
 void k_tid(Task_Scheduler* task_scheduler);
 void k_pid(Task_Scheduler* task_scheduler);
 void k_pass(Task_Scheduler* task_scheduler);

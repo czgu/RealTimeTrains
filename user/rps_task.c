@@ -91,7 +91,7 @@ void rps_server() {
         bwprintf(COM2, "Invalid num of players (%d)\n\r", num_player);
     }
     while(num_player --> 0)
-        Create(MED, rps_client);
+        Create(11, rps_client);
 
     for (;;) {
         RPS_Request request;
