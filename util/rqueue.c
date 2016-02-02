@@ -15,9 +15,8 @@ void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned int unit_s
     rq_clear(q);
 }
 
-void* rq_first(RQueue* q) {
-    unsigned int addr = q->buffer + q->first * q->unit_size;
-	return (void*)addr;
+inline void* rq_first(RQueue* q) {
+	return (void*)(q->buffer + q->first * q->unit_size);
 }
 
 void* rq_pop_front(RQueue* q) {
@@ -30,10 +29,8 @@ void* rq_pop_front(RQueue* q) {
 	return (void*)addr;
 }
 
-void* rq_pop_back(RQueue* q) {
-	q->size--;
-    unsigned int addr = q->buffer + ((q->size + q->first) % q->max_size) * q->unit_size;
-	return (void*)addr;
+inline void* rq_pop_back(RQueue* q) {
+    return (void *)(q->buffer + ((--q->size + q->first) % q->max_size) * q->unit_size);
 }
 
 int rq_push_front(RQueue* q, void* p) {
@@ -62,11 +59,11 @@ int rq_push_back(RQueue* q, void* p) {
 	return 0;
 }
 
-int rq_empty(RQueue* q) {
+inline int rq_empty(RQueue* q) {
 	return q->size == 0;
 }
 
-void rq_clear(RQueue* q) {
+inline void rq_clear(RQueue* q) {
 	q->size = 0;
 	q->first = 0;
 }

@@ -13,11 +13,11 @@ typedef struct PQueue {
 } PQueue;
 
 void pq_init(PQueue* buffer);
-void* pq_first(PQueue* buffer);
-void* pq_pop(PQueue* buffer);
-void* pq_pop_back(PQueue* buffer);
+inline void* pq_first(PQueue* buffer);
+inline void* pq_pop(PQueue* buffer);
+inline void* pq_pop_back(PQueue* buffer);
 int pq_push(PQueue* buffer, void* ptr);
-int pq_empty(PQueue* buffer);
-void pq_clear(PQueue* buffer);	// clears buffer (sets first = size = 0)
+inline int pq_empty(PQueue* buffer);
+inline void pq_clear(PQueue* buffer);	// clears buffer (sets first = size = 0)
 
 #endif

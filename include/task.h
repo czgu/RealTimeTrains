@@ -40,7 +40,7 @@ typedef struct Task_Scheduler {
 void scheduler_init(Task_Scheduler* scheduler);
 Task* scheduler_next(Task_Scheduler* scheduler);
 int scheduler_push(Task_Scheduler* scheduler, Task* task);
-int scheduler_empty(Task_Scheduler* scheduler);
+inline int scheduler_empty(Task_Scheduler* scheduler);
 int scheduler_pop_free_task(Task_Scheduler* scheduler, Task** free_task);
 int scheduler_push_free_task(Task_Scheduler* scheduler, Task* task);
 

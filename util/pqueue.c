@@ -10,11 +10,11 @@ void pq_init(PQueue* buffer) {
 	pq_clear(buffer);
 }
 
-void* pq_first(PQueue* pq) {
+inline void* pq_first(PQueue* pq) {
 	return pq->buffer[pq->first];
 }
 
-void* pq_pop(PQueue* q) {
+inline void* pq_pop(PQueue* q) {
 	//assert(q->size > 0);
 	void* p = q->buffer[q->first];
 	q->first = (q->first + 1) % PQCAPACITY;
@@ -22,9 +22,8 @@ void* pq_pop(PQueue* q) {
 	return p;
 }
 
-void* pq_pop_back(PQueue* q) {
-	q->size--;
-	return q->buffer[(q->first + q->size) % PQCAPACITY];
+inline void* pq_pop_back(PQueue* q) {
+	return q->buffer[(q->first + --q->size) % PQCAPACITY];
 }
 
 int pq_push(PQueue* q, void* p) {
@@ -38,11 +37,10 @@ int pq_push(PQueue* q, void* p) {
 	return 0;
 }
 
-int pq_empty(PQueue* q) {
+inline int pq_empty(PQueue* q) {
 	return q->size == 0;
 }
 
-void pq_clear(PQueue* buffer) {
-	buffer->size = 0;
-	buffer->first = 0;
+inline void pq_clear(PQueue* buffer) {
+	buffer->size = buffer->first = 0;
 }

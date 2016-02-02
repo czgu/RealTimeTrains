@@ -13,12 +13,12 @@ typedef struct RQueue {
 } RQueue;
 
 void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned unit_size);
-void* rq_first(RQueue* q);
-void* rq_pop_back(RQueue* q);
+inline void* rq_first(RQueue* q);
+inline void* rq_pop_back(RQueue* q);
 void* rq_pop_front(RQueue* q);
 int rq_push_back(RQueue* q, void* ptr);
 int rq_push_front(RQueue* q, void* ptr);
-int rq_empty(RQueue* q);
-void rq_clear(RQueue* q);	// clears buffer (sets first = size = 0)
+inline int rq_empty(RQueue* q);
+inline void rq_clear(RQueue* q);	// clears buffer (sets first = size = 0)
 
 #endif
