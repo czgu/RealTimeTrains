@@ -41,6 +41,8 @@ void nameserver_task() {
     Dictionary dict;
     dictionary_init(&dict);
 
+    nameserver_tid = MyTid();
+
     for (;;) {
         int sender;
         NSmsg msg;

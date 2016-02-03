@@ -4,6 +4,10 @@
 
 int swi_jump(Request* request);
 
+// server tids
+int nameserver_tid = 0;
+int clockserver_tid = 0;
+
 int Create(int priority, void (*code)()) {
     Request request;
     request.opcode = CREATE;
@@ -79,7 +83,7 @@ int RegisterAs(char *name) {
 
     strcpy(msg.binding.name, name);
 
-    int ret = Send(NAMESERVER_TID, &msg, sizeof(msg), &msg, sizeof(msg));
+    int ret = Send(nameserver_tid, &msg, sizeof(msg), &msg, sizeof(msg));
 
     if (ret < 0) {
         return -1;    
@@ -95,7 +99,7 @@ int WhoIs(char *name) {
 
     strcpy(msg.binding.name, name);
 
-    int ret = Send(NAMESERVER_TID, &msg, sizeof(msg), &msg, sizeof(msg));
+    int ret = Send(nameserver_tid, &msg, sizeof(msg), &msg, sizeof(msg));
 
     if (ret < 0) {
         return -1;
