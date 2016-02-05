@@ -16,11 +16,11 @@ typedef struct Task {
     unsigned int priority; // #28
 
     // all task in the linked list should be receive blocked except head
-    struct Task* send_queue_next;
+    struct Task* send_queue_next; // #32
     // for queue insertion, only set for head
-    struct Task* send_queue_last; 
+    struct Task* send_queue_last; // #36
 
-    Request* last_request;    
+    Request* last_request; //#40
 } Task;
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation);

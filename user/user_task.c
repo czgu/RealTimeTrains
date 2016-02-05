@@ -1,6 +1,8 @@
 // std
 #include <user_task.h>
 #include <nameserver.h>
+#include <clockserver.h>
+
 #include <ts7200.h>
 
 // user
@@ -58,10 +60,17 @@ void test_time_sender() {
 
 void first_task() {
     Create(1, nameserver_task);
+    //Create(2, clockserver_task);
 
     //Create(HIGH, test_time_sender);
 
     Create(10, rps_server);
+
+    for(;;) {
+        //*((unsigned int*)VIC1_BASE +VIC_SOFTINT) = 1;
+        Pass();
+    }
+
     
     return;
 

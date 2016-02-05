@@ -5,11 +5,19 @@
 #include <string.h>
 #include <task.h>
 
+#include <ts7200.h>
+
 void handle(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
     task_scheduler->active->last_request = request;
 
-    DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
+    if (request == 0) {
+        DEBUG_MSG("handle hardware request\n\r");
+        *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
+        RETURN_ACTIVE(0);
+    }
+
+    // DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
 
     switch (request->opcode) {
     case CREATE:

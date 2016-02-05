@@ -17,10 +17,10 @@ UTIL_DIR = util
 TASK_DIR = user
 
 USER = $(shell whoami)
-FILE = kernel2
+FILE = kernel3
 
-DEBUGFLAGS = -D_ASSERT -DNDEBUG
-OPTIMIZATION = 2
+DEBUGFLAGS = -D_ASSERT -D_DEBUG
+OPTIMIZATION = 0
 CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
 
 # -g: include hooks for gdb
