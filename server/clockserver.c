@@ -1,8 +1,9 @@
+#include <clockserver.h>
+
+#include <priority.h>
 #include <syscall.h>
 #include <bwio.h>
 #include <ts7200.h>
-
-#include <clockserver.h>
 
 #define TIMER_INIT_VAL 5084 //69
 
@@ -48,13 +49,11 @@ void clockserver_task() {
 
 // Clock notifier
 void clocknotifier_task() {
-    //clocknotifier_init();
     int server_tid = WhoIs("Clock Server");
     CSmsg msg;
-    msg.type = UPDATE_TIME;
+    msg.opcode = UPDATE_TIME;
     for (;;) {
-        // TODO: replace 0 with macro
-        msg.data = AwaitEvent(0);
-        Send(server_tid, &msg, sizeof(CSmsg));
+        msg.data = AwaitEvent(TIMER_IRQ);
+        Send(server_tid, (void*) &msg, sizeof(CSmsg), (void*) &msg, sizeof(CSmsg));
     }
 }

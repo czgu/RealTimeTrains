@@ -4,6 +4,7 @@
 #include <clockserver.h>
 
 #include <ts7200.h>
+#include <priority.h>
 
 // user
 #include "rps_task.h"

@@ -20,7 +20,6 @@ void clockserver_init();
 void clockserver_task();
 
 // Clock notifier
-void clocknotifier_init();
 void clocknotifier_task();
 
 #endif
