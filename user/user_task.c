@@ -60,7 +60,7 @@ void test_time_sender() {
 
 void first_task() {
     Create(1, nameserver_task);
-    //Create(2, clockserver_task);
+    Create(2, clockserver_task);
 
     //Create(HIGH, test_time_sender);
 
@@ -68,7 +68,7 @@ void first_task() {
 
     for(;;) {
         //*((unsigned int*)VIC1_BASE +VIC_SOFTINT) = 1;
-        Pass();
+        //Pass();
     }
 
     

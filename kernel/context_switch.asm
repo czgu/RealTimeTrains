@@ -20,9 +20,6 @@ asm_kern_exit:
 
     msr     CPSR_c, #0xDF; # change to system mode, interrupt off
 
-    # put the return value
-    ldr r0, [r3, #20];
-    
     # restore sp_user
     ldr sp, [r3, #8];
 
@@ -31,11 +28,18 @@ asm_kern_exit:
     # check if last_request is hardware interrupt
     ldr r2, [r3, #40];
     cmp r2, #0;
-    ldmfdeq sp!, {r0-r3};
 
+    # put the return value
+    ldr r0, [r3, #20];
+
+    bne _not_hardware; # if not hardware, we do not store sp
+
+    ldmfd sp!, {r0-r3};
+
+    _not_hardware:
     msr CPSR_c, #0xD3; # change to supervisor mode, interrupt off
-  
-    # exit to user space
+    
+    # exit to user space, pc = lr_svc
     movs pc, lr;
 
 	.size	asm_kern_exit, .-asm_kern_exit
@@ -43,42 +47,47 @@ asm_kern_exit:
 	.global	irq_entry
 	.type	irq_entry, %function
 irq_entry:
-    stmfd sp!, {r0-r3};
+    MSR     CPSR_c, #0xDF; # change to system mode, interrupt off
+
+    stmfd sp!, {r0-r3}; # save on user stack
+
+    msr CPSR_c, #0xD2; #irq mode, interrupt off
+
     mov r0, #0; #indicate it's a hardware interrupt
+    sub lr, lr, #4;
+
 	.size	irq_entry, .-irq_entry
 	.ident	"GCC: (GNU) 4.0.2"
 	.global	asm_kern_entry
 	.type	asm_kern_entry, %function
 asm_kern_entry:
     mov r1, lr; # let r1 = lr_svc or lr_irq
+    mrs r2, spsr; # let r2 = spsr_irq or spsr_svc
 
     MSR     CPSR_c, #0xDF; # change to system mode, interrupt off
 
     # store user registers
     stmfd sp!, {r4-r12, lr};
 
-    mov r2, sp; # acqure sp of the active task
+    mov r3, sp; # acqure sp of the active task
 
     msr CPSR_c, #0xD3; # change to supervisor mode, interrupt off
 
-    mov r3, r0; # move request value to r3
-
     #Get TD and Request
-    ldmfd sp!, {r0};
+    ldmfd sp!, {r4};
 
     # save sp to TD
-    str r2, [r0, #8];
+    str r3, [r4, #8];
 
     # save spsr to TD
-    mrs r2, spsr;
-    str r2, [r0, #16];
+    str r2, [r4, #16];
 
     # save lr_svc to TD
-    str r1, [r0, #12];
+    str r1, [r4, #12];
 
     #Fill Request
-    ldmfd sp!, {r0};
-    str r3, [r0, #0];
+    ldmfd sp!, {r4};
+    str r0, [r4, #0];
 
     #popped TD and request
     #restore kernel register

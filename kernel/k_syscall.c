@@ -8,16 +8,25 @@
 #include <ts7200.h>
 
 void handle(Request* request, Task_Scheduler* task_scheduler) {
-    unsigned int* param = request->param;
     task_scheduler->active->last_request = request;
 
     if (request == 0) {
-        DEBUG_MSG("handle hardware request\n\r");
-        *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
-        RETURN_ACTIVE(0);
+        handle_irq(task_scheduler);
+    } else {
+        handle_swi(request, task_scheduler);
     }
+}
 
-    // DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
+void handle_irq(Task_Scheduler* task_scheduler) {
+    DEBUG_MSG("handle hardware request\n\r");
+    *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
+    RETURN_ACTIVE(0);
+}
+
+void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
+    unsigned int* param = request->param;
+
+    DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
 
     switch (request->opcode) {
     case CREATE:
@@ -79,13 +88,22 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
     // new_task->state = READY; set when added to scheduler
     new_task->priority = priority;
     new_task->spsr = 0x10;
+    new_task->last_request = 0;
 
     // Initialize program memory
     unsigned int *sp = (unsigned int*)TASK_BASE_SP + index * TASK_STACK_SIZE;
+    
+    int i;
+
+    // simulate return from hardware interrupt
+    // as if stmfd {r0-r3} happened
+    for(i = 0; i >= -3; i--) {
+        *sp-- = 0;
+    }
+
     sp[0] = (unsigned int)Exit; // lr
     sp[-2] = (unsigned int)sp; // fp
 
-    int i;
     for(i = -3; i >= -9; i--) {
         sp[i] = 0;
     }
