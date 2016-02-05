@@ -1,15 +1,26 @@
 #ifndef _CLOCKSERVER_H_
 #define _CLOCKSERVER_H_
 
+// Clock server
+typedef enum {
+    UPDATE_TIME = 0,
+    TIME_REQUEST,
+    DELAY_REQUEST,
+    DELAYUNTIL_REQUEST,
+} CSOP;
+
 typedef struct CSmsg {
-    int opcode;
-    int type;
-    int param[2];
-    int ret;
+    CSOP opcode;
+    //int type;
+    int data;
+    int err;
 } CSmsg;
 
-void clock_init();
+void clockserver_init();
 void clockserver_task();
 
+// Clock notifier
+void clocknotifier_init();
+void clocknotifier_task();
 
 #endif
