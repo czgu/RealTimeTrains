@@ -23,4 +23,6 @@ int WhoIs(char *name);
 // K3
 extern int clockserver_tid;
 
+int AwaitEvent(int eventid);
+
 #endif

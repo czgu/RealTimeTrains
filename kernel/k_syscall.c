@@ -18,8 +18,38 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
 }
 
 void handle_irq(Task_Scheduler* task_scheduler) {
-    DEBUG_MSG("handle hardware request\n\r");
-    *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
+    int VIC1_IRQ = *((volatile int*)(VIC1_BASE + VIC_IRQ_STATUS));
+    int VIC2_IRQ = *((volatile int*)(VIC2_BASE + VIC_IRQ_STATUS));
+
+    EVENT_FLAG event = NONE_IRQ;
+    int i;
+    for (i = 0; i < EVENT_FLAG_LEN; i++) {
+        int index = task_scheduler->events[i].index;
+        int VIC_IRQ = (index & (0x1 << 5)) ? VIC2_IRQ : VIC1_IRQ;
+        if (VIC_IRQ & (0x1u << (index % 32))) {
+            event = i;
+            break;
+        }
+    }
+
+    int volatile_data;
+    switch (event) {
+    case TIMER_IRQ:
+        *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
+        volatile_data = *((volatile int*)(TIMER3_BASE + VAL_OFFSET));
+        DEBUG_MSG("timer\n\r");
+        break;
+    default:
+        DEBUG_MSG("unhandled hardware request\n\r");
+        break;
+    }
+
+    // awake waiting task
+    if (task_scheduler->events[i].wait_task != 0) {
+        return_to_task(volatile_data, task_scheduler->events[i].wait_task, task_scheduler);
+        task_scheduler->events[i].wait_task = 0;
+    }
+
     RETURN_ACTIVE(0);
 }
 
@@ -52,6 +82,9 @@ void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
         break;
     case REPLY:
         k_reply(param[0], task_scheduler);
+        break;
+    case AWAITEVENT:
+        k_awaitevent(param[0], task_scheduler);
         break;
     default:
         bwprintf(COM2, "Invalid syscall");
@@ -240,4 +273,14 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
     return_to_task(size_copied, sender, task_scheduler);    
     // receiver is made ready again (not sure what return value yet)
     RETURN_ACTIVE(0);
+}
+
+void k_awaitevent(int eventType, Task_Scheduler* task_scheduler) {
+    if (eventType < TIMER_IRQ || eventType > NONE_IRQ) {
+        RETURN_ACTIVE(-1);   
+    }
+
+    if (task_scheduler->events[eventType].wait_task == 0) {
+        task_scheduler->events[eventType].wait_task = task_scheduler->active;
+    }
 }

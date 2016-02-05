@@ -23,14 +23,23 @@ typedef enum {
     SEND, // 5
     RECEIVE, // 6
     REPLY, // 7
+    AWAITEVENT, // 8 
     NONE
 } SYSCALL;
-
 
 typedef struct Request {
     SYSCALL opcode;
     unsigned int param[10];
 } Request;
 
+#define EVENT_FLAG_LEN 5
+typedef enum {
+    TIMER_IRQ = 0,
+    COM2_SEND_IRQ,
+    COM2_RECEIVE_IRQ,
+    COM1_SEND_IRQ,
+    COM1_RECEIVE_IRQ,
+    NONE_IRQ
+} EVENT_FLAG;
 
 #endif

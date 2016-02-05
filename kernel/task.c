@@ -88,10 +88,25 @@ int send_queue_pop(Task* receiver, Task** sender) {
     return 0;
 }
 
+// EVENTS
+void events_init(Event* events) {
+    int i;
+    for (i = 0; i < EVENT_FLAG_LEN; i++) {
+        events[i].wait_task = 0;
+    }
+
+    events[TIMER_IRQ].index = 51;
+    events[COM2_SEND_IRQ].index = 26;
+    events[COM2_RECEIVE_IRQ].index = 25;
+    events[COM1_SEND_IRQ].index = 24;
+    events[COM1_RECEIVE_IRQ].index = 23;
+}
+
 // TASK_SCHEDULER
 
 void scheduler_init(Task_Scheduler* scheduler) {
     int i;
+
     scheduler->priority_bitmap = 0;
     for (i = 0; i < TASK_NPRIORITIES; i++) {
         pq_init(scheduler->ready_queue + i);
@@ -113,6 +128,7 @@ void scheduler_init(Task_Scheduler* scheduler) {
         pq_push(&scheduler->free_list, (void*)(scheduler->task_pool + i));
     }
 
+    events_init(scheduler->events);
     scheduler->active = (Task*)0;
 }
 

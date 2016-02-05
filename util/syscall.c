@@ -108,3 +108,11 @@ int WhoIs(char *name) {
     // -2: error happened during register
     return (msg.err < 0? -2: msg.binding.tid);
 }
+
+int AwaitEvent(int eventid) {
+    Request request;
+    request.opcode = AWAITEVENT;
+    request.param[0] = eventid;
+
+    return swi_jump(&request);
+}

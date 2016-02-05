@@ -28,6 +28,13 @@ unsigned int merge_tid(unsigned short index, unsigned short generation);
 void send_queue_push(Task* receiver, Task* sender);
 int send_queue_pop(Task* receiver, Task** sender);
 
+typedef struct Event {
+    short index;
+    Task* wait_task;
+} Event;
+void events_init(Event* events);
+
+
 #define TASK_POOL_SIZE  40
 typedef struct Task_Scheduler {
     Task task_pool[TASK_POOL_SIZE];
@@ -35,6 +42,8 @@ typedef struct Task_Scheduler {
     PQueue ready_queue[TASK_NPRIORITIES];
     unsigned int priority_bitmap;
     Task* active;
+
+    Event events[EVENT_FLAG_LEN];    
 } Task_Scheduler;
 
 void scheduler_init(Task_Scheduler* scheduler);

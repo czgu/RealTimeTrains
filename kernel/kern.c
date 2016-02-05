@@ -30,7 +30,7 @@ int main() {
         if (task_scheduler.active == 0) {
             break;
         }
-        DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
+        // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
 
         asm_kern_exit(task_scheduler.active, &request);
 
