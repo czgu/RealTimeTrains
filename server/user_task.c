@@ -59,8 +59,8 @@ void test_time_sender() {
 }
 
 void first_task() {
-    Create(1, nameserver_task);
-    Create(2, clockserver_task);
+    Create(NAMESERVER_PRIORITY, nameserver_task);
+    Create(CLOCKSERVER_PRIORITY, clockserver_task);
 
     //Create(HIGH, test_time_sender);
 
