@@ -17,14 +17,16 @@ void clock_init() {
 }
 
 void clockserver_init() {
-    clock_init();
+    // TODO: initialize clock data structures
     RegisterAs("Clock Server");
+    Create(CLOCKNOTIFIER_PRIORITY, clocknotifier_task);
+    clock_init();
 }
 
 void clockserver_task() {
     clockserver_init();
-    Create(CLOCKNOTIFIER_PRIORITY, clocknotifier_task);
 
+    unsigned int ticks_elapsed = 0;
     CSmsg msg;
     for (;;) {
         int sender;
@@ -33,12 +35,30 @@ void clockserver_task() {
         } else {
             switch(msg.opcode) {
                 // TODO: handle messages
-                case UPDATE_TIME:
-                case TIME_REQUEST:
+                case UPDATE_TIME: {
+                    // FIXME: I'm not sure if this is correct
+                    ticks_elapsed++;
+                    msg.err = 0;
+                    Reply(sender, (void*) &msg, sizeof(CSmsg));
+
+                    // TODO: check wait queue for expired tasks
+                    break;
+                }
+                case TIME_REQUEST: {
+                    msg.data = ticks_elapsed; 
+                    msg.err = 0;
+                    Reply(sender, (void*) &msg, sizeof(CSmsg));
+                    break;
+                }
                 case DELAY_REQUEST:
-                case DELAYUNTIL_REQUEST:
+                    msg.data += ticks_elapsed;
+                    // FALL-THROUGH
+                case DELAYUNTIL_REQUEST: {
+                    // TODO: add task id and msg.data to wait queue
+                    break;
+                }
                 default:
-                    // TODO: throw error
+                    DEBUG_MSG("clockserver: unknown opcode %d\n\r", msg.opcode);
                     break;
             }
         }
@@ -54,6 +74,29 @@ void clocknotifier_task() {
     msg.opcode = UPDATE_TIME;
     for (;;) {
         msg.data = AwaitEvent(TIMER_IRQ);
-        Send(server_tid, (void*) &msg, sizeof(CSmsg), (void*) &msg, sizeof(CSmsg));
+        int err = Send(server_tid, (void*) &msg, sizeof(CSmsg), 
+                                   (void*) &msg, sizeof(CSmsg));
+        switch(err) {
+            case 0:
+                // success
+                break;
+            case -1:
+                DEBUG_MSG("clocknotifier_task (error %d): %s\n\r", err,
+                          "clock server id is impossible");
+                break;
+            case -2:
+                DEBUG_MSG("clocknotifier_task (error %d): %s\n\r", err,
+                          "clock server id is not an existing task");
+                break;
+            case -3:
+                DEBUG_MSG("clocknotifier_task (error %d): %s\n\r", err,
+                          "send-receive-reply transaction is incomplete");
+                break;
+            default:
+                // unknown error code
+                DEBUG_MSG("clocknotifier_task (error %d): %s\n\r", err,
+                          "unknown error");
+                break;
+        }
     }
 }

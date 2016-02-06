@@ -12,7 +12,7 @@ typedef enum {
 typedef struct CSmsg {
     CSOP opcode;
     //int type;
-    int data;
+    unsigned int data;
     int err;
 } CSmsg;
 
