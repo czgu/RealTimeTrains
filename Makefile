@@ -14,7 +14,7 @@ INCLUDE = include
 BIN = bin
 KER_DIR = kernel
 UTIL_DIR = util
-TASK_DIR = server
+TASK_DIR = task
 
 USER = $(shell whoami)
 FILE = kernel3

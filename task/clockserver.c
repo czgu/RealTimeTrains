@@ -16,15 +16,19 @@ void clock_init() {
     *timer_control = CLKSEL_MASK | MODE_MASK | ENABLE_MASK;
 }
 
-void clockserver_init() {
-    // TODO: initialize clock data structures
+void clockserver_init(Wait_Queue* wait_queue) {
+    wait_queue_init(wait_queue);
+
     RegisterAs("Clock Server");
     Create(CLOCKNOTIFIER_PRIORITY, clocknotifier_task);
+
     clock_init();
 }
 
 void clockserver_task() {
-    clockserver_init();
+    Wait_Queue wait_queue;
+
+    clockserver_init(&wait_queue);
 
     unsigned int ticks_elapsed = 0;
     CSmsg msg;
@@ -34,14 +38,13 @@ void clockserver_task() {
         if (sz != sizeof(CSmsg)) {
         } else {
             switch(msg.opcode) {
-                // TODO: handle messages
                 case UPDATE_TIME: {
-                    // FIXME: I'm not sure if this is correct
+                    // YOU THERE: I'm not sure if this is correct, yes it is, you need to have faith in yourself
                     ticks_elapsed++;
                     msg.err = 0;
                     Reply(sender, (void*) &msg, sizeof(CSmsg));
 
-                    // TODO: check wait queue for expired tasks
+                    reply_expired_tasks(&wait_queue, ticks_elapsed);
                     break;
                 }
                 case TIME_REQUEST: {
@@ -54,7 +57,7 @@ void clockserver_task() {
                     msg.data += ticks_elapsed;
                     // FALL-THROUGH
                 case DELAYUNTIL_REQUEST: {
-                    // TODO: add task id and msg.data to wait queue
+                    wait_queue_push(&wait_queue, msg.data);
                     break;
                 }
                 default:
@@ -99,4 +102,46 @@ void clocknotifier_task() {
                 break;
         }
     }
+}
+
+void wait_queue_init(Wait_Queue* wq) {
+    pq_init(&wq->free_pool);
+    int i;
+    for (i = 0; i < WAIT_QUEUE_SIZE; i++) {
+        pq_push(&wq->free_pool, &wq->buffer[i]);
+    }
+
+    wq->head = 0;
+}
+
+int wait_queue_push(Wait_Queue* wq, Wait_Task* task) {
+    Wait_Task* elem = pq_pop(&wq->free_pool);
+    *elem = *task;
+    elem->next = 0;
+
+    Wait_Task** next_node = &wq->head;
+    while (1) {
+        if (*next_node == 0 || (*next_node)->time > elem->time) {
+            elem->next = *next_node;
+            *next_node = elem;
+            break;
+        }     
+        next_node = &((*next_node)->next);
+    }
+    return 0;
+}
+
+void reply_expired_tasks(Wait_Queue* wq, int time) {
+    Wait_Task** node = &wq->head;
+    while (1) {
+        if (*node == 0) {
+            return;
+        } else if ((*node)->time <= time) {
+            Reply((*node)->tid, 0, 0);
+            pq_push(&(wq->free_pool), *node); 
+            *node = (*node)->next;
+        } else {
+            return;
+        }
+    }   
 }
