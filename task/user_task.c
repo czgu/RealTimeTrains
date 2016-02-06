@@ -3,7 +3,6 @@
 #include <nameserver.h>
 #include <clockserver.h>
 
-#include <ts7200.h>
 #include <priority.h>
 
 // user
@@ -14,66 +13,54 @@
 #include <syscall.h>
 #include <string.h>
 
-#define MSG_SIZE 64
-
-#define TIMER_INIT_VAL (0x1 << 20)
-
-void test_time_receiver() {
-    char msg[MSG_SIZE];
-
-    int tid;
-    Receive( &tid, msg, MSG_SIZE);
-    Reply(tid, msg, MSG_SIZE);
-
+void idle_task() {
+    int i = 0;
+    for(;;) {
+        i++;
+    }
 }
 
-void test_time_sender() {
-    unsigned int timer_base = TIMER3_BASE;
-    volatile int* timer_loader = (int*)timer_base;
-    volatile int* timer_control = (int*)(timer_base + CTRL_OFFSET);
+void timer_task() {
+    int tid = MyTid();
+    int pid = MyParentTid();
+    int time[2];
 
-    *timer_control = 0;
-    *timer_control |= CLKSEL_MASK | MODE_MASK;
-    *timer_loader = TIMER_INIT_VAL;
+    Send(pid, 0, 0, time, sizeof(int) * 2);
 
-    Create(0, test_time_receiver);
-
-    char msg[MSG_SIZE];
     int i;
-    for (i = 0; i < MSG_SIZE - 1; i++)
-        msg[i] = 'a';
-    msg[MSG_SIZE - 1] = 0;
-
-    *timer_control |= ENABLE_MASK;
-
-    int ret;
-    ret = Send(65539, msg, MSG_SIZE, msg, MSG_SIZE);
-
-    *timer_control &= ~ENABLE_MASK;
-
-    int time_passed = TIMER_INIT_VAL - *((int*)(timer_base + VAL_OFFSET));
-
-    int ms_passed = time_passed / 0.508469;
-
-    bwprintf(COM2, "reply (%d): %s, time passed: %dus\n\r", ret, msg, ms_passed);
-
+    for (i = 1; i <= time[1]; i++) {
+        Delay(time[0]);
+        bwprintf(COM2, "[%d] interval: %d iter: %d\n\r", tid, time[0], i);
+    }
 }
 
 void first_task() {
     Create(NAMESERVER_PRIORITY, nameserver_task);
     Create(CLOCKSERVER_PRIORITY, clockserver_task);
 
-    //Create(HIGH, test_time_sender);
+    // Create(HIGH, test_time_sender);
 
-    Create(10, rps_server);
+    // Create(10, rps_server);
 
-    for(;;) {
-        //*((unsigned int*)VIC1_BASE +VIC_SOFTINT) = 1;
-        //Pass();
+    Create(IDLE_TASK_PRIORITY, idle_task);
+
+    Create(3, timer_task); // 65541
+    Create(4, timer_task); // 65542
+    Create(5, timer_task); // 65543
+    Create(6, timer_task); // 65544
+
+    int delaytimes[4] = {10, 23, 33, 71};
+    int delaynum[4] = {20, 9, 6, 3};
+    
+    int i;
+    int tid; int reply[2];
+    for (i = 0; i < 4; i++) {
+        Receive(&tid, 0, 0);
+        reply[0] = delaytimes[tid - 65541];
+        reply[1] = delaynum[tid - 65541];
+        Reply(tid, reply, sizeof(int) * 2); 
     }
 
-    
     return;
-
 }   
 

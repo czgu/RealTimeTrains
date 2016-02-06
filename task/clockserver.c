@@ -5,24 +5,11 @@
 #include <bwio.h>
 #include <ts7200.h>
 
-#define TIMER_INIT_VAL 5084 //69
-
-void clock_init() {
-    unsigned int timer_base = TIMER3_BASE;
-    volatile int* timer_loader = (int*)(timer_base + LDR_OFFSET);
-    volatile int* timer_control = (int*)(timer_base + CTRL_OFFSET);
-
-    *timer_loader = TIMER_INIT_VAL;
-    *timer_control = CLKSEL_MASK | MODE_MASK | ENABLE_MASK;
-}
-
 void clockserver_init(Wait_Queue* wait_queue) {
     wait_queue_init(wait_queue);
 
     RegisterAs("Clock Server");
     Create(CLOCKNOTIFIER_PRIORITY, clocknotifier_task);
-
-    clock_init();
 }
 
 void clockserver_task() {
@@ -32,6 +19,7 @@ void clockserver_task() {
 
     unsigned int ticks_elapsed = 0;
     CSmsg msg;
+    Wait_Task wait_task;
     for (;;) {
         int sender;
         int sz = Receive(&sender, &msg, sizeof(CSmsg));
@@ -39,17 +27,22 @@ void clockserver_task() {
         } else {
             switch(msg.opcode) {
                 case UPDATE_TIME: {
-                    // YOU THERE: I'm not sure if this is correct, yes it is, you need to have faith in yourself
+                    // TODO: verify if this would lose ticks
                     ticks_elapsed++;
                     msg.err = 0;
-                    Reply(sender, (void*) &msg, sizeof(CSmsg));
 
+                    //DEBUG_MSG("timer update %d\n\r", ticks_elapsed);
+
+                    Reply(sender, 0, 0);
                     reply_expired_tasks(&wait_queue, ticks_elapsed);
                     break;
                 }
                 case TIME_REQUEST: {
                     msg.data = ticks_elapsed; 
                     msg.err = 0;
+                    
+                    // DEBUG_MSG("reply to time request %d\n\r", sender);
+
                     Reply(sender, (void*) &msg, sizeof(CSmsg));
                     break;
                 }
@@ -57,16 +50,19 @@ void clockserver_task() {
                     msg.data += ticks_elapsed;
                     // FALL-THROUGH
                 case DELAYUNTIL_REQUEST: {
-                    wait_queue_push(&wait_queue, msg.data);
+                    // DEBUG_MSG("added to wait queue%d\n\r", sender);
+
+                    wait_task.tid = sender;
+                    wait_task.time = msg.data; 
+
+                    wait_queue_push(&wait_queue, &wait_task);
                     break;
                 }
                 default:
-                    DEBUG_MSG("clockserver: unknown opcode %d\n\r", msg.opcode);
+                    // DEBUG_MSG("clockserver: unknown opcode %d\n\r", msg.opcode);
                     break;
             }
         }
-        // the error will be -2, if msg.err != 0
-        Reply(sender, (void*) &msg, sizeof(CSmsg));
     }
 }
 
@@ -77,8 +73,7 @@ void clocknotifier_task() {
     msg.opcode = UPDATE_TIME;
     for (;;) {
         msg.data = AwaitEvent(TIMER_IRQ);
-        int err = Send(server_tid, (void*) &msg, sizeof(CSmsg), 
-                                   (void*) &msg, sizeof(CSmsg));
+        int err = Send(server_tid, (void*) &msg, sizeof(CSmsg), 0, 0);
         switch(err) {
             case 0:
                 // success
@@ -128,6 +123,7 @@ int wait_queue_push(Wait_Queue* wq, Wait_Task* task) {
         }     
         next_node = &((*next_node)->next);
     }
+    // DEBUG_MSG("wait queue head %d %d %d\n\r", (int)(wq->head), elem->time, task->time);
     return 0;
 }
 
@@ -137,6 +133,7 @@ void reply_expired_tasks(Wait_Queue* wq, int time) {
         if (*node == 0) {
             return;
         } else if ((*node)->time <= time) {
+            // DEBUG_MSG("remove wait queue %d %d\n\r",time, (*node)->tid);
             Reply((*node)->tid, 0, 0);
             pq_push(&(wq->free_pool), *node); 
             *node = (*node)->next;

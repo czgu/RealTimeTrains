@@ -24,5 +24,9 @@ int WhoIs(char *name);
 extern int clockserver_tid;
 
 int AwaitEvent(int eventid);
+int Delay(int ticks);
+int DelayUntil(int ticks);
+int Time();
+
 
 #endif

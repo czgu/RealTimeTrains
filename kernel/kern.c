@@ -9,8 +9,13 @@
 
 #define FOREVER for(;;)
 
+// Initialization functions
 void kernel_init(Task_Scheduler* scheduler);
 void icu_init();
+
+#define TIMER_PER_SEC 508469
+#define TIMER_INIT_VAL (TIMER_PER_SEC / 100) // 1 tick = 10 ms
+void clock_init();
 
 // ASM
 extern void asm_cache_on();
@@ -25,12 +30,18 @@ int main() {
 
     kernel_init(&task_scheduler);
 
+    //volatile int* timer_val = (volatile int*)(TIMER3_BASE + VAL_OFFSET);
+    //long long time_passed = 0;
+    //long long idle_time_passed = 0;
+
     FOREVER {
         scheduler_next(&task_scheduler);
         if (task_scheduler.active == 0) {
             break;
         }
         // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
+
+        int time_now = *timer_val;
 
         asm_kern_exit(task_scheduler.active, &request);
 
@@ -55,6 +66,9 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     *((unsigned int*)IRQ_JUMP_TABLE) = (unsigned int)&irq_entry;
     *((unsigned int*)IRQ_FIRST_INSTRUCTION_LOCATION) = IRQ_JUMP_INSTRUCTION;
 
+    // initialize hardware
+    clock_init();
+
     // initialize ICU
     icu_init();
 
@@ -76,4 +90,13 @@ void icu_init() {
 
     // enable Timer 3 interrupt
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 19);
+}
+
+void clock_init() {
+    unsigned int timer_base = TIMER3_BASE;
+    volatile int* timer_loader = (int*)(timer_base + LDR_OFFSET);
+    volatile int* timer_control = (int*)(timer_base + CTRL_OFFSET);
+
+    *timer_loader = TIMER_INIT_VAL;
+    *timer_control = CLKSEL_MASK | MODE_MASK | ENABLE_MASK;
 }

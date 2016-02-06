@@ -26,6 +26,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
     for (i = 0; i < EVENT_FLAG_LEN; i++) {
         int index = task_scheduler->events[i].index;
         int VIC_IRQ = (index & (0x1 << 5)) ? VIC2_IRQ : VIC1_IRQ;
+
         if (VIC_IRQ & (0x1u << (index % 32))) {
             event = i;
             break;
@@ -33,11 +34,13 @@ void handle_irq(Task_Scheduler* task_scheduler) {
     }
 
     int volatile_data;
+
+    // TODO: handle UART hardware interrupts
     switch (event) {
     case TIMER_IRQ:
         *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
         volatile_data = *((volatile int*)(TIMER3_BASE + VAL_OFFSET));
-        DEBUG_MSG("timer\n\r");
+        //DEBUG_MSG("timer\n\r");
         break;
     default:
         DEBUG_MSG("unhandled hardware request\n\r");
@@ -56,7 +59,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
 void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
     unsigned int* param = request->param;
 
-    DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
+    //DEBUG_MSG("handle syscall: %d\n\r", request->opcode);
 
     switch (request->opcode) {
     case CREATE:

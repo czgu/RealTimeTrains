@@ -1,11 +1,16 @@
 #include <syscall.h>
+
+#include <clockserver.h>
 #include <nameserver.h>
+
+#include <bwio.h>
 #include <string.h>
 
 int swi_jump(Request* request);
 
 // server tids
 int nameserver_tid = 0;
+// FIXME: clockserver_tid is not initialized to 0
 int clockserver_tid = 0;
 
 int Create(int priority, void (*code)()) {
@@ -116,3 +121,54 @@ int AwaitEvent(int eventid) {
 
     return swi_jump(&request);
 }
+
+int find_clockserver() {
+    int tid = WhoIs("Clock Server");
+    if (tid < 0)
+        return -1;
+    
+    return tid;
+}
+
+int Delay(int ticks) {
+    CSmsg msg;
+    msg.opcode = DELAY_REQUEST;
+    msg.data = ticks;
+
+    int tid = find_clockserver();
+    if (tid < 0) 
+        return -2;
+
+    if (Send(tid, &msg, sizeof(msg), 0, 0) < 0)
+        return -1;
+    return 0;
+}
+
+int DelayUntil(int ticks) {
+    CSmsg msg;
+    msg.opcode = DELAYUNTIL_REQUEST;
+    msg.data = ticks;
+
+    int tid = find_clockserver();
+    if (tid < 0) 
+        return -2;
+
+    if (Send(tid, &msg, sizeof(msg), 0, 0) < 0)
+        return -1;
+    return 0;
+}
+
+int Time() {
+    CSmsg msg;
+    msg.opcode = TIME_REQUEST;
+
+    int tid = find_clockserver();
+    if (tid < 0) 
+        return -2;
+
+    if (Send(tid, &msg, sizeof(msg), &msg, sizeof(msg)) < 0)
+        return -1;
+    
+    return msg.data;
+}
+

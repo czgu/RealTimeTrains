@@ -6,4 +6,6 @@
 
 #define NAMESERVER_PRIORITY     2
 
+#define IDLE_TASK_PRIORITY 31
+
 #endif
