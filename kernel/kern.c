@@ -24,15 +24,26 @@ extern void asm_kern_entry();
 extern void asm_kern_exit(Task* active, Request** request);
 extern void irq_entry();
 
+// statistics
+inline int get_time_passed(volatile int* timer_val, int* timer_last) {
+    int timer_now = *timer_val;
+    int ret = (timer_now > *timer_last) ? (TIMER_INIT_VAL - timer_now) + *timer_last : *timer_last - timer_now;
+    *timer_last = timer_now;
+
+    return ret;
+}
+
 int main() {
     Task_Scheduler task_scheduler;
     Request* request;
 
     kernel_init(&task_scheduler);
 
-    //volatile int* timer_val = (volatile int*)(TIMER3_BASE + VAL_OFFSET);
-    //long long time_passed = 0;
-    //long long idle_time_passed = 0;
+    volatile int* timer_val = (volatile int*)(TIMER3_BASE + VAL_OFFSET);
+    long long total_time_passed = 0;
+    long long total_idle_time_passed = 0;
+    int timer_last = TIMER_INIT_VAL;
+    long long last_printed_time = 0;
 
     FOREVER {
         scheduler_next(&task_scheduler);
@@ -40,16 +51,30 @@ int main() {
             break;
         }
         // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
-
-        int time_now = *timer_val;
+        total_time_passed += get_time_passed(timer_val, &timer_last);
 
         asm_kern_exit(task_scheduler.active, &request);
+
+        int user_time = get_time_passed(timer_val, &timer_last);
+        total_time_passed += user_time;
+        if (task_scheduler.active->priority == 31) {
+            total_idle_time_passed += user_time;
+        }
+        
+        // print percentage usage for idle task
+        if (total_time_passed - last_printed_time > (TIMER_PER_SEC * 1)) {
+            DEBUG_MSG("Idle time percentage: %d\n\r", total_idle_time_passed * 100 / total_time_passed);
+            last_printed_time = total_time_passed;
+        }
+
 
         handle(request, &task_scheduler);
     }
     
     return 0;
 }
+
+
 
 void kernel_init(Task_Scheduler* task_scheduler) {
     // turn cache on
