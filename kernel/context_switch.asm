@@ -29,10 +29,9 @@ asm_kern_exit:
     ldr r2, [r3, #40];
     cmp r2, #0;
 
-    # put the return value
-    ldr r0, [r3, #20];
-
-    bne _not_hardware; # if not hardware, we do not store sp
+    # if not hardware, put the return value
+    ldrne r0, [r3, #20];
+    bne _not_hardware; # if not hardware, we do not restore r0-r3
 
     ldmfd sp!, {r0-r3};
 

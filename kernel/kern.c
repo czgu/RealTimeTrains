@@ -40,33 +40,61 @@ int main() {
     kernel_init(&task_scheduler);
 
     volatile int* timer_val = (volatile int*)(TIMER3_BASE + VAL_OFFSET);
-    long long total_time_passed = 0;
-    long long total_idle_time_passed = 0;
-    int timer_last = TIMER_INIT_VAL;
-    long long last_printed_time = 0;
+    unsigned int total_time_passed = 0;
+    unsigned int total_idle_time_passed = 0;
+    unsigned int total_swi_time_passed = 0;
+    unsigned int total_irq_time_passed = 0;
+    unsigned int total_task_time_passed = 0;
+    unsigned int total_bwio_time_passed = 0;
 
+    int timer_last = TIMER_INIT_VAL;
+    unsigned int last_printed_time = 0;
+    int time_passed;
     FOREVER {
         scheduler_next(&task_scheduler);
         if (task_scheduler.active == 0) {
             break;
         }
         // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
-        total_time_passed += get_time_passed(timer_val, &timer_last);
+        time_passed = get_time_passed(timer_val, &timer_last);
+        total_time_passed += time_passed;
 
+        if (task_scheduler.active->last_request == 0) {
+            total_irq_time_passed += time_passed;
+        } else {
+            total_swi_time_passed += time_passed;
+        }
         asm_kern_exit(task_scheduler.active, &request);
 
-        int user_time = get_time_passed(timer_val, &timer_last);
-        total_time_passed += user_time;
+        time_passed = get_time_passed(timer_val, &timer_last);
+        total_time_passed += time_passed;
         if (task_scheduler.active->priority == 31) {
-            total_idle_time_passed += user_time;
+            total_idle_time_passed += time_passed;
+        } else {
+            total_task_time_passed += time_passed;
         }
         
         // print percentage usage for idle task
         if (total_time_passed - last_printed_time > (TIMER_PER_SEC * 1)) {
-            DEBUG_MSG("Idle time percentage: %d\n\r", total_idle_time_passed * 100 / total_time_passed);
+            DEBUG_MSG("time percentage: %d/%d=%d, task: %d, swi: %d, hwi: %d, bwio: %d\n\r",
+                total_idle_time_passed, total_time_passed,
+                total_idle_time_passed * 100 / total_time_passed,
+                total_task_time_passed, total_swi_time_passed,
+                total_irq_time_passed, total_bwio_time_passed);
+
+            total_time_passed = 0;
+            total_idle_time_passed = 0;
+            total_task_time_passed = 0;
+            total_swi_time_passed = 0;
+            total_irq_time_passed = 0;
+            total_bwio_time_passed = 0;
             last_printed_time = total_time_passed;
+            
         }
 
+        time_passed = get_time_passed(timer_val, &timer_last);
+        total_time_passed += time_passed;
+        total_bwio_time_passed += time_passed;
 
         handle(request, &task_scheduler);
     }
