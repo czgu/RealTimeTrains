@@ -25,12 +25,10 @@ void clockserver_task();
 void clocknotifier_task();
 
 // Wait queue
-// ordered priority queue with linked list
+// unordered priority queue (implemented as circular array)
 typedef struct Wait_Task {
-    int time;
+    unsigned int time;
     int tid;
-
-    struct Wait_Task* next;
 } Wait_Task;
 
 #define WAIT_QUEUE_SIZE 40
@@ -38,7 +36,6 @@ typedef struct Wait_Queue {
     Wait_Task buffer[WAIT_QUEUE_SIZE];
     PQueue free_pool;
     
-
     Wait_Task* head;
 } Wait_Queue;
 

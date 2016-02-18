@@ -16,6 +16,9 @@ inline void* pq_first(PQueue* pq) {
 
 inline void* pq_pop(PQueue* q) {
 	//assert(q->size > 0);
+    if (q->size == 0) {
+        return 0;
+    }
 	void* p = q->buffer[q->first];
 	q->first = (q->first + 1) % PQCAPACITY;
 	q->size--;

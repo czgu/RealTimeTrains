@@ -103,6 +103,8 @@ void wait_queue_init(Wait_Queue* wq) {
     pq_init(&wq->free_pool);
     int i;
     for (i = 0; i < WAIT_QUEUE_SIZE; i++) {
+        wq->buffer[i].time = -1;    // signed to unsigned = large number
+        wq-> buffer[i].tid = 0;
         pq_push(&wq->free_pool, &wq->buffer[i]);
     }
 
@@ -111,34 +113,35 @@ void wait_queue_init(Wait_Queue* wq) {
 
 int wait_queue_push(Wait_Queue* wq, Wait_Task* task) {
     Wait_Task* elem = pq_pop(&wq->free_pool);
+    if (elem == 0) {
+        return -1;
+    }
     *elem = *task;
-    elem->next = 0;
 
-    Wait_Task** next_node = &wq->head;
-    while (1) {
-        if (*next_node == 0 || (*next_node)->time > elem->time) {
-            elem->next = *next_node;
-            *next_node = elem;
-            break;
-        }     
-        next_node = &((*next_node)->next);
+    if (wq->head == 0 || elem->time < wq->head->time) {
+        wq->head = elem;
     }
     // DEBUG_MSG("wait queue head %d %d %d\n\r", (int)(wq->head), elem->time, task->time);
     return 0;
 }
 
 void reply_expired_tasks(Wait_Queue* wq, int time) {
-    Wait_Task** node = &wq->head;
-    while (1) {
-        if (*node == 0) {
-            return;
-        } else if ((*node)->time <= time) {
+    if (wq->head == 0 || time < wq->head->time) {
+        return;
+    }
+    int i;
+    wq->head = 0;
+    for (i = 0; i < WAIT_QUEUE_SIZE; i++) {
+        if (wq->buffer[i].time <= time) {
             // DEBUG_MSG("remove wait queue %d %d\n\r",time, (*node)->tid);
-            Reply((*node)->tid, 0, 0);
-            pq_push(&(wq->free_pool), *node); 
-            *node = (*node)->next;
-        } else {
-            return;
+            Reply(wq->buffer[i].tid, 0, 0);
+
+            // reset cell to indicate empty
+            wq->buffer[i].time = -1;
+            wq->buffer[i].tid = 0;
+            pq_push(&wq->free_pool, &wq->buffer[i]);
+        } else if (wq->head == 0 || wq->buffer[i].time < wq->head->time) {
+            wq->head = &wq->buffer[i];
         }
-    }   
+    }
 }
