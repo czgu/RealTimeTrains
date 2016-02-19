@@ -10,7 +10,7 @@ AR	= /u/wbcowan/gnuarm-4.0.2/arm-elf/bin/ar
 ARFLAGS = rcs
 
 
-INCLUDE = include
+INCLUDE = -I include -I include/kern -I include/user
 BIN = bin
 KER_DIR = kernel
 UTIL_DIR = util
@@ -21,7 +21,7 @@ FILE = kernel4
 
 DEBUGFLAGS = -D_ASSERT -D_DEBUG
 OPTIMIZATION = 2
-CFLAGS  = -c -fPIC -Wall -I. -I$(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
+CFLAGS  = -c -fPIC -Wall -I. $(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
 
 # -g: include hooks for gdb
 # -c: only compile

@@ -28,5 +28,20 @@ int Delay(int ticks);
 int DelayUntil(int ticks);
 int Time();
 
+// K4
+typedef enum {
+    NOTIFIER_UPDATE = 0,
+    PUTC,
+    GETC    
+} IOOP;
+
+typedef struct IOmsg {
+    IOOP opcode;
+    int c;
+} IOmsg;
+
+int Putc( int channel, char ch );
+int Getc( int channel );
+
 
 #endif

@@ -2,12 +2,11 @@
 #include <user_task.h>
 #include <nameserver.h>
 #include <clockserver.h>
-#include <terminal_io_server.h>
 
 #include <priority.h>
 
 // user
-//#include "rps_task.h"
+#include "rps_task.h"
 
 // util
 #include <bwio.h>

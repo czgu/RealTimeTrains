@@ -23,8 +23,7 @@ void clockserver_task() {
     for (;;) {
         int sender;
         int sz = Receive(&sender, &msg, sizeof(CSmsg));
-        if (sz != sizeof(CSmsg)) {
-        } else {
+        if (sz == sizeof(CSmsg)) {
             switch(msg.opcode) {
                 case UPDATE_TIME: {
                     // TODO: verify if this would lose ticks
@@ -74,6 +73,7 @@ void clocknotifier_task() {
     for (;;) {
         msg.data = AwaitEvent(TIMER_IRQ);
         int err = Send(server_tid, (void*) &msg, sizeof(CSmsg), 0, 0);
+        /*
         switch(err) {
             case 0:
                 // success
@@ -96,6 +96,7 @@ void clocknotifier_task() {
                           "unknown error");
                 break;
         }
+        */
     }
 }
 
