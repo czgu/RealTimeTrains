@@ -18,39 +18,68 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
 }
 
 void handle_irq(Task_Scheduler* task_scheduler) {
-    int VIC1_IRQ = *((volatile int*)(VIC1_BASE + VIC_IRQ_STATUS));
+    // int VIC1_IRQ = *((volatile int*)(VIC1_BASE + VIC_IRQ_STATUS));
     int VIC2_IRQ = *((volatile int*)(VIC2_BASE + VIC_IRQ_STATUS));
 
     EVENT_FLAG event = NONE_IRQ;
-    int i;
-    for (i = 0; i < EVENT_FLAG_LEN; i++) {
-        int index = task_scheduler->events[i].index;
-        int VIC_IRQ = (index & (0x1 << 5)) ? VIC2_IRQ : VIC1_IRQ;
 
-        if (VIC_IRQ & (0x1u << (index % 32))) {
-            event = i;
-            break;
+    if (VIC2_IRQ & (0x1 << 19)) { // handle timer
+        event = TIMER_IRQ;
+    } else if (VIC2_IRQ & (0x1 << 22)) { // handle UART 2
+        int uart2_intr = *((volatile int*)(UART2_BASE + UART_INTR_OFFSET));
+        if (uart2_intr & TIS_MASK) {
+            event = COM2_SEND_IRQ;
+        } else if (uart2_intr & RIS_MASK) {
+            event = COM2_RECEIVE_IRQ;
+        }
+    } else if (VIC2_IRQ & (0x1 << 20)) { // handle UART 1
+        int uart1_intr = *((volatile int*)(UART1_BASE + UART_INTR_OFFSET));
+        if (uart1_intr & TIS_MASK) {
+            event = COM1_SEND_IRQ; 
+        } else if (uart1_intr & RIS_MASK) {
+            event = COM1_RECEIVE_IRQ; 
+        } else if (uart1_intr & MIS_MASK) {
+            event = COM1_MODEM_IRQ;
         }
     }
 
-    int volatile_data;
+    int volatile_data = 0;
 
-    // TODO: handle UART hardware interrupts
     switch (event) {
     case TIMER_IRQ:
         *((volatile unsigned int*)(TIMER3_BASE + CLR_OFFSET)) = 1;
         volatile_data = *((volatile int*)(TIMER3_BASE + VAL_OFFSET));
         //DEBUG_MSG("timer\n\r");
         break;
+    case COM2_SEND_IRQ:
+        // turn off transmit
+        *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
+        volatile_data = (UART2_BASE + UART_DATA_OFFSET);
+        break;
+    case COM2_RECEIVE_IRQ:
+        volatile_data = *((volatile int*)(UART2_BASE + UART_DATA_OFFSET));
+        break;
+    case COM1_SEND_IRQ:
+        // turn off transmit
+        *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
+        volatile_data = (UART2_BASE + UART_DATA_OFFSET);
+        break;
+    case COM1_RECEIVE_IRQ:
+        volatile_data = *((volatile int*)(UART1_BASE + UART_DATA_OFFSET));
+        break;
+    case COM1_MODEM_IRQ:
+        // clear the interrupt bit
+        *((volatile int*)(UART1_BASE + UART_INTR_OFFSET)) &= MIS_MASK;
+        break;
     default:
-        DEBUG_MSG("unhandled hardware request\n\r");
+        // DEBUG_MSG("unhandled hardware request\n\r");
         break;
     }
 
     // awake waiting task
-    if (task_scheduler->events[i].wait_task != 0) {
-        return_to_task(volatile_data, task_scheduler->events[i].wait_task, task_scheduler);
-        task_scheduler->events[i].wait_task = 0;
+    if (task_scheduler->events[event].wait_task != 0) {
+        return_to_task(volatile_data, task_scheduler->events[event].wait_task, task_scheduler);
+        task_scheduler->events[event].wait_task = 0;
     }
 
     RETURN_ACTIVE(0);
@@ -90,7 +119,7 @@ void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
         k_awaitevent(param[0], task_scheduler);
         break;
     default:
-        bwprintf(COM2, "Invalid syscall");
+        // bwprintf(COM2, "Invalid syscall");
         break;
     }
 }
@@ -148,7 +177,7 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
     
     scheduler_push(task_scheduler, new_task);
 
-    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
+    // bwprintf(COM2, "Created: %d\n\r", new_task->tid);
     
     RETURN_ACTIVE(0);
 }

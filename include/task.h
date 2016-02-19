@@ -29,7 +29,6 @@ void send_queue_push(Task* receiver, Task* sender);
 int send_queue_pop(Task* receiver, Task** sender);
 
 typedef struct Event {
-    short index;
     Task* wait_task;
 } Event;
 void events_init(Event* events);

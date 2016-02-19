@@ -11,11 +11,13 @@
 
 // Initialization functions
 void kernel_init(Task_Scheduler* scheduler);
+void io_init();
 void icu_init();
 
 #define TIMER_PER_SEC 508469
 #define TIMER_INIT_VAL (TIMER_PER_SEC / 100) // 1 tick = 10 ms
 void clock_init();
+
 
 // ASM
 extern void asm_cache_on();
@@ -76,12 +78,12 @@ int main() {
         
         // print percentage usage for idle task
         if (total_time_passed - last_printed_time > (TIMER_PER_SEC * 1)) {
-            DEBUG_MSG("time percentage: %d/%d=%d, task: %d, swi: %d, hwi: %d, bwio: %d\n\r",
+            /* DEBUG_MSG("time percentage: %d/%d=%d, task: %d, swi: %d, hwi: %d, bwio: %d\n\r",
                 total_idle_time_passed, total_time_passed,
                 total_idle_time_passed * 100 / total_time_passed,
                 total_task_time_passed, total_swi_time_passed,
                 total_irq_time_passed, total_bwio_time_passed);
-
+            */
             total_time_passed = 0;
             total_idle_time_passed = 0;
             total_task_time_passed = 0;
@@ -109,8 +111,7 @@ void kernel_init(Task_Scheduler* task_scheduler) {
     asm_cache_on();
 
     // initialize io
-    bwsetfifo(COM2, OFF);
-    bwsetspeed(COM2, 115200);
+    io_init();
     
     // initialize low memory
     *((unsigned int*)SWI_JUMP_TABLE) = (unsigned int)&asm_kern_entry;
@@ -134,15 +135,21 @@ void kernel_init(Task_Scheduler* task_scheduler) {
 
 void icu_init() {
     // set all interrupt to irq
-    *((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
+    //*((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_SELECT)) = 0x0;
 
     // disable all interrupts
-    *((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
+    //*((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) = 0x0;
 
     // enable Timer 3 interrupt
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 19);
+
+    // enable UART 1 General interrupt
+    //*((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 20);
+
+    // enable UART 2 General interrupt
+    *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 22);
 }
 
 void clock_init() {
@@ -152,4 +159,17 @@ void clock_init() {
 
     *timer_loader = TIMER_INIT_VAL;
     *timer_control = CLKSEL_MASK | MODE_MASK | ENABLE_MASK;
+}
+
+void io_init() {
+    // UART 2
+    io_set_connection(COM2, UART_FAST, OFF);
+
+    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) = (TIEN_MASK | RIEN_MASK);
+
+    // UART 1
+    io_set_connection(COM1, UART_SLOW, OFF);
+
+    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) = (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
+    
 }

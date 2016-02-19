@@ -17,7 +17,7 @@ UTIL_DIR = util
 TASK_DIR = task
 
 USER = $(shell whoami)
-FILE = kernel3
+FILE = kernel4
 
 DEBUGFLAGS = -D_ASSERT -D_DEBUG
 OPTIMIZATION = 2

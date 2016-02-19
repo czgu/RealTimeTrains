@@ -94,12 +94,6 @@ void events_init(Event* events) {
     for (i = 0; i < EVENT_FLAG_LEN; i++) {
         events[i].wait_task = 0;
     }
-
-    events[TIMER_IRQ].index = 51;
-    events[COM2_SEND_IRQ].index = 26;
-    events[COM2_RECEIVE_IRQ].index = 25;
-    events[COM1_SEND_IRQ].index = 24;
-    events[COM1_RECEIVE_IRQ].index = 23;
 }
 
 // TASK_SCHEDULER

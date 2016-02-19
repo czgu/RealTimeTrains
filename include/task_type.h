@@ -32,13 +32,14 @@ typedef struct Request {
     unsigned int param[10];
 } Request;
 
-#define EVENT_FLAG_LEN 5
+#define EVENT_FLAG_LEN 6
 typedef enum {
     TIMER_IRQ = 0,
     COM2_SEND_IRQ,
     COM2_RECEIVE_IRQ,
     COM1_SEND_IRQ,
     COM1_RECEIVE_IRQ,
+    COM1_MODEM_IRQ,
     NONE_IRQ
 } EVENT_FLAG;
 
