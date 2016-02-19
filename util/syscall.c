@@ -172,3 +172,25 @@ int Time() {
     return msg.data;
 }
 
+int Putc(int tid, int channel, char ch ) {
+    IOmsg msg;
+    msg.opcode = PUTC;
+
+    if (Send(tid, &msg, sizeof(IOmsg), 0, 0) < 0)
+        return -1;
+    
+    return 0;
+}
+
+int Getc(int tid, int channel ) {
+    IOmsg msg;
+    msg.opcode = GETC;        
+
+    int ret;
+
+    if (Send(tid, &msg, sizeof(IOmsg), &ret, sizeof(int)) < 0)
+        return -1;
+    
+    return ret;
+}
+

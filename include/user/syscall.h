@@ -40,8 +40,8 @@ typedef struct IOmsg {
     int c;
 } IOmsg;
 
-int Putc( int channel, char ch );
-int Getc( int channel );
+int Putc(int tid, int channel, char ch );
+int Getc(int tid, int channel );
 
 
 #endif

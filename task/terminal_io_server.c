@@ -3,7 +3,7 @@
 #include <syscall.h>
 #include <priority.h>
 
-void temrinal_input_notifier_task() {
+void terminal_input_notifier_task() {
     int server_tid = WhoIs("UART2 Input");
     IOmsg msg;
     msg.opcode = NOTIFIER_UPDATE;
@@ -44,7 +44,7 @@ void terminal_input_server_task() {
     RQueue buffer;
     rq_init(&buffer, get_buffer, GET_BUFFER_SIZE, sizeof(int));
 
-    Create(TERMINAL_NOTIFIER_PRIOIRTY, temrinal_input_notifier_task);
+    Create(TERMINAL_NOTIFIER_PRIOIRTY, terminal_input_notifier_task);
 
     IOmsg msg;
 
