@@ -1,10 +1,10 @@
 #ifndef _TERMINAL_IO_SERVER_H_
 #define _TERMINAL_IO_SERVER_H_
 
-#define GET_QUEUE_SIZE 10
-#define GET_BUFFER_SIZE 30
+#define TERM_GET_QUEUE_SIZE 10
+#define TERM_GET_BUFFER_SIZE 100
 
-#define PUT_BUFFER_SIZE 255
+#define TERM_PUT_BUFFER_SIZE 600
 
 // Server task
 void terminal_input_notifier_task();

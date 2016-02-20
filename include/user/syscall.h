@@ -32,12 +32,14 @@ int Time();
 typedef enum {
     NOTIFIER_UPDATE = 0,
     PUTC,
-    GETC    
+    GETC,
+    PUTLINE,
+    GETLINE,
 } IOOP;
 
 typedef struct IOmsg {
     IOOP opcode;
-    int c;
+    char str[100];
 } IOmsg;
 
 int Putc(int tid, int channel, char ch );
