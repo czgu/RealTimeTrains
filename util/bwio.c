@@ -35,7 +35,7 @@ int bwsetfifo( int channel, int state ) {
 }
 
 int io_set_connection( int channel, int speed, int fifo) {
-    bwsetfifo(COM1, fifo);
+    bwsetfifo(channel, fifo);
 
 	int *high, *low, *mid;
     

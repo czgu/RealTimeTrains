@@ -175,6 +175,7 @@ int Time() {
 int Putc(int tid, int channel, char ch ) {
     IOmsg msg;
     msg.opcode = PUTC;
+    msg.c = ch;
 
     if (Send(tid, &msg, sizeof(IOmsg), 0, 0) < 0)
         return -1;

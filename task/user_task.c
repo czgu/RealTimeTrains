@@ -21,15 +21,30 @@ void idle_task() {
     }
 }
 
+void basic_print_task() {
+    int out_tid = WhoIs("UART2 Output");
+    int in_tid = WhoIs("UART2 Input");
+
+    for (;;) {
+        char c;
+        c = Getc(in_tid, 1);
+        Putc(out_tid, 1, c);
+    }
+}
+
 void first_task() {
+    DEBUG_MSG("hello world");   
     Create(NAMESERVER_PRIORITY, nameserver_task);
     Create(CLOCKSERVER_PRIORITY, clockserver_task);
-
+    
     Create(TERMINAL_SERVER_PRIORITY, terminal_output_server_task);
     Create(TERMINAL_SERVER_PRIORITY, terminal_input_server_task);
-
+    
     Create(IDLE_TASK_PRIORITY, idle_task);
+
+    Create(15, basic_print_task);
 
     return;
 }   
+
 

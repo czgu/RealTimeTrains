@@ -12,4 +12,6 @@ void terminal_output_notifier_task();
 void terminal_input_server_task();
 void terminal_output_server_task();
 
+void terminal_courier_task();
+
 #endif

@@ -16,7 +16,7 @@ void terminal_input_notifier_task() {
 }
 
 void terminal_output_notifier_task() {
-    int server_tid = WhoIs("UART Output");
+    int server_tid = WhoIs("UART2 Output");
     IOmsg msg;
     msg.opcode = NOTIFIER_UPDATE;
     for (;;) {
@@ -44,7 +44,7 @@ void terminal_input_server_task() {
     RQueue buffer;
     rq_init(&buffer, get_buffer, GET_BUFFER_SIZE, sizeof(int));
 
-    Create(TERMINAL_NOTIFIER_PRIOIRTY, terminal_input_notifier_task);
+    Create(TERMINAL_NOTIFIER_PRIORITY, terminal_input_notifier_task);
 
     IOmsg msg;
 
@@ -92,7 +92,7 @@ void terminal_output_server_task() {
     RQueue buffer;
     rq_init(&buffer, put_buffer, PUT_BUFFER_SIZE, sizeof(int));
 
-    Create(TERMINAL_NOTIFIER_PRIOIRTY, terminal_output_notifier_task);
+    Create(TERMINAL_NOTIFIER_PRIORITY, terminal_output_notifier_task);
 
     IOmsg msg;
 
@@ -128,9 +128,19 @@ void terminal_output_server_task() {
             }
         }
     }
-
-
 }
 
+void terminal_courier_task() {
+    RegisterAs("UART2 Courier");
 
+    int terminal_output_server_tid, terminal_input_server_tid;
+    while ((terminal_output_server_tid = WhoIs("UART2 Output")) < 0);
+    while ((terminal_input_server_tid = WhoIs("UART2 Input")) < 0);
+
+    
+
+    for (;;) {
+        //Send(terminal_input_server_tid,         
+    }
+}
 

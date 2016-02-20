@@ -24,6 +24,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
     EVENT_FLAG event = NONE_IRQ;
 
     if (VIC2_IRQ & (0x1 << 19)) { // handle timer
+        // DEBUG_MSG("timer interrupt\n\r");
         event = TIMER_IRQ;
     } else if (VIC2_IRQ & (0x1 << 22)) { // handle UART 2
         int uart2_intr = *((volatile int*)(UART2_BASE + UART_INTR_OFFSET));
@@ -55,13 +56,16 @@ void handle_irq(Task_Scheduler* task_scheduler) {
         // turn off transmit
         *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
         volatile_data = (UART2_BASE + UART_DATA_OFFSET);
+        // *((int *)(UART2_BASE + UART_DATA_OFFSET)) = 'a';
+        //DEBUG_MSG("can send");
         break;
     case COM2_RECEIVE_IRQ:
         volatile_data = *((volatile int*)(UART2_BASE + UART_DATA_OFFSET));
+        //DEBUG_MSG("received %d", volatile_data);
         break;
     case COM1_SEND_IRQ:
         // turn off transmit
-        *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
+        *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
         volatile_data = (UART2_BASE + UART_DATA_OFFSET);
         break;
     case COM1_RECEIVE_IRQ:
@@ -177,7 +181,7 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
     
     scheduler_push(task_scheduler, new_task);
 
-    // bwprintf(COM2, "Created: %d\n\r", new_task->tid);
+    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
     
     RETURN_ACTIVE(0);
 }
@@ -310,6 +314,12 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
 void k_awaitevent(int eventType, Task_Scheduler* task_scheduler) {
     if (eventType < TIMER_IRQ || eventType > NONE_IRQ) {
         RETURN_ACTIVE(-1);   
+    }
+
+    if (eventType == COM2_SEND_IRQ) {
+        *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= TIEN_MASK;
+    } else if (eventType == COM1_SEND_IRQ) {
+        *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= TIEN_MASK;
     }
 
     if (task_scheduler->events[eventType].wait_task == 0) {

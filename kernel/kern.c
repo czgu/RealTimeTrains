@@ -57,7 +57,8 @@ int main() {
         if (task_scheduler.active == 0) {
             break;
         }
-        // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
+        
+        //DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
         time_passed = get_time_passed(timer_val, &timer_last);
         total_time_passed += time_passed;
 
@@ -66,6 +67,8 @@ int main() {
         } else {
             total_swi_time_passed += time_passed;
         }
+
+        // DEBUG_MSG("exit kernel \n\r");
         asm_kern_exit(task_scheduler.active, &request);
 
         time_passed = get_time_passed(timer_val, &timer_last);
@@ -165,11 +168,11 @@ void io_init() {
     // UART 2
     io_set_connection(COM2, UART_FAST, OFF);
 
-    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) = (TIEN_MASK | RIEN_MASK);
+    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK);
 
     // UART 1
     io_set_connection(COM1, UART_SLOW, OFF);
 
-    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) = (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
+    //*((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
     
 }
