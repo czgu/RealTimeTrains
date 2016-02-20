@@ -293,8 +293,9 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
     }
 
     // if insufficient copy space
+    int ret_code = 0;
     if (receiver_request->param[2] > sender_request->param[4]) {
-        RETURN_ACTIVE(-4);
+        ret_code = -4; // wake up both anyway
     }
 
     int size_copied = memory_copy(
@@ -307,7 +308,7 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
     // sender is made ready again (it's made ready first)
     return_to_task(size_copied, sender, task_scheduler);    
     // receiver is made ready again (not sure what return value yet)
-    RETURN_ACTIVE(0);
+    RETURN_ACTIVE(ret_code);
 }
 
 void k_awaitevent(int eventType, Task_Scheduler* task_scheduler) {
