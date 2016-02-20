@@ -135,10 +135,6 @@ void train_output_server_task() {
                 Reply(sender, 0, 0);
                 break;
             }
-            case PUTLINE:
-            {
-
-            }
             default:
                 break;
             }

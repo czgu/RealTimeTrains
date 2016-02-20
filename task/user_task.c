@@ -21,14 +21,15 @@ void idle_task() {
     }
 }
 
-void basic_print_task() {    
+void basic_print_task() {
+    int out_tid = WhoIs("UART2 Output");
+    int in_tid = WhoIs("UART2 Input");
+
     for (;;) {
         char c;
         c = Getc(1);
         int i = Time();
         pprintf("you typed: %c %d\n\r", c, i);
-
-        //Putc(1, c);
     }
 }
 

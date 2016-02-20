@@ -34,13 +34,34 @@ void terminal_output_notifier_task() {
     }
 }
 
+inline char buffer_pop_char(RQueue* buffer, int* numLines) {
+    char c = *((char *)rq_pop_front(buffer));
+    if (c == '\r') {
+        (*numLines)--;
+    }
+    return c;
+}
+
+inline int buffer_pop_line(RQueue* buffer, char* outstr, int len, int* numLines) {
+    int i;
+    for (i = 0; i < len - 1; i++) {
+        outstr[i] = *((char *)rq_pop_front(buffer));
+        if (outstr[i] == '\r') {
+            (*numLines)--;
+            outstr[i + 1] = '\0';
+            break;
+        }
+    }
+    return i + 2;
+}
+
 void terminal_input_server_task() {
     // initialization
     RegisterAs("UART2 Input");
 
-    int get_tasks[TERM_GET_QUEUE_SIZE]; // used to cache task tid that calls getc
+    GetRequest get_tasks[TERM_GET_QUEUE_SIZE]; // used to cache task tid that calls getc
     RQueue get_queue;
-    rq_init(&get_queue, get_tasks, TERM_GET_QUEUE_SIZE, sizeof(int));
+    rq_init(&get_queue, get_tasks, TERM_GET_QUEUE_SIZE, sizeof(GetRequest));
  
     char get_buffer[TERM_GET_BUFFER_SIZE];
     RQueue buffer;
@@ -49,6 +70,7 @@ void terminal_input_server_task() {
     Create(TERMINAL_NOTIFIER_PRIORITY, terminal_input_notifier_task);
 
     IOmsg msg;
+    int numLines = 0;
 
     for (;;) {
         int sender;
@@ -60,21 +82,53 @@ void terminal_input_server_task() {
                 char c = msg.str[0];
                 Reply(sender, 0, 0);
                 
-                if (!rq_empty(&get_queue)) {
-                    int tid = *((int *)rq_pop_front(&get_queue));
-                    Reply(tid, &c, sizeof(char));
-                } else {
-                    rq_push_back(&buffer, &c);
+                // TODO: implement echo here
+                rq_push_back(&buffer, &c);
+                // TODO: implement backspace
+                if (c == '\r') {
+                    numLines++;
                 }
-                    
+
+                if (!rq_empty(&get_queue)) {
+                    GetRequest* gr = (GetRequest*)rq_first(&get_queue);
+                    if (gr->opcode == GETC) {
+                        rq_pop_front(&get_queue);
+                        char c = buffer_pop_char(&buffer, &numLines);
+                        Reply(gr->tid, &c, sizeof(char));
+                    } else if (gr->opcode == GETLINE && numLines > 0) {
+                        rq_pop_front(&get_queue);
+                        char str[TERM_GET_BUFFER_SIZE];
+                        int len = buffer_pop_line(&buffer, str,
+                                                  TERM_GET_BUFFER_SIZE,
+                                                  &numLines);
+                        Reply(gr->tid, str, len * sizeof(char));
+                    }
+                }
                 break;
             }
             case GETC:
                 if (!rq_empty(&buffer)) {
-                    char c = *((char *)rq_pop_front(&buffer));
+                    char c = buffer_pop_char(&buffer, &numLines);
                     Reply(sender, &c, sizeof(char));
                 } else {
-                    rq_push_back(&get_queue, &sender);
+                    GetRequest gr;
+                    gr.tid = sender; 
+                    gr.opcode = GETC;
+                    rq_push_back(&get_queue, &gr);
+                }
+                break;
+            case GETLINE:
+                if (numLines > 0) {
+                    char str[TERM_GET_BUFFER_SIZE];
+                    int len = buffer_pop_line(&buffer, str, 
+                                              TERM_GET_BUFFER_SIZE, 
+                                              &numLines);
+                    Reply(sender, str, len * sizeof(char));
+                } else {
+                    GetRequest gr;
+                    gr.tid = sender; 
+                    gr.opcode = GETLINE;
+                    rq_push_back(&get_queue, &gr);
                 }
                 break;
             default:

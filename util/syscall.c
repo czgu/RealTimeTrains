@@ -211,7 +211,7 @@ int Putc(int channel, char ch ) {
 }
 
 int PutStr(int channel, char* str) {
-    PutnStr(channel, str, strlen(str));
+    return PutnStr(channel, str, strlen(str));
 }
 
 int PutnStr(int channel, char* str, int len) {
@@ -241,3 +241,9 @@ int Getc(int channel ) {
     return ret;
 }
 
+int GetLine(int tid, char* str, int len) {
+    IOmsg msg;
+    msg.opcode = GETLINE;
+
+    return Send(tid, &msg, sizeof(IOOP), str, sizeof(char) * len);
+}

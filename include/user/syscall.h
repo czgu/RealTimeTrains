@@ -52,6 +52,6 @@ int Getc(int channel );
 int PutStr(int channel, char* str);
 int PutnStr(int channel, char* str, int len);
 
-
+int GetLine(int tid, char* str, int len);
 
 #endif
