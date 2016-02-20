@@ -33,7 +33,7 @@ typedef enum {
     NOTIFIER_UPDATE = 0,
     PUTC,
     GETC,
-    PUTLINE,
+    PUTSTR,
     GETLINE,
 } IOOP;
 
@@ -47,10 +47,11 @@ typedef struct GetRequest {
     IOOP opcode;
 } GetRequest;
 
-int Putc(int tid, int channel, char ch );
-int Getc(int tid, int channel );
+int Putc(int channel, char ch );
+int Getc(int channel );
+int PutStr(int channel, char* str);
+int PutnStr(int channel, char* str, int len);
 
-int PutStr(int tid, char* str, int len);
 
 
 #endif

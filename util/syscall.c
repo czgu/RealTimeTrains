@@ -11,7 +11,10 @@ int swi_jump(Request* request);
 // server tids
 int nameserver_tid = 0;
 // FIXME: clockserver_tid is not initialized to 0
-int clockserver_tid = 0;
+int clockserver_tid = -1;
+
+int uart_output_tid[2] = {-1, -1};
+int uart_input_tid[2] = {-1, -1};
 
 int Create(int priority, void (*code)()) {
     Request request;
@@ -122,12 +125,12 @@ int AwaitEvent(int eventid) {
     return swi_jump(&request);
 }
 
-int find_clockserver() {
-    int tid = WhoIs("Clock Server");
-    if (tid < 0)
-        return -1;
+inline int find_clockserver() {
+    if (clockserver_tid < 0) {
+        clockserver_tid = WhoIs("Clock Server");
+    }
     
-    return tid;
+    return clockserver_tid;
 }
 
 int Delay(int ticks) {
@@ -172,39 +175,67 @@ int Time() {
     return msg.data;
 }
 
-int Putc(int tid, int channel, char ch ) {
+int get_io_server_tid(short in, short channel) {
+    int* tid = 0;
+    if (in) { // input
+        tid = uart_input_tid + channel;
+
+    } else { // ouput
+        tid = uart_output_tid + channel;
+    }
+
+    if (*tid < 0) {
+        char search_str[16] = "UART  ";
+        if (in) 
+            strcat(search_str, "Input");
+        else
+            strcat(search_str, "Output");
+
+        search_str[4] = '1' + channel;
+
+        *tid = WhoIs(search_str);
+    }
+
+    return *tid;
+}
+
+int Putc(int channel, char ch ) {
     IOmsg msg;
     msg.opcode = PUTC;
     msg.str[0] = ch;
 
-    if (Send(tid, &msg, sizeof(IOOP) + sizeof(char), 0, 0) < 0)
+    if (Send(get_io_server_tid(0, channel), &msg, sizeof(IOOP) + sizeof(char), 0, 0) < 0)
         return -1;
     
     return 0;
 }
 
-int PutStr(int tid, char* str, int len) {
+int PutStr(int channel, char* str) {
+    PutnStr(channel, str, strlen(str));
+}
+
+int PutnStr(int channel, char* str, int len) {
     IOmsg msg;
-    msg.opcode = PUTLINE;
+    msg.opcode = PUTSTR;
     
     int i;
     for (i = 0; i < len; i++) {
         msg.str[i] = str[i];
     }
 
-     if (Send(tid, &msg, sizeof(IOOP) + sizeof(char) * len, 0, 0) < 0)
+     if (Send(get_io_server_tid(0, channel), &msg, sizeof(IOOP) + sizeof(char) * len, 0, 0) < 0)
         return -1;
     
     return 0;
 }
 
-int Getc(int tid, int channel ) {
+int Getc(int channel ) {
     IOmsg msg;
     msg.opcode = GETC;        
 
     char ret;
 
-    if (Send(tid, &msg, sizeof(IOOP), &ret, sizeof(char)) < 0)
+    if (Send(get_io_server_tid(1, channel), &msg, sizeof(IOOP), &ret, sizeof(char)) < 0)
         return -1;
     
     return ret;

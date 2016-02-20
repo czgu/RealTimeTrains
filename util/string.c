@@ -1,4 +1,11 @@
 #include <string.h>
+#include <bwio.h>
+
+
+char c2x( char ch ) {
+	if ( (ch <= 9) ) return '0' + ch;
+	return 'a' + ch - 10;
+}
 
 int a2d( char ch ) {
     if( ch >= '0' && ch <= '9' ) return ch - '0';
@@ -100,9 +107,10 @@ int substrcmp(char* a, char* b, int a_start, int b_start, int len) {
 }
 
 int strlen(const char* a) {
+    // includes the null character
     int i = 0;
     while (a[i++] != 0);
-    return i + 1;
+    return i;
 }
 
 char* strcpy (char * destination,const char * source) {
@@ -115,20 +123,52 @@ char* strcpy (char * destination,const char * source) {
 
 int memory_copy(const void* src, int src_len, void* dest, int dest_len) {
     int copy_len = src_len < dest_len ? src_len : dest_len;
-    int copy_int = copy_len >> 2; // div 4
-    int copy_extra = copy_len & 0x3; // mod 4
+    
+
+
+    int copy_int = 0;
+    int copy_extra = copy_len;
+
+    // must be able to do so when both src, dest are 4 byte aligned
+    if (((unsigned int)src & 0x3) == 0 && ((unsigned int)dest & 0x3) == 0) {
+        copy_int = copy_len >> 2; // div 4
+        copy_extra = copy_len & 0x3; // mod 4
+    }
 
     // int is 4 bytes
     int* s = (int*)src, *d = (int*)dest;
-    while (copy_int-- > 0)
-        *d ++ = *s ++;
+    while (copy_int-- > 0) {
+        *d = *s;
+        d++;
+        s++;
+
+    }
 
     if (copy_extra > 0) {
         char* sc = (char*)s, * dc = (char*)d;
         while (copy_extra-- > 0) {
-            *dc ++ = *sc ++;
+            *dc  = *sc ;
+
+            dc ++;
+            sc ++;
         }
     }
-
     return copy_len;
 }
+
+void* memcpy(void* d, void* s, unsigned int size) {
+    DEBUG_MSG("memcpy: %d, %d, %d\n\r", s, d, size);
+    memory_copy(s, size, d, size);
+
+    return d;
+}
+
+char* strcat (char* destination, const char * source) {
+    int dest_start = strlen(destination) -1;
+    int copy_len = strlen(source);
+
+    memory_copy(source, copy_len, destination + dest_start, copy_len);
+
+    return destination;
+}
+

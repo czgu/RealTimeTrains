@@ -3,6 +3,8 @@
 #include <syscall.h>
 #include <priority.h>
 
+#include <bwio.h> //temp
+
 void terminal_input_notifier_task() {
     int server_tid = WhoIs("UART2 Input");
     IOmsg msg;
@@ -69,7 +71,7 @@ void terminal_input_server_task() {
             }
             case GETC:
                 if (!rq_empty(&buffer)) {
-                    int c = *((int *)rq_pop_front(&buffer));
+                    char c = *((char *)rq_pop_front(&buffer));
                     Reply(sender, &c, sizeof(char));
                 } else {
                     rq_push_back(&get_queue, &sender);
@@ -107,8 +109,8 @@ void terminal_output_server_task() {
             switch(msg.opcode) {
             case NOTIFIER_UPDATE:
                 if (!rq_empty(&buffer)) {
-                    int out = *((int *)rq_pop_front(&buffer));
-                    Reply(sender, &out, sizeof(int)); 
+                    char out = *((char *)rq_pop_front(&buffer));
+                    Reply(sender, &out, sizeof(char)); 
                 } else {
                     notifier_tid = sender;
                 }
@@ -117,15 +119,18 @@ void terminal_output_server_task() {
                 if (msg_len == 0)
                     break;
 
-                int c = msg.str[0];
+                char c = msg.str[0];
                 if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(int));
+                    Reply(notifier_tid, &c, sizeof(char));
                     notifier_tid = -1;
                 } else {
                     rq_push_back(&buffer, &c);
                 }
+
+                Reply(sender, 0, 0);
+
                 break;
-            case PUTLINE:
+            case PUTSTR:
             {
                 if (msg_len == 0)
                     break;
@@ -133,7 +138,7 @@ void terminal_output_server_task() {
                 // now the first byte
                 int c = msg.str[0];
                 if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(int));
+                    Reply(notifier_tid, &c, sizeof(char));
                     notifier_tid = -1;
                 } else {
                     rq_push_back(&buffer, &c);

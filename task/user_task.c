@@ -21,19 +21,16 @@ void idle_task() {
     }
 }
 
-void basic_print_task() {
-    int out_tid = WhoIs("UART2 Output");
-    int in_tid = WhoIs("UART2 Input");
-
+void basic_print_task() {    
     for (;;) {
         char c;
-        c = Getc(in_tid, 1);
-        Putc(out_tid, 1, c);
+        c = Getc(1);
+        PutStr(1, "you typed: \n\r");
+        //Putc(1, c);
     }
 }
 
 void first_task() {
-    DEBUG_MSG("hello world");   
     Create(NAMESERVER_PRIORITY, nameserver_task);
     Create(CLOCKSERVER_PRIORITY, clockserver_task);
     

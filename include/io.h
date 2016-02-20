@@ -23,32 +23,6 @@ typedef char *va_list;
 #define ON	1
 #define	OFF	0
 
-#define UART_FAST 115200 
-#define UART_SLOW 2400
-
-/* http://www.marklin.com/tech/digital1/components/commands.html
- baud rate = 2400 
- start bits = 1 
- stop bits = 2 
- parity = none 
- word size = 8 bits 
- these settings are reflected in: 
-                                       | no fifo
- 0b 0000 0000 0000 0000 0000 0000 0 11 0 1 0 0 0 
-                             8 bits ||   | stop bits 
-*/
-#define COM1_SETTINGS 0x68 
- 
-int io_set_fifo( int channel, int state );
-
-int io_set_connection( int channel, int speed, int fifo );
-
-void assert(int cond, char* msg);
-
-int ioputc( int channel, char c );
-
-int iogetc( int channel );
-
 int ioputx( int channel, char c );
 
 int ioputstr( int channel, char *str );

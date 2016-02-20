@@ -11,8 +11,26 @@
 
 // Initialization functions
 void kernel_init(Task_Scheduler* scheduler);
-void io_init();
 void icu_init();
+
+// IO functions
+#define UART_FAST 115200 
+#define UART_SLOW 2400
+
+/* http://www.marklin.com/tech/digital1/components/commands.html
+ baud rate = 2400 
+ start bits = 1 
+ stop bits = 2 
+ parity = none 
+ word size = 8 bits 
+ these settings are reflected in: 
+                                       | no fifo
+ 0b 0000 0000 0000 0000 0000 0000 0 11 0 1 0 0 0 
+                             8 bits ||   | stop bits 
+*/
+#define COM1_SETTINGS 0x68 
+void io_init();
+int io_set_connection( int channel, int speed);
 
 #define TIMER_PER_SEC 508469
 #define TIMER_INIT_VAL (TIMER_PER_SEC / 100) // 1 tick = 10 ms
@@ -166,13 +184,57 @@ void clock_init() {
 
 void io_init() {
     // UART 2
-    io_set_connection(COM2, UART_FAST, OFF);
+    io_set_connection(COM2, UART_FAST);
 
     *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK);
 
     // UART 1
-    io_set_connection(COM1, UART_SLOW, OFF);
+    io_set_connection(COM1, UART_SLOW);
 
     //*((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
-    
 }
+
+/*
+ * The UARTs are initialized by RedBoot to the following state
+ * 	115,200 bps
+ * 	8 bits
+ * 	no parity
+ * 	fifos enabled
+ */
+int io_set_connection( int channel, int speed) {
+	int *high, *low, *mid;
+    
+
+	switch( channel ) {
+	case COM1:
+		high = (int *)( UART1_BASE + UART_LCRH_OFFSET );
+        mid = (int *)( UART1_BASE + UART_LCRM_OFFSET );
+		low = (int *)( UART1_BASE + UART_LCRL_OFFSET );
+	        break;
+	case COM2:
+		high = (int *)( UART2_BASE + UART_LCRH_OFFSET );
+        mid = (int *)( UART2_BASE + UART_LCRM_OFFSET );
+		low = (int *)( UART2_BASE + UART_LCRL_OFFSET );
+	        break;
+	default:
+	        return -1;
+	        break;
+	}
+
+	switch( speed ) {
+	    case UART_FAST:
+            *high = *high & ~FEN_MASK; // fifo off
+		    *mid = 0x0;
+		    *low = 0x3;
+		    return 0;
+	    case UART_SLOW:
+		    *high = (*high & 0xffffff00) | COM1_SETTINGS; // turns fifo off as well
+            *mid = *mid & 0xffffff00;
+		    *low = (*low & 0xFFFFFF00) | 0xBF;
+		    return 0;
+	    default:
+		    return -1;
+	}
+}
+
+

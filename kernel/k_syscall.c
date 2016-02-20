@@ -178,12 +178,11 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
     }
 
     new_task->sp = (int) (sp - 9); // {r4-r12, lr}
-    
     scheduler_push(task_scheduler, new_task);
 
-    bwprintf(COM2, "Created: %d\n\r", new_task->tid);
+    //bwprintf(COM2, "Created: %d\n\r", new_task->tid);
     
-    RETURN_ACTIVE(0);
+    RETURN_ACTIVE(new_task->tid);
 }
 
 void k_tid(Task_Scheduler* task_scheduler) {
