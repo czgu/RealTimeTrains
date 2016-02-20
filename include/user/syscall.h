@@ -42,8 +42,15 @@ typedef struct IOmsg {
     char str[100];
 } IOmsg;
 
+typedef struct GetRequest {
+    int tid;
+    IOOP opcode;
+} GetRequest;
+
 int Putc(int tid, int channel, char ch );
 int Getc(int tid, int channel );
+
+int PutStr(int tid, char* str, int len);
 
 
 #endif

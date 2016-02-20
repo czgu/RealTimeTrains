@@ -175,9 +175,24 @@ int Time() {
 int Putc(int tid, int channel, char ch ) {
     IOmsg msg;
     msg.opcode = PUTC;
-    msg.c = ch;
+    msg.str[0] = ch;
 
-    if (Send(tid, &msg, sizeof(IOmsg), 0, 0) < 0)
+    if (Send(tid, &msg, sizeof(IOOP) + sizeof(char), 0, 0) < 0)
+        return -1;
+    
+    return 0;
+}
+
+int PutStr(int tid, char* str, int len) {
+    IOmsg msg;
+    msg.opcode = PUTLINE;
+    
+    int i;
+    for (i = 0; i < len; i++) {
+        msg.str[i] = str[i];
+    }
+
+     if (Send(tid, &msg, sizeof(IOOP) + sizeof(char) * len, 0, 0) < 0)
         return -1;
     
     return 0;
@@ -187,9 +202,9 @@ int Getc(int tid, int channel ) {
     IOmsg msg;
     msg.opcode = GETC;        
 
-    int ret;
+    char ret;
 
-    if (Send(tid, &msg, sizeof(IOmsg), &ret, sizeof(int)) < 0)
+    if (Send(tid, &msg, sizeof(IOOP), &ret, sizeof(char)) < 0)
         return -1;
     
     return ret;

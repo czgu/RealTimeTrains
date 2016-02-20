@@ -8,8 +8,8 @@ void train_input_notifier_task() {
     IOmsg msg;
     msg.opcode = NOTIFIER_UPDATE;
     for (;;) {
-        msg.c = AwaitEvent(COM1_RECEIVE_IRQ);
-        int err = Send(server_tid, &msg, sizeof(IOmsg), 0, 0);
+        msg.str[0] = AwaitEvent(COM1_RECEIVE_IRQ);
+        int err = Send(server_tid, &msg, sizeof(IOOP) + sizeof(char), 0, 0);
 
         (void)err;
     }
@@ -20,10 +20,10 @@ void train_output_notifier_task() {
     IOmsg msg;
     msg.opcode = NOTIFIER_UPDATE;
     for (;;) {
-        int out;
+        char out;
 
         int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
-        int err = Send(server_tid, &msg, sizeof(IOmsg), &out, sizeof(int));
+        int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
 
         (void)err;
 
@@ -36,11 +36,11 @@ void train_input_server_task() {
     // initialization
     RegisterAs("UART1 Input");
 
-    GetRequest get_tasks[GET_QUEUE_SIZE]; // used to cache task tid that calls getc
+    GetRequest get_tasks[TRAIN_GET_QUEUE_SIZE]; // used to cache task tid that calls getc
     RQueue request_queue;       // outstanding read requests
     rq_init(&request_queue, get_tasks, TRAIN_GET_QUEUE_SIZE, sizeof(GetRequest));
  
-    char get_buffer[GET_BUFFER_SIZE];
+    char get_buffer[TRAIN_GET_BUFFER_SIZE];
     RQueue buffer;              // buffered input
     rq_init(&buffer, get_buffer, TRAIN_GET_BUFFER_SIZE, sizeof(char));
 
@@ -58,32 +58,22 @@ void train_input_server_task() {
                 char c = msg.str[0];
                 Reply(sender, 0, 0);
 
-                rq_push_back(&buffer, &c);
 
                 // check type of request: char or short
                 if (!rq_empty(&request_queue)) {
                     GetRequest* gr = (GetRequest*) rq_first(&request_queue);
                     switch (gr->opcode) {
-                        case GETC: {
-                            rq_pop_front(&request_queue);
-                            char c = *((char *)rq_pop_front(&buffer);
-                            // FIXME: reply message is a char??
-                            Reply(gr->tid, &c, sizeof(char));
-                            break;
-                        }
-                        case GETLINE:
-                            if (buffer.size >= 2) {
-                                rq_pop_front(&request_queue);
-                                char c1 = *((char *)rq_pop_front(&buffer);
-                                char c2 = *((char *)rq_pop_front(&buffer);
-                                
-                                short s = (c1 << 8) | c2;
-                                Reply(gr->tid, &s, sizeof(short));
-                            }
-                            break;
-                        default:
-                            break;
+                    case GETC: {
+                        rq_pop_front(&request_queue);
+                        // FIXME: reply message is a char??
+                        Reply(gr->tid, &c, sizeof(char));
+                        break;
                     }
+                    default:
+                        break;
+                    }
+                } else {
+                    rq_push_back(&buffer, &c);
                 }
                 break;
             }
@@ -92,20 +82,6 @@ void train_input_server_task() {
                     char c = *((char *)rq_pop_front(&buffer));
                     // FIXME: reply message is a char??
                     Reply(sender, &c, sizeof(char));
-                } else {
-                    GetRequest gr;
-                    gr.tid = sender;
-                    gr.opcode = msg.opcode;
-                    rq_push_back(&request_queue, &gr);
-                }
-                break;
-            case GETLINE:
-                if (buffer.size >= 2) {
-                    char c1 = *((char *)rq_pop_front(&buffer));
-                    char c2 = *((char *)rq_pop_front(&buffer));
-                    short s = (c1 << 8) | c2;
-                    // FIXME: reply message is a short??
-                    Reply(sender, &s, sizeof(short));
                 } else {
                     GetRequest gr;
                     gr.tid = sender;
@@ -124,9 +100,9 @@ void train_output_server_task() {
     // initialization
     RegisterAs("UART1 Output");
 
-    char put_buffer[PUT_BUFFER_SIZE];
+    char put_buffer[TRAIN_PUT_BUFFER_SIZE];
     RQueue buffer;
-    rq_init(&buffer, put_buffer, PUT_BUFFER_SIZE, sizeof(char));
+    rq_init(&buffer, put_buffer, TRAIN_PUT_BUFFER_SIZE, sizeof(char));
 
     Create(TRAIN_NOTIFIER_PRIORITY, train_output_notifier_task);
 
@@ -142,16 +118,16 @@ void train_output_server_task() {
             case NOTIFIER_UPDATE:
                 if (!rq_empty(&buffer)) {
                     int out = *((int *)rq_pop_front(&buffer));
-                    Reply(sender, &out, sizeof(int)); 
+                    Reply(sender, &out, sizeof(char)); 
                 } else {
                     notifier_tid = sender;
                 }
                 break;
             case PUTC:
             {
-                int c = msg.c;
+                char c = msg.str[0];
                 if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(int));
+                    Reply(notifier_tid, &c, sizeof(char));
                     notifier_tid = -1;
                 } else {
                     rq_push_back(&buffer, &c);
@@ -168,8 +144,6 @@ void train_output_server_task() {
             }
         }
     }
-
-
 }
 
 
