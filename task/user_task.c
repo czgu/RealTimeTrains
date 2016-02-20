@@ -10,7 +10,7 @@
 //#include "rps_task.h"
 
 // util
-#include <bwio.h>
+#include <io.h>
 #include <syscall.h>
 #include <string.h>
 
@@ -25,7 +25,9 @@ void basic_print_task() {
     for (;;) {
         char c;
         c = Getc(1);
-        PutStr(1, "you typed: \n\r");
+        int i = Time();
+        pprintf("you typed: %c %d\n\r", c, i);
+
         //Putc(1, c);
     }
 }

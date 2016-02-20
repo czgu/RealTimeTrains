@@ -23,14 +23,22 @@ typedef char *va_list;
 #define ON	1
 #define	OFF	0
 
-int ioputx( int channel, char c );
+typedef struct StringBuffer {
+    char* string;
+    int len;
+    int max_len;
+} StringBuffer;
+void stringbuffer_init(StringBuffer* sb, char* str, int max_len);
 
-int ioputstr( int channel, char *str );
 
-int ioputr( int channel, unsigned int reg );
+// private
+int stringbuffer_putc(StringBuffer *sb, char c);
+int stringbuffer_putx(StringBuffer *sb, char c );
+int stringbuffer_putstr(StringBuffer *sb, char *str );
+int stringbuffer_putr(StringBuffer *sb, unsigned int reg );
+void stringbuffer_putw(StringBuffer *sb, int n, char fc, char *bf );
 
-void ioputw( int channel, int n, char fc, char *bf );
-
-void pprintf( int channel, char *format, ... );
+// public
+void pprintf(char *format, ... );
 
 #endif

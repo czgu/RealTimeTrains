@@ -77,6 +77,10 @@ int strcmp(char* a, char* b) {
     return -1;
 }
 
+int strncmp(char* a, char* b, int len) {
+    return substrcmp(a, b, 0, 0, len);
+}
+
 int substrcmp(char* a, char* b, int a_start, int b_start, int len) {
     // assume meaningful and correct input
     if (a == 0 && b == 0)
@@ -114,17 +118,17 @@ int strlen(const char* a) {
 }
 
 char* strcpy (char * destination,const char * source) {
-    int copy_len = strlen(source);
+    return strncpy(destination, source, strlen(source));
+}
 
-    memory_copy(source, copy_len, destination, copy_len);
+char* strncpy (char * destination,const char * source, int len) {
+    memory_copy(source, len, destination, len);
 
     return destination;
 }
 
 int memory_copy(const void* src, int src_len, void* dest, int dest_len) {
     int copy_len = src_len < dest_len ? src_len : dest_len;
-    
-
 
     int copy_int = 0;
     int copy_extra = copy_len;
@@ -163,12 +167,17 @@ void* memcpy(void* d, void* s, unsigned int size) {
     return d;
 }
 
-char* strcat (char* destination, const char * source) {
-    int dest_start = strlen(destination) -1;
-    int copy_len = strlen(source);
+char* strcat(char* destination, const char * source) {
+    return strncat(destination, source, strlen(source));
+}
 
-    memory_copy(source, copy_len, destination + dest_start, copy_len);
+char* strncat(char* destination, const char* source, int len) {
+    int dest_start = strlen(destination) - 1;
+
+    memory_copy(source, len, destination + dest_start, len);
 
     return destination;
 }
+
+
 
