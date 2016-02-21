@@ -167,7 +167,7 @@ void icu_init() {
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 19);
 
     // enable UART 1 General interrupt
-    //*((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 20);
+    *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 20);
 
     // enable UART 2 General interrupt
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) |= (0x1u << 22);

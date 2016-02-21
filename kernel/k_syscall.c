@@ -66,7 +66,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
     case COM1_SEND_IRQ:
         // turn off transmit
         *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
-        volatile_data = (UART2_BASE + UART_DATA_OFFSET);
+        volatile_data = (UART1_BASE + UART_DATA_OFFSET);
         break;
     case COM1_RECEIVE_IRQ:
         volatile_data = *((volatile int*)(UART1_BASE + UART_DATA_OFFSET));
@@ -74,6 +74,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
     case COM1_MODEM_IRQ:
         // clear the interrupt bit
         *((volatile int*)(UART1_BASE + UART_INTR_OFFSET)) &= MIS_MASK;
+        volatile_data = *((volatile int *)(UART1_BASE + UART_FLAG_OFFSET)) & CTS_MASK;
         break;
     default:
         // DEBUG_MSG("unhandled hardware request\n\r");

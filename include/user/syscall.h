@@ -31,6 +31,7 @@ int Time();
 // K4
 typedef enum {
     NOTIFIER_UPDATE = 0,
+    NOTIFIER2_UPDATE,
     COURIER,
     PUTC,
     GETC,

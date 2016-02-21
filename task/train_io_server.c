@@ -3,6 +3,9 @@
 #include <syscall.h>
 #include <priority.h>
 
+#include <bwio.h> // temp
+#include <ts7200.h>// temp
+
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");
     IOmsg msg;
@@ -12,23 +15,6 @@ void train_input_notifier_task() {
         int err = Send(server_tid, &msg, sizeof(IOOP) + sizeof(char), 0, 0);
 
         (void)err;
-    }
-}
-
-void train_output_notifier_task() {
-    int server_tid = WhoIs("UART1 Output");
-    IOmsg msg;
-    msg.opcode = NOTIFIER_UPDATE;
-    for (;;) {
-        char out;
-
-        int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
-        int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
-
-        (void)err;
-
-        *write_loc = out;
-        
     }
 }
 
@@ -57,7 +43,6 @@ void train_input_server_task() {
             {
                 char c = msg.str[0];
                 Reply(sender, 0, 0);
-
 
                 // check type of request: char or short
                 if (!rq_empty(&request_queue)) {
@@ -96,6 +81,40 @@ void train_input_server_task() {
     }
 }
 
+void train_output_notifier_task() {
+    int server_tid = WhoIs("UART1 Output");
+    IOmsg msg;
+    msg.opcode = NOTIFIER_UPDATE;
+    for (;;) {
+        char out;
+
+        int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
+        //DEBUG_MSG("TRAIN OUTPUT INTERRUPT\n\r");
+        int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
+
+        (void)err;
+
+        *write_loc = out;
+        
+    }
+}
+
+void train_modem_notifier_task() {
+    int server_tid = WhoIs("UART1 Output");
+    IOmsg msg;
+    int cts_on;
+    msg.opcode = NOTIFIER2_UPDATE;
+    //DEBUG_MSG("MODEM TASK\n\r");
+    for (;;) {
+        cts_on = AwaitEvent(COM1_MODEM_IRQ);
+        DEBUG_MSG("MODEM INTERRUPT\n\r");
+
+        if (cts_on) {
+            Send(server_tid, &msg, sizeof(IOOP), 0, 0);
+        }
+    }
+}
+
 void train_output_server_task() {
     // initialization
     RegisterAs("UART1 Output");
@@ -105,42 +124,43 @@ void train_output_server_task() {
     rq_init(&buffer, put_buffer, TRAIN_PUT_BUFFER_SIZE, sizeof(char));
 
     Create(TRAIN_NOTIFIER_PRIORITY, train_output_notifier_task);
+    Create(TRAIN_NOTIFIER_PRIORITY, train_modem_notifier_task);
 
     IOmsg msg;
-
+    int cts_on = 1;             // CTS on
     int notifier_tid = -1;
 
     for (;;) {
         int sender;
         int sz = Receive(&sender, &msg, sizeof(IOmsg));
-        if (sz == sizeof(IOmsg)) {
+        if (sz >= sizeof(IOOP)) {
             switch(msg.opcode) {
-            case NOTIFIER_UPDATE:
-                if (!rq_empty(&buffer)) {
-                    int out = *((int *)rq_pop_front(&buffer));
-                    Reply(sender, &out, sizeof(char)); 
-                } else {
+                case NOTIFIER_UPDATE:
                     notifier_tid = sender;
-                }
-                break;
-            case PUTC:
-            {
-                char c = msg.str[0];
-                if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(char));
-                    notifier_tid = -1;
-                } else {
-                    rq_push_back(&buffer, &c);
-                }
-                Reply(sender, 0, 0);
-                break;
+                    break;
+                case NOTIFIER2_UPDATE:
+                    DEBUG_MSG("NOTIFIER2_UPDATE\n\r");
+                    cts_on = 1;
+                    Reply(sender, 0, 0);
+                    break;
+                case PUTC:
+                    rq_push_back(&buffer, msg.str);
+                    Reply(sender, 0, 0);
+                    break;
+                default:
+                    break;
             }
-            default:
-                break;
+            // TODO: Implement PUTSHORT for concurrent tasks
+
+            if (cts_on > 0 && notifier_tid > 0 && !rq_empty(&buffer)) {
+                DEBUG_MSG("CTS %d\n\r", *((volatile int *)(UART1_BASE + UART_FLAG_OFFSET)) & CTS_MASK);
+                char out = *((char *)rq_pop_front(&buffer));
+                DEBUG_MSG("output %d\n\r", out);
+                Reply(notifier_tid, &out, sizeof(char));
+
+                notifier_tid = -1;
+                cts_on = 0;
             }
         }
     }
 }
-
-
-
