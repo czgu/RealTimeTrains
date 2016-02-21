@@ -97,7 +97,6 @@ void events_init(Event* events) {
 }
 
 // TASK_SCHEDULER
-
 void scheduler_init(Task_Scheduler* scheduler) {
     int i;
 
@@ -124,11 +123,12 @@ void scheduler_init(Task_Scheduler* scheduler) {
 
     events_init(scheduler->events);
     scheduler->active = (Task*)0;
+    scheduler->halt = 0;
 }
 
 Task* scheduler_next(Task_Scheduler* scheduler) {
     scheduler->active = (void*)0;
-    if (scheduler_empty(scheduler)) {
+    if (scheduler_empty(scheduler) || scheduler->halt == 1) {
         return 0;
     }
     unsigned int priority = ctz(scheduler->priority_bitmap);

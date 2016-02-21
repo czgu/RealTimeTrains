@@ -4,7 +4,7 @@
 #include <priority.h>
 
 //#include <bwio.h> //temp
-#include <io.h> //temp
+//#include <io.h> //temp
 
 void terminal_input_notifier_task() {
     int server_tid = WhoIs("UART2 Input");
@@ -159,27 +159,3 @@ void terminal_output_server_task() {
         }
     }
 }
-
-void terminal_courier_task() {
-    RegisterAs("UART2 Courier");
-
-    int terminal_output_server_tid, terminal_input_server_tid;
-    terminal_output_server_tid = WhoIs("UART2 Output");
-    terminal_input_server_tid = WhoIs("UART2 Input");
-
-    //while ((terminal_output_server_tid = WhoIs("UART2 Output")) < 0);
-    //while ((terminal_input_server_tid = WhoIs("UART2 Input")) < 0);
-
-    IOmsg msg;
-
-    for (;;) {
-        msg.opcode = COURIER;    
-        int len = Send(terminal_input_server_tid, &msg, sizeof(IOOP), &msg.str, IOMSG_STRLEN);
-
-        if (len > 0) {
-            msg.opcode = PUTSTR;
-            Send(terminal_output_server_tid, &msg, sizeof(IOOP) + sizeof(char) * len, 0, 0);
-        }
-    }
-}
-

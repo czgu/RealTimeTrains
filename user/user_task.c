@@ -17,6 +17,9 @@
 #include <syscall.h>
 #include <string.h>
 
+void empty_task() {
+}
+
 void idle_task() {
     int i = 0;
     for(;;) {
@@ -41,19 +44,22 @@ void basic_print_task() {
 }
 
 void first_task() {
+    Create(IDLE_TASK_PRIORITY, idle_task);
+
     Create(NAMESERVER_PRIORITY, nameserver_task);
     Create(CLOCKSERVER_PRIORITY, clockserver_task);
-    
+ 
+   
     Create(TERMINAL_SERVER_PRIORITY, terminal_output_server_task);
     Create(TERMINAL_SERVER_PRIORITY, terminal_input_server_task);
-    // Create(TERMINAL_COURIER_PRIORITY, terminal_courier_task);
-    
+
+
     Create(TRAIN_SERVER_PRIORITY, train_output_server_task);
     Create(TRAIN_SERVER_PRIORITY, train_input_server_task);
 
-    Create(IDLE_TASK_PRIORITY, idle_task);
 
     Create(15, terminal_controller_server_task);
+    //Create(15, basic_print_task);
     return;
 }   
 

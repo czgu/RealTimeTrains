@@ -56,7 +56,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
         // turn off transmit
         *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~TIEN_MASK;
         volatile_data = (UART2_BASE + UART_DATA_OFFSET);
-        // *((int *)(UART2_BASE + UART_DATA_OFFSET)) = 'a';
+        //*((int *)(UART2_BASE + UART_DATA_OFFSET)) = 'a';
         //DEBUG_MSG("can send");
         break;
     case COM2_RECEIVE_IRQ:
@@ -123,6 +123,9 @@ void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
     case AWAITEVENT:
         k_awaitevent(param[0], task_scheduler);
         break;
+    case HALT:
+        task_scheduler->halt = 1;
+        break;
     default:
         // bwprintf(COM2, "Invalid syscall");
         break;
@@ -161,7 +164,7 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
     new_task->last_request = 0;
 
     // Initialize program memory
-    unsigned int *sp = (unsigned int*)TASK_BASE_SP + index * TASK_STACK_SIZE;
+    unsigned int *sp = (unsigned int*)(TASK_BASE_SP + index * TASK_STACK_SIZE);
     
     int i;
 

@@ -5,7 +5,6 @@
 
 
 // Temp
-#include <bwio.h>
 
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");

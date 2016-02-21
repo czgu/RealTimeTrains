@@ -4,6 +4,7 @@
 #include <syscall.h>
 #include <io.h>
 
+#include <string.h>
 #include <bqueue.h>
 #include <rqueue.h>
 
@@ -14,8 +15,9 @@ void terminal_controller_server_task() {
     Create(10, terminal_time_listener_task);
     Create(10, terminal_view_listener_task);
 
-    BQueue input_buffer;
-    bq_init(&input_buffer);
+
+    char input_buffer[INPUT_BUFFER_LEN];
+    int input_len = 0;
 
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;
@@ -47,13 +49,34 @@ void terminal_controller_server_task() {
                 rq_push_back(&draw_buffer, &draw_msg);
 
                 if (c == '\r') {
-                
+                    int parse_succ = parse_command_block(input_buffer, input_len, &controller_msg);
+                    if (parse_succ == 0) {
+                        draw_msg.opcode = DRAW_CMD;
+                        draw_msg.param[0] = controller_msg.opcode;
+                        draw_msg.param[1] = controller_msg.param[0];
+                        draw_msg.param[2] = controller_msg.param[1];
+                        
+                        rq_push_back(&draw_buffer, &draw_msg);
+
+                        if (controller_msg.opcode == CMD_Q)
+                            Halt();
+
+                    } else {
+                        pprintf(COM2, "\033[%d;%dH", 25, 1);
+                        PutnStr(COM2, input_buffer, input_len); 
+                    }
+
+                    input_len = 0;
                 }
-                else if (c == '\b' && !bq_empty(&input_buffer)) {
-                    bq_pop(&input_buffer);
+                else if (c == '\b') {
+                    if (input_len > 0)
+                        input_len --;
                 }
-                else {
-                    bq_push(&input_buffer, c);
+                else if (input_len < INPUT_BUFFER_LEN) {
+                    input_buffer[input_len++] = c;
+                } else {
+                    // too much input, dont push
+                    rq_pop_back(&draw_buffer);
                 }
                 break;
             }
@@ -109,6 +132,14 @@ void terminal_view_listener_task() {
                     print_time(&cs, Time());
                     break;
                 }
+                case DRAW_CMD:  {
+                    draw_msg.param[0] += 'A';
+                    draw_msg.param[1] += '0';
+                    draw_msg.param[2] += '0';
+                    draw_msg.param[3] = 0;
+                    print_msg(&cs, draw_msg.param);
+                    break;
+                }
             }    
         }
     }
@@ -137,17 +168,16 @@ void terminal_time_listener_task() {
 }
 
 // HELPERS
-/*
 int parse_command_block(char* str, int str_len, TERMmsg* msg) {
     if (str_len > 10 || str_len == 0) {
         return -1;
     }
     
-    if (str_len == 1 && strcmp(str, "q") == 0) {
+    if (str_len == 1 && strncmp(str, "q", 1) == 0) {
         msg->opcode = CMD_Q;
         return 0;
     } else if(str_len >= 3) {
-        if (substrcmp(str, "tr ", 0, 0, 3) == 0) {
+        if (strncmp(str, "tr ", 3) == 0) {
             int speed, train;
             char* current_c = str + 3;
             a2i('0', &current_c, 10, &train);
@@ -158,16 +188,16 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[1] = speed;
             return 0;
 
-        } else if(substrcmp(str, "rv ", 0, 0, 3) == 0) {
+        } else if(strncmp(str, "rv ", 3) == 0) {
             int train;
             char* current_c = str + 3;
             a2i('0', &current_c, 10, &train);
     
-            cmd->command = CMD_RV;
-            cmd->param1 = train;
+            msg->opcode = CMD_RV;
+            msg->param[0] = train;
             
             return 0;
-        } else if(substrcmp(str, "sw ", 0, 0, 3) == 0) {
+        } else if(strncmp(str, "sw ", 3) == 0) {
             int switch_num, switch_dir;
             char* current_c = str + 3;
             a2i('0', &current_c, 10, &switch_num);
@@ -181,15 +211,13 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             }
             //a2i('0', &current_c, 10, &switch_dir);
 
-            cmd->command = CMD_SW;
-            cmd->param1 = switch_num;
-            cmd->param2 = switch_dir;
+            msg->opcode = CMD_SW;
+            msg->param[0] = switch_num;
+            msg->param[1] = switch_dir;
             return 0;
-
         }
     } 
    
     return -1;    
 }
 
-*/

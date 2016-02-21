@@ -34,7 +34,7 @@ typedef struct Event {
 void events_init(Event* events);
 
 
-#define TASK_POOL_SIZE  40
+#define TASK_POOL_SIZE  80
 typedef struct Task_Scheduler {
     Task task_pool[TASK_POOL_SIZE];
     PQueue free_list;
@@ -42,7 +42,9 @@ typedef struct Task_Scheduler {
     unsigned int priority_bitmap;
     Task* active;
 
-    Event events[EVENT_FLAG_LEN];    
+    Event events[EVENT_FLAG_LEN];
+
+    int halt;
 } Task_Scheduler;
 
 void scheduler_init(Task_Scheduler* scheduler);

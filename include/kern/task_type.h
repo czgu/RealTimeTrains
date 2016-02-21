@@ -24,6 +24,7 @@ typedef enum {
     RECEIVE, // 6
     REPLY, // 7
     AWAITEVENT, // 8 
+    HALT, // TODO: use destroy instead
     NONE
 } SYSCALL;
 

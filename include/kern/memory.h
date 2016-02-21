@@ -7,4 +7,6 @@
 #define IRQ_JUMP_TABLE 0x38
 
 #define TASK_BASE_SP    0x00300000
-#define TASK_STACK_SIZE 524288      // 0.5 MB
+//#define TASK_BASE_SP    0xA80000
+//#define TASK_STACK_SIZE 524288      // 0.5 MB
+#define TASK_STACK_SIZE 262144
