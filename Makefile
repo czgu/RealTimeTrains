@@ -14,7 +14,7 @@ INCLUDE = -I include -I include/kern -I include/user
 BIN = bin
 KER_DIR = kernel
 UTIL_DIR = util
-TASK_DIR = task
+TASK_DIR = user
 
 USER = $(shell whoami)
 FILE = kernel4

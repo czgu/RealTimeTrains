@@ -73,7 +73,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
         break;
     case COM1_MODEM_IRQ:
         // clear the interrupt bit
-        *((volatile int*)(UART1_BASE + UART_INTR_OFFSET)) &= MIS_MASK;
+        *((volatile int*)(UART1_BASE + UART_INTR_OFFSET)) &= ~MIS_MASK;
         volatile_data = *((volatile int *)(UART1_BASE + UART_FLAG_OFFSET)) & CTS_MASK;
         break;
     default:
