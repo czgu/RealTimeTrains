@@ -107,54 +107,27 @@ void terminal_output_server_task() {
 
         if (msg_len >= 0) {
             switch(msg.opcode) {
-            case NOTIFIER_UPDATE:
-                if (!rq_empty(&buffer)) {
-                    char out = *((char *)rq_pop_front(&buffer));
-                    Reply(sender, &out, sizeof(char)); 
-                } else {
+                case NOTIFIER_UPDATE:
                     notifier_tid = sender;
-                }
-                break;
-            case PUTC:
-                if (msg_len == 0)
                     break;
-
-                char c = msg.str[0];
-                if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(char));
-                    notifier_tid = -1;
-                } else {
-                    rq_push_back(&buffer, &c);
-                }
-
-                Reply(sender, 0, 0);
-
-                break;
-            case PUTSTR:
-            {
-                if (msg_len == 0)
+                case PUTC:
+                case PUTSTR:
+                {
+                    int i;
+                    for (i = 0; i < msg_len; i++) {
+                        rq_push_back(&buffer, msg.str + i);
+                    }
+                    Reply(sender, 0, 0);
                     break;
-
-                // now the first byte
-                int c = msg.str[0];
-                if (notifier_tid > 0) {
-                    Reply(notifier_tid, &c, sizeof(char));
-                    notifier_tid = -1;
-                } else {
-                    rq_push_back(&buffer, &c);
                 }
-
-                // other bytes
-                int i = 1;
-                while (i < msg_len) {
-                    rq_push_back(&buffer, &msg.str[i++]);
-                }
-
-                Reply(sender, 0, 0);
-                break;
+                default:
+                    break;
             }
-            default:
-                break;
+
+            if (!rq_empty(&buffer) && notifier_tid > 0) {
+                char out = *((char *)rq_pop_front(&buffer));
+                Reply(notifier_tid, &out, sizeof(char)); 
+                notifier_tid = -1;
             }
         }
     }
