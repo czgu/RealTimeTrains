@@ -35,50 +35,21 @@ void terminal_output_notifier_task() {
     }
 }
 
-inline char buffer_pop_char(RQueue* buffer, int* numLines) {
-    char c = *((char *)rq_pop_front(buffer));
-    if (c == '\r') {
-        (*numLines)--;
-    }
-    return c;
-}
-
-inline int buffer_pop_line(RQueue* buffer, char* outstr, int len, int* numLines) {
-    int i;
-    for (i = 0; i < len - 1; i++) {
-        outstr[i] = *((char *)rq_pop_front(buffer));
-        if (outstr[i] == '\r') {
-            (*numLines)--;
-            outstr[i + 1] = '\0';
-            break;
-        }
-    }
-    return i + 2;
-}
-
 void terminal_input_server_task() {
     // initialization
     RegisterAs("UART2 Input");
 
-    GetRequest get_tasks[TERM_GET_QUEUE_SIZE]; // used to cache task tid that calls getc
+    int get_tasks[TERM_GET_QUEUE_SIZE]; // used to cache task tid that calls getc
     RQueue get_queue;
-    rq_init(&get_queue, get_tasks, TERM_GET_QUEUE_SIZE, sizeof(GetRequest));
+    rq_init(&get_queue, get_tasks, TERM_GET_QUEUE_SIZE, sizeof(int));
  
     char get_buffer[TERM_GET_BUFFER_SIZE];
     RQueue buffer;
     rq_init(&buffer, get_buffer, TERM_GET_BUFFER_SIZE, sizeof(char));
 
-    char c_buffer[TERM_COURIER_SIZE];
-    RQueue courier_buffer;
-    rq_init(&courier_buffer, c_buffer, TERM_COURIER_SIZE, sizeof(char));
-    int courier_tid = -1;
-
     Create(TERMINAL_NOTIFIER_PRIORITY, terminal_input_notifier_task);
 
     IOmsg msg;
-    int numLines = 0;
-
-    char backspace[3] = {'\b', ' ', '\b'};
 
     for (;;) {
         int sender;
@@ -90,90 +61,20 @@ void terminal_input_server_task() {
                 char c = msg.str[0];
                 Reply(sender, 0, 0);
                 
-                if (c == '\b') {
-                    if (!rq_empty(&buffer)) {
-                        buffer_pop_char(&buffer, &numLines);
-                    }
-
-                    // laggy implementation
-                    if (courier_tid > 0) {
-                        Reply(courier_tid, backspace, sizeof(char) * 3);
-                        courier_tid = -1;
-                    } else {
-                        rq_push_back(&courier_buffer, backspace);
-                        rq_push_back(&courier_buffer, backspace + 1);
-                        rq_push_back(&courier_buffer, backspace + 2);
-                    }
+                if (!rq_empty(&get_queue)) {
+                    int tid = *((int*)rq_pop_front(&get_queue));
+                    Reply(tid, &c, sizeof(char));
                 } else {
                     rq_push_back(&buffer, &c);
-                    // TODO: implement backspace
-                    if (c == '\r') {
-                        numLines++;
-                    }
-
-                    if (courier_tid > 0) {
-                        Reply(courier_tid, &c, sizeof(char));
-                        courier_tid = -1;
-                    } else {
-                        rq_push_back(&courier_buffer, &c);
-                    }
-                }
-
-
-                if (!rq_empty(&get_queue)) {
-                    GetRequest* gr = (GetRequest*)rq_first(&get_queue);
-                    if (gr->opcode == GETC) {
-                        rq_pop_front(&get_queue);
-                        if (c != '\b')
-                            buffer_pop_char(&buffer, &numLines);
-                        Reply(gr->tid, &c, sizeof(char));
-                    } else if (gr->opcode == GETLINE && numLines > 0) {
-                        rq_pop_front(&get_queue);
-                        char str[TERM_GET_BUFFER_SIZE];
-                        int len = buffer_pop_line(&buffer, str,
-                                                  TERM_GET_BUFFER_SIZE,
-                                                  &numLines);
-                        Reply(gr->tid, str, len * sizeof(char));
-                    }
                 }
                 break;
-            }
-            case COURIER:
-            {
-                if(!rq_empty(&courier_buffer)) {
-                    char str[TERM_COURIER_SIZE];
-                    int len = 0;
-                    do {
-                        str[len++] = *((char*)rq_pop_front(&courier_buffer));
-                    } while (!rq_empty(&courier_buffer));
-                    Reply(sender, str, len * sizeof(char));   
-                } else {
-                    courier_tid = sender;
-                }     
             }
             case GETC:
                 if (!rq_empty(&buffer)) {
-                    char c = buffer_pop_char(&buffer, &numLines);
+                    char c = *((char *)rq_pop_front(&buffer));
                     Reply(sender, &c, sizeof(char));
                 } else {
-                    GetRequest gr;
-                    gr.tid = sender; 
-                    gr.opcode = GETC;
-                    rq_push_back(&get_queue, &gr);
-                }
-                break;
-            case GETLINE:
-                if (numLines > 0) {
-                    char str[TERM_GET_BUFFER_SIZE];
-                    int len = buffer_pop_line(&buffer, str, 
-                                              TERM_GET_BUFFER_SIZE, 
-                                              &numLines);
-                    Reply(sender, str, len * sizeof(char));
-                } else {
-                    GetRequest gr;
-                    gr.tid = sender; 
-                    gr.opcode = GETLINE;
-                    rq_push_back(&get_queue, &gr);
+                    rq_push_back(&get_queue, &sender);
                 }
                 break;
             default:

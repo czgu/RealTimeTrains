@@ -39,6 +39,6 @@ int stringbuffer_putr(StringBuffer *sb, unsigned int reg );
 void stringbuffer_putw(StringBuffer *sb, int n, char fc, char *bf );
 
 // public
-void pprintf(char *format, ... );
+void pprintf(int channel, char *format, ... );
 
 #endif

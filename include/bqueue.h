@@ -3,25 +3,26 @@
 
 // TODO: figure out appropriate value for capacity
 // Capacity size is completely arbitrary
-#define CAPACITY 500
+#define CAPACITY 200
 
 // access is not mutexed
 
-struct BQueue {
+typedef struct BQueue {
 	//const unsigned int capacity = CAPACITY;
 	unsigned int size;		// size of buffer
 	unsigned int first; 	// index of first element
 	
 	char buffer[CAPACITY];
 
-};
+} BQueue;
 
-void bq_init(struct BQueue* buffer);
-char bq_first(struct BQueue* buffer);
-char bq_pop(struct BQueue* buffer);
-char bq_pop_back(struct BQueue* buffer);
-int bq_push(struct BQueue* buffer, char c);
-int bq_empty(struct BQueue* buffer);
-void bq_clear(struct BQueue* buffer);	// clears buffer (sets first = size = 0)
+void bq_init(BQueue* buffer);
+char bq_first(BQueue* buffer);
+char bq_pop(BQueue* buffer);
+char bq_pop_back(BQueue* buffer);
+int bq_push(BQueue* buffer, char c);
+int bq_empty(BQueue* buffer);
+void bq_clear(BQueue* buffer);	// clears buffer (sets first = size = 0)
+void bq_dump(BQueue* buffer, char* c);
 
 #endif
