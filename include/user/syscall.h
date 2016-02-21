@@ -31,15 +31,17 @@ int Time();
 // K4
 typedef enum {
     NOTIFIER_UPDATE = 0,
+    COURIER,
     PUTC,
     GETC,
     PUTSTR,
     GETLINE,
 } IOOP;
 
+#define IOMSG_STRLEN 100
 typedef struct IOmsg {
     IOOP opcode;
-    char str[100];
+    char str[IOMSG_STRLEN];
 } IOmsg;
 
 typedef struct GetRequest {

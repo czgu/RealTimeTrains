@@ -191,7 +191,7 @@ void io_init() {
     // UART 1
     io_set_connection(COM1, UART_SLOW);
 
-    //*((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
+    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
 }
 
 /*

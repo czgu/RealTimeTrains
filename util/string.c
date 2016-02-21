@@ -161,9 +161,7 @@ int memory_copy(const void* src, int src_len, void* dest, int dest_len) {
 }
 
 void* memcpy(void* d, void* s, unsigned int size) {
-    DEBUG_MSG("memcpy: %d, %d, %d\n\r", s, d, size);
     memory_copy(s, size, d, size);
-
     return d;
 }
 

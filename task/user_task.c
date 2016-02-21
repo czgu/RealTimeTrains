@@ -29,7 +29,7 @@ void basic_print_task() {
         char c;
         c = Getc(1);
         int i = Time();
-        pprintf("you typed: %c %d\n\r", c, i);
+        //pprintf("you typed: %c %d\n\r", c, i);
     }
 }
 
@@ -39,6 +39,7 @@ void first_task() {
     
     Create(TERMINAL_SERVER_PRIORITY, terminal_output_server_task);
     Create(TERMINAL_SERVER_PRIORITY, terminal_input_server_task);
+    Create(TERMINAL_COURIER_PRIORITY, terminal_courier_task);
     
     Create(IDLE_TASK_PRIORITY, idle_task);
 

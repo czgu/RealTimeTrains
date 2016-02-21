@@ -21,4 +21,5 @@ int rq_push_front(RQueue* q, void* ptr);
 inline int rq_empty(RQueue* q);
 inline void rq_clear(RQueue* q);	// clears buffer (sets first = size = 0)
 
+
 #endif

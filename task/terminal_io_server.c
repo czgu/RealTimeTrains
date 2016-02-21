@@ -3,7 +3,8 @@
 #include <syscall.h>
 #include <priority.h>
 
-#include <bwio.h> //temp
+//#include <bwio.h> //temp
+#include <io.h> //temp
 
 void terminal_input_notifier_task() {
     int server_tid = WhoIs("UART2 Input");
@@ -67,10 +68,17 @@ void terminal_input_server_task() {
     RQueue buffer;
     rq_init(&buffer, get_buffer, TERM_GET_BUFFER_SIZE, sizeof(char));
 
+    char c_buffer[TERM_COURIER_SIZE];
+    RQueue courier_buffer;
+    rq_init(&courier_buffer, c_buffer, TERM_COURIER_SIZE, sizeof(char));
+    int courier_tid = -1;
+
     Create(TERMINAL_NOTIFIER_PRIORITY, terminal_input_notifier_task);
 
     IOmsg msg;
     int numLines = 0;
+
+    char backspace[3] = {'\b', ' ', '\b'};
 
     for (;;) {
         int sender;
@@ -82,18 +90,42 @@ void terminal_input_server_task() {
                 char c = msg.str[0];
                 Reply(sender, 0, 0);
                 
-                // TODO: implement echo here
-                rq_push_back(&buffer, &c);
-                // TODO: implement backspace
-                if (c == '\r') {
-                    numLines++;
+                if (c == '\b') {
+                    if (!rq_empty(&buffer)) {
+                        buffer_pop_char(&buffer, &numLines);
+                    }
+
+                    // laggy implementation
+                    if (courier_tid > 0) {
+                        Reply(courier_tid, backspace, sizeof(char) * 3);
+                        courier_tid = -1;
+                    } else {
+                        rq_push_back(&courier_buffer, backspace);
+                        rq_push_back(&courier_buffer, backspace + 1);
+                        rq_push_back(&courier_buffer, backspace + 2);
+                    }
+                } else {
+                    rq_push_back(&buffer, &c);
+                    // TODO: implement backspace
+                    if (c == '\r') {
+                        numLines++;
+                    }
+
+                    if (courier_tid > 0) {
+                        Reply(courier_tid, &c, sizeof(char));
+                        courier_tid = -1;
+                    } else {
+                        rq_push_back(&courier_buffer, &c);
+                    }
                 }
+
 
                 if (!rq_empty(&get_queue)) {
                     GetRequest* gr = (GetRequest*)rq_first(&get_queue);
                     if (gr->opcode == GETC) {
                         rq_pop_front(&get_queue);
-                        char c = buffer_pop_char(&buffer, &numLines);
+                        if (c != '\b')
+                            buffer_pop_char(&buffer, &numLines);
                         Reply(gr->tid, &c, sizeof(char));
                     } else if (gr->opcode == GETLINE && numLines > 0) {
                         rq_pop_front(&get_queue);
@@ -105,6 +137,19 @@ void terminal_input_server_task() {
                     }
                 }
                 break;
+            }
+            case COURIER:
+            {
+                if(!rq_empty(&courier_buffer)) {
+                    char str[TERM_COURIER_SIZE];
+                    int len = 0;
+                    do {
+                        str[len++] = *((char*)rq_pop_front(&courier_buffer));
+                    } while (!rq_empty(&courier_buffer));
+                    Reply(sender, str, len * sizeof(char));   
+                } else {
+                    courier_tid = sender;
+                }     
             }
             case GETC:
                 if (!rq_empty(&buffer)) {
@@ -218,13 +263,22 @@ void terminal_courier_task() {
     RegisterAs("UART2 Courier");
 
     int terminal_output_server_tid, terminal_input_server_tid;
-    while ((terminal_output_server_tid = WhoIs("UART2 Output")) < 0);
-    while ((terminal_input_server_tid = WhoIs("UART2 Input")) < 0);
+    terminal_output_server_tid = WhoIs("UART2 Output");
+    terminal_input_server_tid = WhoIs("UART2 Input");
 
-    
+    //while ((terminal_output_server_tid = WhoIs("UART2 Output")) < 0);
+    //while ((terminal_input_server_tid = WhoIs("UART2 Input")) < 0);
+
+    IOmsg msg;
 
     for (;;) {
-        //Send(terminal_input_server_tid,         
+        msg.opcode = COURIER;    
+        int len = Send(terminal_input_server_tid, &msg, sizeof(IOOP), &msg.str, IOMSG_STRLEN);
+
+        if (len > 0) {
+            msg.opcode = PUTSTR;
+            Send(terminal_output_server_tid, &msg, sizeof(IOOP) + sizeof(char) * len, 0, 0);
+        }
     }
 }
 
