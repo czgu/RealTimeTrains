@@ -324,6 +324,8 @@ void k_awaitevent(int eventType, Task_Scheduler* task_scheduler) {
         *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= TIEN_MASK;
     } else if (eventType == COM1_SEND_IRQ) {
         *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= TIEN_MASK;
+    } else if (eventType == COM1_MODEM_IRQ) {
+        *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= MSIEN_MASK;
     }
 
     if (task_scheduler->events[eventType].wait_task == 0) {

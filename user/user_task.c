@@ -14,6 +14,7 @@
 
 // util
 #include <io.h>
+#include <bwio.h>
 #include <syscall.h>
 #include <string.h>
 
@@ -31,16 +32,20 @@ void basic_print_task() {
     int out_tid = WhoIs("UART2 Output");
     int in_tid = WhoIs("UART2 Input");
 
-    Train train;
-    train_init(&train, 58);
-    train_setspeed(&train, 6);
+    DEBUG_MSG("basic_print_task\n\r");
+    //Delay(100);
+    Train train1, train2;
+    train_init(&train1, 58);
+    train_init(&train2, 63);
 
-    for (;;) {
-        char c;
-        c = Getc(1);
-        int i = Time();
-        //pprintf("you typed: %c %d\n\r", c, i);
-    }
+    //train_setspeed(&train2, 2);
+    //train_reverse(&train1);
+    //train_setspeed(&train1, 2);
+    //Delay(10);
+    train_setspeed(&train2, 6);
+    /*
+    Delay(1000);
+    train_setspeed(&train2, 2);*/
 }
 
 void first_task() {
@@ -59,8 +64,6 @@ void first_task() {
 
 
     Create(15, terminal_controller_server_task);
-    //Create(15, basic_print_task);
+    Create(14, basic_print_task);
     return;
 }   
-
-

@@ -3,9 +3,6 @@
 #include <syscall.h>
 #include <priority.h>
 
-
-// Temp
-
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");
     IOmsg msg;
@@ -129,7 +126,9 @@ void train_output_server_task() {
     for (;;) {
         int sender;
         int sz = Receive(&sender, &msg, sizeof(IOmsg));
-        if (sz >= sizeof(IOOP)) {
+        int msg_len = sz - sizeof(IOOP);
+
+        if (msg_len >= 0) {
             switch(msg.opcode) {
                 case NOTIFIER_UPDATE:
                     notifier_tid = sender;
@@ -139,13 +138,17 @@ void train_output_server_task() {
                     Reply(sender, 0, 0);
                     break;
                 case PUTC:
-                    rq_push_back(&buffer, msg.str);
+                case PUTSTR: {
+                    int i;
+                    for (i = 0; i < msg_len; i++) {
+                        rq_push_back(&buffer, msg.str + i);
+                    }
                     Reply(sender, 0, 0);
                     break;
+                }
                 default:
                     break;
             }
-            // TODO: Implement PUTSHORT for concurrent tasks
 
             if (cts_on > 0 && notifier_tid > 0 && !rq_empty(&buffer)) {
                 char out = *((char *)rq_pop_front(&buffer));
