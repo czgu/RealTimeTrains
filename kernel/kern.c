@@ -229,12 +229,12 @@ int io_set_connection( int channel, int speed) {
 		    return 0;
 	    case UART_SLOW:
 		    *high = (*high & 0xffffff00) | COM1_SETTINGS; // turns fifo off as well
-            *mid = *mid & 0xffffff00;
-		    *low = (*low & 0xFFFFFF00) | 0xBF;
+            // if train doesn't work, try this instead:
+            //*high = (*high | STP2_MASK) & ~PE_MASK & ~FEN_MASK;
+            *mid = 0x0;
+            *low = 0xbf;
 		    return 0;
 	    default:
 		    return -1;
 	}
 }
-
-

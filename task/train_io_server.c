@@ -3,8 +3,9 @@
 #include <syscall.h>
 #include <priority.h>
 
-#include <bwio.h> // temp
-#include <ts7200.h>// temp
+
+// Temp
+#include <bwio.h>
 
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");
@@ -89,13 +90,11 @@ void train_output_notifier_task() {
         char out;
 
         int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
-        //DEBUG_MSG("TRAIN OUTPUT INTERRUPT\n\r");
         int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
 
         (void)err;
 
         *write_loc = out;
-        
     }
 }
 
@@ -104,10 +103,8 @@ void train_modem_notifier_task() {
     IOmsg msg;
     int cts_on;
     msg.opcode = NOTIFIER2_UPDATE;
-    //DEBUG_MSG("MODEM TASK\n\r");
     for (;;) {
         cts_on = AwaitEvent(COM1_MODEM_IRQ);
-        DEBUG_MSG("MODEM INTERRUPT\n\r");
 
         if (cts_on) {
             Send(server_tid, &msg, sizeof(IOOP), 0, 0);
@@ -139,7 +136,6 @@ void train_output_server_task() {
                     notifier_tid = sender;
                     break;
                 case NOTIFIER2_UPDATE:
-                    DEBUG_MSG("NOTIFIER2_UPDATE\n\r");
                     cts_on = 1;
                     Reply(sender, 0, 0);
                     break;
@@ -153,9 +149,7 @@ void train_output_server_task() {
             // TODO: Implement PUTSHORT for concurrent tasks
 
             if (cts_on > 0 && notifier_tid > 0 && !rq_empty(&buffer)) {
-                DEBUG_MSG("CTS %d\n\r", *((volatile int *)(UART1_BASE + UART_FLAG_OFFSET)) & CTS_MASK);
                 char out = *((char *)rq_pop_front(&buffer));
-                DEBUG_MSG("output %d\n\r", out);
                 Reply(notifier_tid, &out, sizeof(char));
 
                 notifier_tid = -1;
