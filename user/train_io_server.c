@@ -86,12 +86,8 @@ void train_output_notifier_task() {
         char out;
 
         int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
-        int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
+        Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
 
-        (void)err;
-        //pprintf(1, "send %d\n\r", out);
-        PutStr(1, "\0\0\0\0\0\0\0");
-        //Delay(5);
         *write_loc = out;
     }
 }

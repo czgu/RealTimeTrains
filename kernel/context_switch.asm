@@ -1,6 +1,6 @@
 	.file	"kernel_switch.c"
 	.text
-	.align	2
+	.align 4
 	.global	asm_kern_exit
 	.type	asm_kern_exit, %function
 asm_kern_exit:
@@ -56,6 +56,7 @@ irq_entry:
     sub lr, lr, #4;
 
 	.size	irq_entry, .-irq_entry
+    .align 2
 	.ident	"GCC: (GNU) 4.0.2"
 	.global	asm_kern_entry
 	.type	asm_kern_entry, %function
@@ -94,7 +95,7 @@ asm_kern_entry:
 
     mov pc, lr;
 	.size	asm_kern_entry, .-asm_kern_entry
-	.align	2
+	.align 4
 	.global	swi_jump
 	.type	swi_jump, %function
 swi_jump:
@@ -105,5 +106,6 @@ swi_jump:
 
     ldmfd sp, {sp, pc};
 
-	.size	irq_entry, .-irq_entry
+    .align 4
+	.size	swi_jump, .-swi_jump
 	.ident	"GCC: (GNU) 4.0.2"

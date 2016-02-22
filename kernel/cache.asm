@@ -1,6 +1,6 @@
 	.file	"cache.c"
 	.text
-	.align	2
+	.align 4
 	.global	asm_cache_on
 	.type	asm_cache_on, %function
 asm_cache_on:
@@ -16,6 +16,7 @@ asm_cache_on:
 
     mov pc, lr;
 
+    .align 4
 	.global	asm_cache_off
 	.type	asm_cache_off, %function
 asm_cache_off:
@@ -30,3 +31,6 @@ asm_cache_off:
     mcr p15, 0, r0, c1, c0, 0;
 
     mov pc, lr;
+    .align 4
+    .size asm_cache_off, .-asm_cache_off
+    .ident  "GCC: (GNU) 4.0.2"
