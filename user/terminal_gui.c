@@ -116,7 +116,7 @@ void print_switch(Cursor* cs, char switch_status, int index) {
 void print_sensor(Cursor* cs, int index, SensorId sensor) {
     pprintf(COM2, "\033[%d;%dH", CSSENSORY + index, CSSENSORX);
     pprintf(COM2, "\033[K");				// clear previous message
-    pprintf(COM2, "%d. Module %d, sensor %d", index + 1, 
+    pprintf(COM2, "%d. Module %c, sensor %d", index + 1, 
             sensor.module + 'A'-1, sensor.id);
     /*
 	int i;

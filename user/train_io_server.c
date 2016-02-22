@@ -89,7 +89,7 @@ void train_output_notifier_task() {
         int err = Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
 
         (void)err;
-
+        //pprintf(1, "send %d\n\r", out);
         PutStr(1, "\0\0\0\0\0\0\0");
         //Delay(5);
         *write_loc = out;
