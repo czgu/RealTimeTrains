@@ -39,6 +39,7 @@ void init_sensors() {
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
 	print_clr();				// clear screen
+
 	init_time();
 	init_switches(); //, sws, nsw);
 	init_sensors();
