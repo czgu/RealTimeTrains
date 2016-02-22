@@ -20,6 +20,6 @@ int rq_push_back(RQueue* q, void* ptr);
 int rq_push_front(RQueue* q, void* ptr);
 inline int rq_empty(RQueue* q);
 inline void rq_clear(RQueue* q);	// clears buffer (sets first = size = 0)
-
+inline void* rq_get(RQueue* q, int index);
 
 #endif

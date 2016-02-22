@@ -18,9 +18,15 @@
 #define CSMSGX 1
 #define CSMSGY 24
 
+#include <rqueue.h>
+
 typedef struct Cursor {
 	int row, col;
 } Cursor;
+
+typedef struct SensorId {
+    int module, id;
+} SensorId;
 
 void init_screen(Cursor* cs);
 
@@ -34,5 +40,6 @@ void reset_cursor(Cursor* cs);
 // Part-specific
 void print_time(Cursor* cs, unsigned int ticks);
 void print_switch(Cursor* cs, char switch_status, int index);
+void print_sensor(Cursor* cs, RQueue* recent);
 
 #endif

@@ -10,6 +10,8 @@
 #include <bqueue.h>
 #include <rqueue.h>
 
+#define MAX_RECENT_SENSORS 10
+
 void terminal_controller_server_task() {
     RegisterAs("term controller");
 
@@ -21,6 +23,10 @@ void terminal_controller_server_task() {
 
     char input_buffer[INPUT_BUFFER_LEN + 1];
     int input_len = 0;
+
+    SensorId tsensors[MAX_RECENT_SENSORS];
+    RQueue triggered_sensors;
+    rq_init(&triggered_sensors, tsensors, MAX_RECENT_SENSORS, sizeof(SensorId));
 
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;
@@ -88,8 +94,30 @@ void terminal_controller_server_task() {
                 }
                 break;
             }
-            case SENSOR_UPDATE:
+            case SENSOR_UPDATE: {
+                Reply(sender, 0, 0);
+                char module = controller_msg.param[0];
+                short data = (short*) (controller_msg.param + 1);
+                /*
+                char group = controller_msg.param[1];
+                char data = controller_msg.param[2];*/
+
+                int i;
+
+                SensorId sensor;
+                sensor.module = module;
+                for (i = 0; i < 16; i++) {
+                    if ((0x8000 >> i) & data) {
+                        if (triggered_sensors.size == MAX_RECENT_SENSORS) {
+                            rq_pop_front(&triggered_sensors);
+                        }
+                        sensor.id = i + 1;
+                        rq_push_back(&triggered_sensors, &sensor);
+                    }
+                }
+                
                 break;
+            }
             case VIEW_READY:
                 view_listener_tid = sender;
                 break;

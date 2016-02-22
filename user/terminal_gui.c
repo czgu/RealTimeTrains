@@ -28,12 +28,13 @@ void init_sensors() {
 	pprintf(COM2, "\033[%d;%dH", CSSENSORY - 1, CSSENSORX);
 	PutStr(COM2, "Recent sensors:");
 	
+    /*
 	int i;
 	for(i = 0; i < 5; i++) {
 		pprintf(COM2, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
 		pprintf(COM2, "%d.", i + 1);
 	}
-
+	}*/
 }
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
@@ -103,16 +104,17 @@ void print_switch(Cursor* cs, char switch_status, int index) {
 	}
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
 }
-/*
-void print_sensor(struct BQueue* out, struct cursor cs, struct BQueue64* recent) {
+
+void print_sensor(Cursor* cs, RQueue* recent) {
 	int i;
 	for(i = 0; i < recent->size; i++) {
-		qprintf(out, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
-		qprintf(out, "\033[K");				// clear previous message
+		pprintf(COM2, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
+		pprintf(COM2, "\033[K");				// clear previous message
 
-		struct Pair sensor = bq64get(recent, recent->size - i - 1);
-		qprintf(out, "%d. Module %c, sensor %d", i + 1, sensor.x + 'A', sensor.y);
+		//struct Pair sensor = bq64get(recent, recent->size - i - 1);
+        SensorId* sensor = (SensorId*)rq_get(recent, recent->size - i - 1);
+		pprintf(COM2, "%d. Module %c, sensor %d", i + 1, 
+                sensor->module + 'A'-1, sensor->id);
 	}
-	qprintf(out, "\033[%d;%dH", cs.row, cs.col);	// move cursor back
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back
 }
-*/

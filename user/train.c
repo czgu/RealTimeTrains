@@ -92,11 +92,10 @@ void train_soloff() {
 	//delay(out);
 }
 
-void sensor_reset(Sensor* sn) {
-	/*
+void sensor_reset(SensorData* sn) {
 	sn->lo = 0;
-	sn->hi = 0;*/
-	sn->data = 0;
+	sn->hi = 0;
+	//sn->data = 0;
 }
 
 void sensor_request(unsigned int module_id) {

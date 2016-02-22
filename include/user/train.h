@@ -49,14 +49,14 @@ void train_soloff();
 #define SNSIZE 2
 #define SNREQUEST 0xc0
 
-typedef struct Sensor {
-	/*
+typedef struct SensorData {
 	char lo;
-	char hi;*/
-	short data;
-} Sensor;
+	char hi;
+	//short data;
+    // WARNING: If more data is added here, need to modify train_sensor.c
+} SensorData;
 
-void sensor_reset(Sensor*);
+void sensor_reset(SensorData*);
 void sensor_request(unsigned int module_id);
 
 #endif

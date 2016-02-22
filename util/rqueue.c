@@ -67,3 +67,7 @@ inline void rq_clear(RQueue* q) {
 	q->size = 0;
 	q->first = 0;
 }
+
+inline void* rq_get(RQueue* q, int index) {
+    return (void *)(q->buffer + ((q->first + index) % q->max_size) * q->unit_size);
+}
