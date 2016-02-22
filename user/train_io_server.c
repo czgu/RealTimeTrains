@@ -90,9 +90,8 @@ void train_output_notifier_task() {
 
         (void)err;
 
-        //PutStr(1, "send \n\r");
-        Delay(1);
-
+        PutStr(1, "\0\0\0\0\0\0\0");
+        //Delay(5);
         *write_loc = out;
     }
 }
