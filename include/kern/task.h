@@ -45,6 +45,7 @@ typedef struct Task_Scheduler {
     Event events[EVENT_FLAG_LEN];
 
     int halt;
+    int kernel_stats;
 } Task_Scheduler;
 
 void scheduler_init(Task_Scheduler* scheduler);

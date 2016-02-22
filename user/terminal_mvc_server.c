@@ -18,7 +18,8 @@ void terminal_controller_server_task() {
     Create(10, terminal_input_listener_task);
     Create(10, terminal_time_listener_task);
     Create(10, terminal_view_listener_task);
-    
+    Create(10, terminal_kernel_status_listener_task);
+
     Create(10, train_command_task);
 
     char input_buffer[INPUT_BUFFER_LEN + 1];
@@ -53,6 +54,17 @@ void terminal_controller_server_task() {
                 draw_msg.opcode = DRAW_TIME;
                 rq_push_back(&draw_buffer, &draw_msg);
 
+                break;
+            case KERNEL_STATS_UPDATE:
+                Reply(sender, 0, 0);
+
+                draw_msg.opcode = DRAW_STATS;
+        
+                // copy short
+                draw_msg.param[0] = controller_msg.param[0];
+                draw_msg.param[1] = controller_msg.param[1];
+
+                rq_push_back(&draw_buffer, &draw_msg);
                 break;
             case INPUT_UPDATE: {
                 char c = controller_msg.param[0];
@@ -192,6 +204,11 @@ void terminal_view_listener_task() {
                     // print_msg(&cs, draw_msg.param);
                     break;
                 }
+                case DRAW_STATS: {
+                    short val = (draw_msg.param[0] << 8) | draw_msg.param[1]; // hack
+                    print_stats(&cs, val);
+                    break;
+                }   
             }    
         }
     }
@@ -218,6 +235,22 @@ void terminal_time_listener_task() {
         Send(logical_server_tid, &opcode, sizeof(char), 0, 0);        
     }
 }
+
+void terminal_kernel_status_listener_task() {
+    int logical_server_tid = WhoIs("term controller");
+    
+    TERMmsg msg;
+    msg.opcode = KERNEL_STATS_UPDATE;
+
+    for (;;) {
+        short stat = AwaitEvent(KERNEL_STATS);
+        msg.param[0] = (stat & 0xFF00) >> 8; // upper 8
+        msg.param[1] = (stat & 0xFF); // lower 8
+
+        Send(logical_server_tid, &msg, sizeof(TERMmsg), 0, 0);
+    }
+}
+
 
 // HELPERS
 int parse_command_block(char* str, int str_len, TERMmsg* msg) {

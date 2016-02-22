@@ -4,6 +4,9 @@
 #define CSTIMEX 15
 #define CSTIMEY 1
 
+#define CSSTATSX 1
+#define CSSTATSY 2
+
 #define CSSWITCHX 2
 #define CSSWITCHY 4
 #define CSSWITCHL 9		// col position for left col
@@ -41,5 +44,6 @@ void reset_cursor(Cursor* cs);
 void print_time(Cursor* cs, unsigned int ticks);
 void print_switch(Cursor* cs, char switch_status, int index);
 void print_sensor(Cursor* cs, RQueue* recent);
+void print_stats(Cursor* cs, short percent);
 
 #endif

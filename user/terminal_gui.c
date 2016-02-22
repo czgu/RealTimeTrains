@@ -65,6 +65,14 @@ void print_time(Cursor* cs, unsigned int ticks) {
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
 }
 
+void print_stats(Cursor* cs, short percent) {
+	pprintf(COM2, "\033[%d;%dH", CSSTATSY, CSSTATSX);
+	PutStr(COM2, "\033[K");							// clear previous message
+	pprintf(COM2, "idle: %d.%d ", percent/10, percent%10);
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
+}
+
+
 void print_clr() {
 	pprintf(COM2, "\033[2J");			// clear screen
 }

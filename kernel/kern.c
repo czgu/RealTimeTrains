@@ -60,12 +60,16 @@ int main() {
     kernel_init(&task_scheduler);
 
     volatile int* timer_val = (volatile int*)(TIMER3_BASE + VAL_OFFSET);
+
     unsigned int total_time_passed = 0;
     unsigned int total_idle_time_passed = 0;
+
+    /*
     unsigned int total_swi_time_passed = 0;
     unsigned int total_irq_time_passed = 0;
     unsigned int total_task_time_passed = 0;
     unsigned int total_bwio_time_passed = 0;
+    */
 
     int timer_last = TIMER_INIT_VAL;
     unsigned int last_printed_time = 0;
@@ -77,6 +81,8 @@ int main() {
         }
         
         //DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
+        total_time_passed += get_time_passed(timer_val, &timer_last);
+        /*
         time_passed = get_time_passed(timer_val, &timer_last);
         total_time_passed += time_passed;
 
@@ -85,6 +91,7 @@ int main() {
         } else {
             total_swi_time_passed += time_passed;
         }
+        */
 
         // DEBUG_MSG("exit kernel \n\r");
         asm_kern_exit(task_scheduler.active, &request);
@@ -93,9 +100,12 @@ int main() {
         total_time_passed += time_passed;
         if (task_scheduler.active->priority == 31) {
             total_idle_time_passed += time_passed;
-        } else {
+        } 
+        /*
+        else {
             total_task_time_passed += time_passed;
         }
+        */
         
         // print percentage usage for idle task
         if (total_time_passed - last_printed_time > (TIMER_PER_SEC * 1)) {
@@ -105,19 +115,32 @@ int main() {
                 total_task_time_passed, total_swi_time_passed,
                 total_irq_time_passed, total_bwio_time_passed);
             */
+
+            if (task_scheduler.events[KERNEL_STATS].wait_task != 0) {
+                return_to_task(total_idle_time_passed * 1000 / total_time_passed, task_scheduler.events[KERNEL_STATS].wait_task, &task_scheduler);
+                task_scheduler.events[KERNEL_STATS].wait_task = 0;
+            }
+
+
             total_time_passed = 0;
             total_idle_time_passed = 0;
+
+            /*
             total_task_time_passed = 0;
             total_swi_time_passed = 0;
             total_irq_time_passed = 0;
             total_bwio_time_passed = 0;
-            last_printed_time = total_time_passed;
-            
+            */
+
+            last_printed_time = total_time_passed;            
         }
+
+        /*
 
         time_passed = get_time_passed(timer_val, &timer_last);
         total_time_passed += time_passed;
         total_bwio_time_passed += time_passed;
+        */
 
         handle(request, &task_scheduler);
     }
