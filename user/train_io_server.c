@@ -90,7 +90,8 @@ void train_output_notifier_task() {
 
         (void)err;
 
-        //Delay(8);
+        //PutStr(1, "send \n\r");
+        Delay(1);
 
         *write_loc = out;
     }
@@ -105,7 +106,6 @@ void train_modem_notifier_task() {
         cts_on = AwaitEvent(COM1_MODEM_IRQ);
 
         if (cts_on) {
-            //PutStr(1, "Clear to send\n\r");
             Send(server_tid, &msg, sizeof(IOOP), 0, 0);
         }
     }
