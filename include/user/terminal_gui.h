@@ -33,7 +33,6 @@ void reset_cursor(Cursor* cs);
 
 // Part-specific
 void print_time(Cursor* cs, unsigned int ticks);
-void print_switch(Cursor* cs); // struct Switch, int index);
-void print_sensor(Cursor* cs);//, struct BQueue64* recent);
+void print_switch(Cursor* cs, char switch_status, int index);
 
 #endif

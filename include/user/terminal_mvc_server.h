@@ -7,7 +7,8 @@ typedef enum {
     TIME_UPDATE = 0,
     INPUT_UPDATE,
     SENSOR_UPDATE,
-    VIEW_READY
+    VIEW_READY,
+    TRAIN_CMD_READY
 } CONTROLLER_OP;
 
 typedef enum {
@@ -37,8 +38,6 @@ void terminal_input_listener_task();
 void terminal_time_listener_task();
 
 //HELPERS
-#define SWITCH_DIR_S 33
-#define SWITCH_DIR_C 34
 int parse_command_block(char* str, int str_len, TERMmsg* cmd);
 
 #endif

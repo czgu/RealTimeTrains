@@ -1,6 +1,8 @@
 #include <terminal_mvc_server.h>
 
 #include <terminal_gui.h>
+#include <train_logic_task.h>
+
 #include <syscall.h>
 #include <io.h>
 
@@ -14,19 +16,25 @@ void terminal_controller_server_task() {
     Create(10, terminal_input_listener_task);
     Create(10, terminal_time_listener_task);
     Create(10, terminal_view_listener_task);
+    
+    Create(10, train_command_task);
 
-
-    char input_buffer[INPUT_BUFFER_LEN];
+    char input_buffer[INPUT_BUFFER_LEN + 1];
     int input_len = 0;
 
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;
     rq_init(&draw_buffer, draw_buffer_pool, 20, sizeof(TERMmsg));
 
+    TERMmsg command_buffer_pool[20];
+    RQueue command_buffer;
+    rq_init(&command_buffer, command_buffer_pool, 20, sizeof(TERMmsg));
+
     TERMmsg controller_msg;
     TERMmsg draw_msg;    
 
     int view_listener_tid = -1;
+    int train_command_tid = -1;
 
     int sender;
     for (;;) {
@@ -51,6 +59,7 @@ void terminal_controller_server_task() {
                 if (c == '\r') {
                     int parse_succ = parse_command_block(input_buffer, input_len, &controller_msg);
                     if (parse_succ == 0) {
+                        // push some output
                         draw_msg.opcode = DRAW_CMD;
                         draw_msg.param[0] = controller_msg.opcode;
                         draw_msg.param[1] = controller_msg.param[0];
@@ -60,11 +69,10 @@ void terminal_controller_server_task() {
 
                         if (controller_msg.opcode == CMD_Q)
                             Halt();
-
-                    } else {
-                        pprintf(COM2, "\033[%d;%dH", 25, 1);
-                        PutnStr(COM2, input_buffer, input_len); 
-                    }
+                    
+                        // push the command
+                        rq_push_back(&command_buffer, &controller_msg);
+                    } 
 
                     input_len = 0;
                 }
@@ -84,12 +92,20 @@ void terminal_controller_server_task() {
                 break;
             case VIEW_READY:
                 view_listener_tid = sender;
-                break;   
+                break;
+            case TRAIN_CMD_READY:
+                train_command_tid = sender;
+                break;
             }
 
             if (view_listener_tid > 0 && !rq_empty(&draw_buffer)) {   
                 draw_msg = *((TERMmsg *)rq_pop_front(&draw_buffer));
                 Reply(view_listener_tid, &draw_msg, sizeof(TERMmsg));
+            }
+
+            if (train_command_tid > 0 && !rq_empty(&command_buffer)) {
+                controller_msg = *((TERMmsg *)rq_pop_front(&command_buffer));
+                Reply(train_command_tid, &controller_msg, sizeof(TERMmsg));
             }
         }
     }
@@ -133,11 +149,19 @@ void terminal_view_listener_task() {
                     break;
                 }
                 case DRAW_CMD:  {
-                    draw_msg.param[0] += 'A';
-                    draw_msg.param[1] += '0';
-                    draw_msg.param[2] += '0';
-                    draw_msg.param[3] = 0;
-                    print_msg(&cs, draw_msg.param);
+                    // DEBUG ------------------------
+                    pprintf(COM2, "\033[%d;%dH", 24, 1);
+                    pprintf(COM2, "\033[K");
+
+                    pprintf(COM2, "'%d %d %d'", draw_msg.param[0], draw_msg.param[1], draw_msg.param[2]);
+
+
+                    if (draw_msg.param[0] == CMD_SW) {
+                        print_switch(&cs, draw_msg.param[2], draw_msg.param[1]);
+                    }
+        
+
+                    // print_msg(&cs, draw_msg.param);
                     break;
                 }
             }    
@@ -169,6 +193,8 @@ void terminal_time_listener_task() {
 
 // HELPERS
 int parse_command_block(char* str, int str_len, TERMmsg* msg) {
+    str[str_len] = 0;
+
     if (str_len > 10 || str_len == 0) {
         return -1;
     }

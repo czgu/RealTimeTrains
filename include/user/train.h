@@ -17,12 +17,14 @@ typedef struct Train {
 	int p_spd;	// previous speed
 } Train;
 
+int train_cmd(char c1, char c2);
 void train_init(Train*, int id);
 void train_setspeed(Train*, int speed);
 
 /*
  * Sends reverse command to train and accelerates to previous speed.
  */
+
 void train_reverse(Train*);
 
 #define SWADDRBASEL 1

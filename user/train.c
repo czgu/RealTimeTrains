@@ -21,14 +21,21 @@ void delay(struct BQueue* buffer) {
 }*/
 
 int train_cmd(char c1, char c2) {
+    /*
     Putc(COM1, c1);
     Putc(COM1, c2);
+
+
     return 0;
-    /*
+    */
+    
+    //pprintf(COM2, "\033[%d;%dH", 27, 1);
+    //pprintf(COM2, "send '%d %d'", c1, c2);
+
     char msg[2];
     msg[0] = c1;
     msg[1] = c2;
-    return PutnStr(COM1, msg, sizeof(char) * 2);*/
+    return PutnStr(COM1, msg, sizeof(char) * 2);
 }
 
 void train_setspeed(Train* train, int speed) {

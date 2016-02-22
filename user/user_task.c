@@ -40,9 +40,11 @@ void basic_print_task() {
 
     //train_setspeed(&train2, 2);
     //train_reverse(&train1);
-    //train_setspeed(&train1, 2);
-    //Delay(10);
-    train_setspeed(&train2, 6);
+    train_setspeed(&train1, 10);
+    Delay(500);
+
+    train_setspeed(&train1, 0);
+    //train_setspeed(&train1, 10);
     /*
     Delay(1000);
     train_setspeed(&train2, 2);*/
@@ -63,7 +65,7 @@ void first_task() {
     Create(TRAIN_SERVER_PRIORITY, train_input_server_task);
 
 
-    Create(15, terminal_controller_server_task);
-    Create(14, basic_print_task);
+    Create(10, terminal_controller_server_task);
+    //Create(14, basic_print_task);
     return;
 }   

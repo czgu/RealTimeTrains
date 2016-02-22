@@ -3,36 +3,37 @@
 #include <io.h>
 #include <syscall.h>
 
+// for constants
+#include <train_logic_task.h>
+
 void init_time() {
 	PutStr(COM2, "\033[H");					// move cursor to top-left
 	PutStr(COM2, "Time elapsed:");
 }
 
-void init_switches() { //(struct Switch* switches, int nswitches) {
+void init_switches() {
 	pprintf(COM2, "\033[%d;%dH", CSSWITCHY - 1, CSSWITCHX);
 	PutStr(COM2, "Switches:");
 
-    /*   
 	int i;
-	int half = nswitches / 2;
+	int half = NUM_TRAIN_SWITCH / 2;
 	for (i = 0; i < half; i++) {
-		qprintf(out, "\033[%d;%dH", CSSWITCHY + i, CSSWITCHX);
-		qprintf(out, "%d:\tC\t%d:\tC", switches[i].addr, switches[i + half].addr);
+		pprintf(COM2, "\033[%d;%dH", CSSWITCHY + i, CSSWITCHX);
+		pprintf(COM2, "%d:\tC\t%d:\tC", i + 1, i + half + 1);
 	}
-    */
     
 }
 
 void init_sensors() {
 	pprintf(COM2, "\033[%d;%dH", CSSENSORY - 1, CSSENSORX);
 	PutStr(COM2, "Recent sensors:");
-	/*
+	
 	int i;
 	for(i = 0; i < 5; i++) {
-		qprintf(out, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
-		qprintf(out, "%d.", i + 1);
+		pprintf(COM2, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
+		pprintf(COM2, "%d.", i + 1);
 	}
-*/
+
 }
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
@@ -86,24 +87,23 @@ void reset_cursor(Cursor* cs) {
 	pprintf(COM2, "\033[K");
 }
 
-/*
-void print_switch(struct cursor cs, 
-				  struct Switch sw, int index) {
+void print_switch(Cursor* cs, char switch_status, int index) {
+    index --;
 	int col = (index < 12)? CSSWITCHL : CSSWITCHR;
-	qprintf(out, "\033[%d;%dH", CSSWITCHY + (index % 11), col);
+	pprintf(COM2, "\033[%d;%dH", CSSWITCHY + (index % 11), col);
 
-	switch(sw.status) {
-		case STRAIGHT:
+	switch(switch_status) {
+		case SWITCH_DIR_S:
 			//qputc(out, 'S');
-			P(out, 'S');
+			Putc(COM2, 'S');
 			break;
-		case CURVED:
-			qputc(out, 'C');
+		case SWITCH_DIR_C:
+			Putc(COM2, 'C');
 			break;
 	}
-	qprintf(out, "\033[%d;%dH", cs.row, cs.col);	// move cursor back to original position
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
 }
-
+/*
 void print_sensor(struct BQueue* out, struct cursor cs, struct BQueue64* recent) {
 	int i;
 	for(i = 0; i < recent->size; i++) {
