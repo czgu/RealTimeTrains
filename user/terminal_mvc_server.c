@@ -2,6 +2,7 @@
 
 #include <terminal_gui.h>
 #include <train_logic_task.h>
+#include <train_sensor.h>
 
 #include <syscall.h>
 #include <io.h>
@@ -21,14 +22,11 @@ void terminal_controller_server_task() {
     Create(10, terminal_kernel_status_listener_task);
 
     Create(10, train_command_task);
+    Create(10, train_sensor_task);
 
     char input_buffer[INPUT_BUFFER_LEN + 1];
     int input_len = 0;
-
-    SensorId tsensors[MAX_RECENT_SENSORS];
-    RQueue triggered_sensors;
-    rq_init(&triggered_sensors, tsensors, MAX_RECENT_SENSORS, sizeof(SensorId));
-
+    
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;
     rq_init(&draw_buffer, draw_buffer_pool, 20, sizeof(TERMmsg));
@@ -44,6 +42,9 @@ void terminal_controller_server_task() {
     int train_command_tid = -1;
 
     int sender;
+
+    //Cursor cs;
+    //print_msg(&cs, "term_ctrl_task\n\r");
     for (;;) {
         int size = Receive(&sender, &controller_msg, sizeof(TERMmsg));
         if (size >= sizeof(char)) {
@@ -107,27 +108,26 @@ void terminal_controller_server_task() {
                 break;
             }
             case SENSOR_UPDATE: {
+                //Cursor cs;
+                //print_msg(&cs, "sensor update\n\r");
                 Reply(sender, 0, 0);
                 char module = controller_msg.param[0];
-                short data = (short*) (controller_msg.param + 1);
+                int data = controller_msg.param[1] << 8 
+                           | controller_msg.param[2];
                 /*
                 char group = controller_msg.param[1];
                 char data = controller_msg.param[2];*/
 
                 int i;
 
-                SensorId sensor;
-                sensor.module = module;
+                draw_msg.opcode = DRAW_SENSOR;
+                draw_msg.param[0] = module;
                 for (i = 0; i < 16; i++) {
                     if ((0x8000 >> i) & data) {
-                        if (triggered_sensors.size == MAX_RECENT_SENSORS) {
-                            rq_pop_front(&triggered_sensors);
-                        }
-                        sensor.id = i + 1;
-                        rq_push_back(&triggered_sensors, &sensor);
+                        draw_msg.param[1] = i + 1;
+                        rq_push_back(&draw_buffer, &draw_msg);
                     }
                 }
-                
                 break;
             }
             case VIEW_READY:
@@ -158,6 +158,10 @@ void terminal_view_listener_task() {
     Cursor cs;
     init_screen(&cs);
 
+    SensorId triggered_sensor_pool[30];
+    RQueue triggered_sensors;
+    rq_init(&triggered_sensors, 
+            triggered_sensor_pool, 30, sizeof(SensorId));
 
     int logical_server_tid = WhoIs("term controller");
 
@@ -209,6 +213,24 @@ void terminal_view_listener_task() {
                     print_stats(&cs, val);
                     break;
                 }   
+                case DRAW_SENSOR: {
+                    //print_msg(&cs, "draw sensor\n\r");
+                    SensorId sensor;
+                    sensor.module = draw_msg.param[0];
+                    sensor.id = draw_msg.param[1];
+
+                    if (triggered_sensors.size == MAX_RECENT_SENSORS) {
+                        rq_pop_back(&triggered_sensors);
+                    }
+                    rq_push_front(&triggered_sensors, &sensor);
+                    //print_sensor(&cs, index, sensor);
+                    int i;
+                    for (i = 0; i < triggered_sensors.size; i++) {
+                        SensorId* sensor = (SensorId*)rq_get(&triggered_sensors, i);
+                        print_sensor(&cs, i, *sensor);
+                    }
+                    break;
+                }
             }    
         }
     }

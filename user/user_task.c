@@ -18,6 +18,9 @@
 #include <syscall.h>
 #include <string.h>
 
+// temp
+#include <train_sensor.h>
+
 void empty_task() {
 }
 
@@ -66,6 +69,6 @@ void first_task() {
 
 
     Create(10, terminal_controller_server_task);
-    //Create(14, basic_print_task);
+    //Create(14, train_sensor_task);
     return;
 }   
