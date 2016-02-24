@@ -73,6 +73,7 @@ void clocknotifier_task() {
     for (;;) {
         msg.data = AwaitEvent(TIMER_IRQ);
         int err = Send(server_tid, (void*) &msg, sizeof(CSmsg), 0, 0);
+        /*
         switch(err) {
             case 0:
                 // success
@@ -95,6 +96,7 @@ void clocknotifier_task() {
                           "unknown error");
                 break;
         }
+        */
     }
 }
 

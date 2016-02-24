@@ -84,7 +84,7 @@ clean:
 	rm -f $(KER_DIR)/*.s
 	rm -f $(KER_DIR)/*.o
 	rm -f $(KER_DIR)/*.elf
-	rm -f $(KER_DIR)/$(FILE).map
+	rm -f $(KER_DIR)/*.map
 	rm -f $(TASK_DIR)/*.s
 	rm -f $(TASK_DIR)/*.o
 	rm -f $(UTIL_DIR)/*.s

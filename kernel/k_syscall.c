@@ -18,7 +18,6 @@ void handle(Request* request, Task_Scheduler* task_scheduler) {
 }
 
 void handle_irq(Task_Scheduler* task_scheduler) {
-    // int VIC1_IRQ = *((volatile int*)(VIC1_BASE + VIC_IRQ_STATUS));
     int VIC2_IRQ = *((volatile int*)(VIC2_BASE + VIC_IRQ_STATUS));
 
     EVENT_FLAG event = NONE_IRQ;

@@ -179,11 +179,11 @@ void kernel_init(Task_Scheduler* task_scheduler) {
 
 void icu_init() {
     // set all interrupt to irq
-    *((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
+    //*((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_SELECT)) = 0x0;
 
     // disable all interrupts
-    *((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
+    //*((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) = 0x0;
 
     // enable Timer 3 interrupt
