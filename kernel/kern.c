@@ -14,7 +14,6 @@ void kernel_init(Task_Scheduler* scheduler);
 void kernel_end();
 
 void icu_init();
-void icu_end();
 
 // IO functions
 #define UART_FAST 115200 
@@ -120,7 +119,7 @@ int main() {
             */
 
             if (task_scheduler.events[KERNEL_STATS].wait_task != 0) {
-                return_to_task(total_idle_time_passed * 100 / total_time_passed, task_scheduler.events[KERNEL_STATS].wait_task, &task_scheduler);
+                return_to_task(total_idle_time_passed * 1000 / total_time_passed, task_scheduler.events[KERNEL_STATS].wait_task, &task_scheduler);
                 task_scheduler.events[KERNEL_STATS].wait_task = 0;
             }
 
@@ -202,9 +201,8 @@ void icu_init() {
 }
 
 void clock_init() {
-    unsigned int timer_base = TIMER3_BASE;
-    volatile int* timer_loader = (int*)(timer_base + LDR_OFFSET);
-    volatile int* timer_control = (int*)(timer_base + CTRL_OFFSET);
+    volatile int* timer_loader = (int*)(TIMER3_BASE + LDR_OFFSET);
+    volatile int* timer_control = (int*)(TIMER3_BASE + CTRL_OFFSET);
 
     *timer_loader = TIMER_INIT_VAL;
     *timer_control = CLKSEL_MASK | MODE_MASK | ENABLE_MASK;
@@ -266,12 +264,15 @@ int io_set_connection( int channel, int speed) {
 }
 
 void kernel_end() {
-    icu_end();
-}
-
-void icu_end() {
-    // disable all interrupts
+    // disble ICU
     *((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) = 0x0;
-}
+ 
+    // disable clock   
+    *((int*)(TIMER3_BASE + CTRL_OFFSET)) &= ~ENABLE_MASK;
 
+    // disable io interrupt
+    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) &= ~(TIEN_MASK | RIEN_MASK | MSIEN_MASK);
+    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) &= ~(TIEN_MASK | RIEN_MASK);
+
+}
