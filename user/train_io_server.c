@@ -3,6 +3,8 @@
 #include <syscall.h>
 #include <priority.h>
 
+#include <io.h>
+
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");
     IOmsg msg;
@@ -82,11 +84,24 @@ void train_output_notifier_task() {
     int server_tid = WhoIs("UART1 Output");
     IOmsg msg;
     msg.opcode = NOTIFIER_UPDATE;
+
+    // int line = 25;
+
     for (;;) {
         char out;
 
         int* write_loc = (int *)AwaitEvent(COM1_SEND_IRQ);
+        write_loc = 0x808c0000;
+        
         Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
+
+        //pprintf(COM2, "\033[%d;%dH", line++, 1);
+        //PutStr(COM2, "\033[K");
+        //pprintf(COM2, "write %d to %d", out, write_loc);
+
+        //if (line > 50)
+        //    line = 25;
+
 
         *write_loc = out;
     }
@@ -95,11 +110,10 @@ void train_output_notifier_task() {
 void train_modem_notifier_task() {
     int server_tid = WhoIs("UART1 Output");
     IOmsg msg;
-    int cts_on;
+    int cts_on = 0;
     msg.opcode = NOTIFIER2_UPDATE;
     for (;;) {
         cts_on = AwaitEvent(COM1_MODEM_IRQ);
-
         if (cts_on) {
             Send(server_tid, &msg, sizeof(IOOP), 0, 0);
         }

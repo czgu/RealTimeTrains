@@ -11,7 +11,10 @@
 
 // Initialization functions
 void kernel_init(Task_Scheduler* scheduler);
+void kernel_end();
+
 void icu_init();
+void icu_end();
 
 // IO functions
 #define UART_FAST 115200 
@@ -117,7 +120,7 @@ int main() {
             */
 
             if (task_scheduler.events[KERNEL_STATS].wait_task != 0) {
-                return_to_task(total_idle_time_passed * 1000 / total_time_passed, task_scheduler.events[KERNEL_STATS].wait_task, &task_scheduler);
+                return_to_task(total_idle_time_passed * 100 / total_time_passed, task_scheduler.events[KERNEL_STATS].wait_task, &task_scheduler);
                 task_scheduler.events[KERNEL_STATS].wait_task = 0;
             }
 
@@ -144,6 +147,8 @@ int main() {
 
         handle(request, &task_scheduler);
     }
+
+    kernel_end();
     
     return 0;
 }
@@ -179,11 +184,11 @@ void kernel_init(Task_Scheduler* task_scheduler) {
 
 void icu_init() {
     // set all interrupt to irq
-    //*((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
+    *((int*)(VIC1_BASE + VIC_INT_SELECT)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_SELECT)) = 0x0;
 
     // disable all interrupts
-    //*((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
+    *((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
     *((int*)(VIC2_BASE + VIC_INT_ENABLE)) = 0x0;
 
     // enable Timer 3 interrupt
@@ -208,13 +213,11 @@ void clock_init() {
 void io_init() {
     // UART 2
     io_set_connection(COM2, UART_FAST);
-
-    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK);
+    *((volatile int *)(UART2_BASE + UART_CTLR_OFFSET)) |= (RIEN_MASK);
 
     // UART 1
     io_set_connection(COM1, UART_SLOW);
-
-    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (TIEN_MASK | RIEN_MASK | MSIEN_MASK);
+    *((volatile int *)(UART1_BASE + UART_CTLR_OFFSET)) |= (RIEN_MASK);
 }
 
 /*
@@ -261,3 +264,14 @@ int io_set_connection( int channel, int speed) {
 		    return -1;
 	}
 }
+
+void kernel_end() {
+    icu_end();
+}
+
+void icu_end() {
+    // disable all interrupts
+    *((int*)(VIC1_BASE + VIC_INT_ENABLE)) = 0x0;
+    *((int*)(VIC2_BASE + VIC_INT_ENABLE)) = 0x0;
+}
+

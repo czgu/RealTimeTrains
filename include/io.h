@@ -40,5 +40,6 @@ void stringbuffer_putw(StringBuffer *sb, int n, char fc, char *bf );
 
 // public
 void pprintf(int channel, char *format, ... );
+void debug_msg(char* msg);
 
 #endif
