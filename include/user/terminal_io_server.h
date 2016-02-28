@@ -5,7 +5,7 @@
 #define TERM_GET_BUFFER_SIZE 100
 #define TERM_COURIER_SIZE 40
 
-#define TERM_PUT_BUFFER_SIZE 600
+#define TERM_PUT_BUFFER_SIZE 1000
 
 // Server task
 void terminal_input_notifier_task();

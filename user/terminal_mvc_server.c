@@ -13,113 +13,44 @@
 
 #define MAX_RECENT_SENSORS 10
 
-void terminal_controller_server_task() {
-    RegisterAs("term controller");
+void terminal_view_server_task() {
+    RegisterAs("View Server");
 
-    Create(10, terminal_input_listener_task);
     Create(10, terminal_time_listener_task);
-    Create(10, terminal_view_listener_task);
     Create(10, terminal_kernel_status_listener_task);
-
-    Create(10, train_command_task);
-    Create(10, train_sensor_task);
-
-    char input_buffer[INPUT_BUFFER_LEN + 1];
-    int input_len = 0;
+    Create(10, terminal_view_worker_task);
     
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;
     rq_init(&draw_buffer, draw_buffer_pool, 20, sizeof(TERMmsg));
 
-    TERMmsg command_buffer_pool[20];
-    RQueue command_buffer;
-    rq_init(&command_buffer, command_buffer_pool, 20, sizeof(TERMmsg));
+    TERMmsg request_msg;
 
-    TERMmsg controller_msg;
-    TERMmsg draw_msg;    
-
-    int view_listener_tid = -1;
+    int view_worker_tid = -1;
     int train_command_tid = -1;
 
     int sender;
 
-    //Cursor cs;
-    //print_msg(&cs, "term_ctrl_task\n\r");
     for (;;) {
-        int size = Receive(&sender, &controller_msg, sizeof(TERMmsg));
+        int size = Receive(&sender, &request_msg, sizeof(TERMmsg));
         if (size >= sizeof(char)) {
-            switch(controller_msg.opcode) {
-            case TIME_UPDATE:
-                Reply(sender, 0, 0);                
-
-                draw_msg.opcode = DRAW_TIME;
-                rq_push_back(&draw_buffer, &draw_msg);
-
-                break;
-            case KERNEL_STATS_UPDATE:
+            switch(request_msg.opcode) {
+            case DRAW_TIME:
+            case DRAW_CHAR:
+            case DRAW_KERNEL_STATS: 
+            case DRAW_CMD:
                 Reply(sender, 0, 0);
-
-                draw_msg.opcode = DRAW_STATS;
-        
-                // copy short
-                draw_msg.param[0] = controller_msg.param[0];
-                draw_msg.param[1] = controller_msg.param[1];
-
-                rq_push_back(&draw_buffer, &draw_msg);
+                rq_push_back(&draw_buffer, &request_msg);
                 break;
-            case INPUT_UPDATE: {
-                char c = controller_msg.param[0];
-                Reply(sender, 0, 0);                
-
-                draw_msg.opcode = DRAW_CHAR;
-                draw_msg.param[0] = c;
-                rq_push_back(&draw_buffer, &draw_msg);
-
-                if (c == '\r') {
-                    int parse_succ = parse_command_block(input_buffer, input_len, &controller_msg);
-                    if (parse_succ == 0) {
-                        // push some output
-                        draw_msg.opcode = DRAW_CMD;
-                        draw_msg.param[0] = controller_msg.opcode;
-                        draw_msg.param[1] = controller_msg.param[0];
-                        draw_msg.param[2] = controller_msg.param[1];
-                        
-                        rq_push_back(&draw_buffer, &draw_msg);
-
-                        if (controller_msg.opcode == CMD_Q)
-                            Halt();
-                    
-                        // push the command
-                        rq_push_back(&command_buffer, &controller_msg);
-                    } 
-
-                    input_len = 0;
-                }
-                else if (c == '\b') {
-                    if (input_len > 0)
-                        input_len --;
-                }
-                else if (input_len < INPUT_BUFFER_LEN) {
-                    input_buffer[input_len++] = c;
-                } else {
-                    // too much input, dont push
-                    rq_pop_back(&draw_buffer);
-                }
-                break;
-            }
-            case SENSOR_UPDATE: {
-                //Cursor cs;
-                //print_msg(&cs, "sensor update\n\r");
+            case DRAW_MODULE: {
                 Reply(sender, 0, 0);
-                char module = controller_msg.param[0];
-                int data = controller_msg.param[1] << 8 
-                           | controller_msg.param[2];
-                /*
-                char group = controller_msg.param[1];
-                char data = controller_msg.param[2];*/
+                char module = request_msg.param[0];
+                int data = request_msg.param[1] << 8 
+                           | request_msg.param[2];
 
                 int i;
 
+                TERMmsg draw_msg;
                 draw_msg.opcode = DRAW_SENSOR;
                 draw_msg.param[0] = module;
                 for (i = 0; i < 16; i++) {
@@ -130,29 +61,26 @@ void terminal_controller_server_task() {
                 }
                 break;
             }
-            case VIEW_READY:
-                view_listener_tid = sender;
+            case VIEW_WORKER_READY:
+                view_worker_tid = sender;
                 break;
-            case TRAIN_CMD_READY:
-                train_command_tid = sender;
-                break;
+            //case TRAIN_CMD_READY:
+            //    train_command_tid = sender;
+            //    break;
             }
 
-            if (view_listener_tid > 0 && !rq_empty(&draw_buffer)) {   
-                draw_msg = *((TERMmsg *)rq_pop_front(&draw_buffer));
-                Reply(view_listener_tid, &draw_msg, sizeof(TERMmsg));
-            }
+            if (view_worker_tid > 0 && !rq_empty(&draw_buffer)) {   
+                TERMmsg draw_msg = *((TERMmsg *)rq_pop_front(&draw_buffer));
+                Reply(view_worker_tid, &draw_msg, sizeof(TERMmsg));
 
-            if (train_command_tid > 0 && !rq_empty(&command_buffer)) {
-                controller_msg = *((TERMmsg *)rq_pop_front(&command_buffer));
-                Reply(train_command_tid, &controller_msg, sizeof(TERMmsg));
+                view_worker_tid = -1;
             }
         }
     }
 }
 
-void terminal_view_listener_task() {
-    char view_ready = VIEW_READY;
+void terminal_view_worker_task() {
+    char view_ready = VIEW_WORKER_READY;
     TERMmsg draw_msg;
 
     Cursor cs;
@@ -163,10 +91,10 @@ void terminal_view_listener_task() {
     rq_init(&triggered_sensors, 
             triggered_sensor_pool, 30, sizeof(SensorId));
 
-    int logical_server_tid = WhoIs("term controller");
+    int view_server_tid = WhoIs("View Server");
 
     for (;;) {
-        int sz = Send(logical_server_tid, &view_ready, sizeof(char), &draw_msg, sizeof(TERMmsg));
+        int sz = Send(view_server_tid, &view_ready, sizeof(char), &draw_msg, sizeof(TERMmsg));
         if (sz > 0) {
             switch(draw_msg.opcode) {
                 case DRAW_CHAR: {
@@ -208,7 +136,7 @@ void terminal_view_listener_task() {
                     // print_msg(&cs, draw_msg.param);
                     break;
                 }
-                case DRAW_STATS: {
+                case DRAW_KERNEL_STATS: {
                     short val = (draw_msg.param[0] << 8) | draw_msg.param[1]; // hack
                     print_stats(&cs, val);
                     break;
@@ -225,7 +153,7 @@ void terminal_view_listener_task() {
                     rq_push_front(&triggered_sensors, &sensor);
                     //print_sensor(&cs, index, sensor);
                     int i;
-                    for (i = 0; i < triggered_sensors.size; i++) {
+                    for (i = 0; i < triggered_sensors.size && i < 10; i++) {
                         SensorId* sensor = (SensorId*)rq_get(&triggered_sensors, i);
                         print_sensor(&cs, i, *sensor);
                     }
@@ -237,39 +165,82 @@ void terminal_view_listener_task() {
 }
 
 void terminal_input_listener_task() {
-    int logical_server_tid = WhoIs("term controller");
+    int view_server_tid = WhoIs("View Server");
+    int command_server_tid = WhoIs("Command Server");
 
     TERMmsg msg;
-    msg.opcode = INPUT_UPDATE;
+    msg.opcode = DRAW_CHAR;
+
+    char input_buffer[INPUT_BUFFER_LEN + 1];
+    int input_len = 0;
 
     for (;;) {
-        msg.param[0] = Getc(COM2);
-        Send(logical_server_tid, &msg, sizeof(char) * 2, 0, 0);
+        char c = Getc(COM2);
+
+        int send_to_draw = 1;
+
+        // parse
+        if (c == '\r') {
+            TERMmsg command_msg;
+
+            int parse_succ = parse_command_block(input_buffer, input_len, &command_msg);
+            if (parse_succ == 0) {
+                // push some output
+                TERMmsg draw_msg;
+
+                draw_msg.opcode = DRAW_CMD;
+                draw_msg.param[0] = command_msg.opcode;
+                draw_msg.param[1] = command_msg.param[0];
+                draw_msg.param[2] = command_msg.param[1];
+ 
+                Send(view_server_tid, &draw_msg, sizeof(TERMmsg), 0, 0);               
+
+                //TODO: send to train server 
+                Send(command_server_tid, &command_msg, sizeof(TERMmsg), 0, 0);
+            } 
+
+            input_len = 0;
+        }
+        else if (c == '\b') {
+            if (input_len > 0)
+                input_len --;
+        }
+        else if (input_len < INPUT_BUFFER_LEN) {
+            input_buffer[input_len++] = c;
+        } else {
+            send_to_draw = 0; // don't draw when over flow
+        }
+
+        if (send_to_draw > 0) {
+            // send to draw
+            msg.param[0] = c;
+            Send(view_server_tid, &msg, sizeof(char) * 2, 0, 0);
+        }
     }   
 }
 
 void terminal_time_listener_task() {
-    char opcode = TIME_UPDATE;
-    int logical_server_tid = WhoIs("term controller");
+    char opcode = DRAW_TIME;
+    int view_server_tid = WhoIs("View Server");
 
     for (;;) {
         Delay(10);
-        Send(logical_server_tid, &opcode, sizeof(char), 0, 0);        
+        Send(view_server_tid, &opcode, sizeof(char), 0, 0);        
     }
 }
 
 void terminal_kernel_status_listener_task() {
-    int logical_server_tid = WhoIs("term controller");
+    int view_server_tid = WhoIs("View Server");
     
     TERMmsg msg;
-    msg.opcode = KERNEL_STATS_UPDATE;
+    msg.opcode = DRAW_KERNEL_STATS;
 
     for (;;) {
         short stat = AwaitEvent(KERNEL_STATS);
         msg.param[0] = (stat & 0xFF00) >> 8; // upper 8
         msg.param[1] = (stat & 0xFF); // lower 8
 
-        Send(logical_server_tid, &msg, sizeof(TERMmsg), 0, 0);
+        Send(view_server_tid, &msg, sizeof(TERMmsg), 0, 0);
     }
 }
 

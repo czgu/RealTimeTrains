@@ -4,7 +4,9 @@
 #include <clockserver.h>
 #include <terminal_io_server.h>
 #include <train_io_server.h>
+
 #include <terminal_mvc_server.h>
+#include <train_logic_task.h>
 
 #include <priority.h>
 
@@ -53,6 +55,14 @@ void basic_print_task() {
     train_setspeed(&train2, 2);*/
 }
 
+void bootstrap_user_task() {
+    Create(10, terminal_view_server_task);
+    Create(10, train_command_server_task);
+
+    Create(10, terminal_input_listener_task);
+    Create(10, train_sensor_task);
+}
+
 void first_task() {
     Create(IDLE_TASK_PRIORITY, idle_task);
 
@@ -67,7 +77,7 @@ void first_task() {
     Create(TRAIN_SERVER_PRIORITY, train_output_server_task);
     Create(TRAIN_SERVER_PRIORITY, train_input_server_task);
 
-
-    Create(10, terminal_controller_server_task);
+    // Boot strap user tasks
+    bootstrap_user_task();
     return;
 }   

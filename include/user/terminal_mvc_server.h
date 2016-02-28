@@ -2,7 +2,7 @@
 #define _TERMINAL_MVC_SERVER_H_
 
 #define INPUT_BUFFER_LEN 80
-
+/*
 typedef enum {
     TIME_UPDATE = 0,
     INPUT_UPDATE,
@@ -11,21 +11,17 @@ typedef enum {
     VIEW_READY,
     TRAIN_CMD_READY
 } CONTROLLER_OP;
+*/
 
 typedef enum {
     DRAW_CHAR = 0,
     DRAW_TIME,
+    DRAW_MODULE,
     DRAW_SENSOR,
-    DRAW_STATS,
-    DRAW_CMD
+    DRAW_KERNEL_STATS,
+    DRAW_CMD,
+    VIEW_WORKER_READY,
 } VIEW_OP;
-
-typedef enum {
-    CMD_Q = 0,
-    CMD_TR,
-    CMD_RV,
-    CMD_SW
-} COMMAND_OP;
 
 typedef struct TERMmsg {
     char opcode;
@@ -33,9 +29,8 @@ typedef struct TERMmsg {
 } TERMmsg;
 
 
-
-void terminal_controller_server_task();
-void terminal_view_listener_task();
+void terminal_view_server_task();
+void terminal_view_worker_task();
 void terminal_input_listener_task();
 void terminal_time_listener_task();
 

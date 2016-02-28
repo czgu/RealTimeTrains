@@ -5,8 +5,17 @@
 #define SWITCH_DIR_C 34
 #define NUM_TRAIN_SWITCH 22
 
-void train_command_task();
-void train_listener_task();
+typedef enum {
+    CMD_Q = 0,
+    CMD_TR,
+    CMD_RV,
+    CMD_SW,
+    CMD_WORKER_READY,
+    CMD_RV_DONE
+} COMMAND_OP;
+
+void train_command_server_task();
+void train_command_worker_task();
 
 // little tasks
 void train_reverse_task();

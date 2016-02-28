@@ -42,7 +42,7 @@ void train_setspeed(Train* train, int speed) {
 	train->p_spd = train->speed;
 	train->speed = speed;
 
-    train_cmd(speed, train->id);
+    //train_cmd(speed, train->id);
 	//qputc(buffer, speed);
 	//qputc(buffer, train->id);
 	//delay(buffer);
@@ -102,4 +102,8 @@ void sensor_request(unsigned int module_id) {
 	//qputc(out, SNREQUEST | module_id);
     Putc(COM1, SNREQUEST | module_id);
 	//delay(out);
+}
+
+void sensor_request_upto(unsigned int module_id) {
+    Putc(COM1, MULTI_SNREQUEST | module_id);
 }

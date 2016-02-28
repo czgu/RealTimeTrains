@@ -48,7 +48,7 @@ void train_soloff();
 #define SNLEN 5
 #define SNSIZE 2
 #define SNREQUEST 0xc0
-
+#define MULTI_SNREQUEST 0x80
 typedef struct SensorData {
 	char lo;
 	char hi;
@@ -58,5 +58,7 @@ typedef struct SensorData {
 
 void sensor_reset(SensorData*);
 void sensor_request(unsigned int module_id);
+void sensor_request_upto(unsigned int module_id);
+
 
 #endif

@@ -17,7 +17,7 @@ UTIL_DIR = util
 TASK_DIR = user
 
 USER = $(shell whoami)
-FILE = kernel4
+FILE = train1
 
 DEBUGFLAGS = -D_ASSERT -D_DEBUG
 OPTIMIZATION = 2

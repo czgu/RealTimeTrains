@@ -116,19 +116,9 @@ void print_switch(Cursor* cs, char switch_status, int index) {
 
 void print_sensor(Cursor* cs, int index, SensorId sensor) {
     pprintf(COM2, "\033[%d;%dH", CSSENSORY + index, CSSENSORX);
-    pprintf(COM2, "\033[K");				// clear previous message
-    pprintf(COM2, "%d. %c %d", index + 1, 
-            sensor.module + 'A'-1, sensor.id);
-    /*
-	int i;
-	for(i = 0; i < recent->size; i++) {
-		pprintf(COM2, "\033[%d;%dH", CSSENSORY + i, CSSENSORX);
-		pprintf(COM2, "\033[K");				// clear previous message
+    PutStr(COM2, "\033[K"); // clear previous message
 
-		//struct Pair sensor = bq64get(recent, recent->size - i - 1);
-        SensorId* sensor = (SensorId*)rq_get(recent, recent->size - i - 1);
-		pprintf(COM2, "%d. Module %c, sensor %d", i + 1, 
-                sensor->module + 'A'-1, sensor->id);
-	}*/
+    pprintf(COM2, "%d. %c%d", index + 1, 
+            sensor.module + 'A'-1, sensor.id);
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back
 }
