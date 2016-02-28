@@ -4,6 +4,8 @@
 #include <syscall.h>
 #include <rqueue.h>
 
+#include <io.h>
+
 // Server caches all information about the train
 void train_command_server_task() {
     RegisterAs("Command Server");
@@ -12,7 +14,7 @@ void train_command_server_task() {
     TERMmsg request_msg;
 
     // Train Track initialization - Done in server
-
+    // init train
     Train trains[81];
     for (i = 0; i < 81; i++) {
         train_init(trains + i, i);
@@ -23,6 +25,9 @@ void train_command_server_task() {
         train_cmd(SWITCH_DIR_C, i);
     }
     train_soloff();
+
+    // init sensor
+    unsigned short sensor_bitmap[SNLEN + 1] = {0};
 
     // Create worker and its buffer
     Create(10, train_command_worker_task);
@@ -69,6 +74,21 @@ void train_command_server_task() {
                     Reply(sender, 0, 0);
                     train_setspeed(trains + (int)request_msg.param[0], request_msg.param[1]);
                     break;
+                case CMD_SENSOR_UPDATE: {
+                    unsigned short old_bitmap = sensor_bitmap[(int)request_msg.param[0]];
+                    unsigned short new_bitmap = request_msg.param[1] << 8 | request_msg.param[2];
+                    sensor_bitmap[(int)request_msg.param[0]] = new_bitmap;
+
+                    // bits 1: changed from 0 to 1, bits 0: otherwise
+                    new_bitmap = (new_bitmap ^ old_bitmap) & old_bitmap; 
+
+                    request_msg.param[1] = new_bitmap >> 8;
+                    request_msg.param[2] = new_bitmap & 0xFF;
+
+                    Reply(sender, &request_msg, sizeof(TERMmsg));
+
+                    break;
+                }
             }
 
             if (command_worker_tid >= 0) {
@@ -138,4 +158,35 @@ void train_switch_task() {
     // turn off solenoid
     Delay(10);
     train_soloff();
+}
+
+void train_sensor_task() {
+    int view_server = WhoIs("View Server");
+    int command_server = WhoIs("Command Server");
+    TERMmsg msg;
+
+    SensorData sensors[SNLEN + 1];  // only sensors [1, SNLEN] are valid
+
+    int i;
+    for (;;) {
+        sensor_request_upto(SNLEN);
+
+        for (i = 1; i <= SNLEN; i++) {
+            sensors[i].lo = Getc(COM1);
+            sensors[i].hi = Getc(COM1);
+
+            // send sensor data
+            msg.opcode = CMD_SENSOR_UPDATE;
+            msg.param[0] = i;
+            msg.param[1] = sensors[i].lo;
+            msg.param[2] = sensors[i].hi;
+
+            Send(command_server, &msg, sizeof(TERMmsg), &msg, sizeof(TERMmsg));
+
+            if (msg.param[1] != 0 || msg.param[2] != 0) {
+                msg.opcode = DRAW_MODULE;
+                Send(view_server, &msg, sizeof(TERMmsg), 0, 0);
+            }
+        }
+    }
 }

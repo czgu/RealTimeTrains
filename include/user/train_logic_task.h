@@ -11,11 +11,14 @@ typedef enum {
     CMD_RV,
     CMD_SW,
     CMD_WORKER_READY,
-    CMD_RV_DONE
+    CMD_RV_DONE,
+    CMD_SENSOR_UPDATE
 } COMMAND_OP;
 
 void train_command_server_task();
 void train_command_worker_task();
+
+void train_sensor_task();
 
 // little tasks
 void train_reverse_task();

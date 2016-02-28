@@ -20,9 +20,6 @@
 #include <syscall.h>
 #include <string.h>
 
-// temp
-#include <train_sensor.h>
-
 void empty_task() {
 }
 
@@ -31,28 +28,6 @@ void idle_task() {
     for(;;) {
         i++;
     }
-}
-
-void basic_print_task() {
-    int out_tid = WhoIs("UART2 Output");
-    int in_tid = WhoIs("UART2 Input");
-
-    DEBUG_MSG("basic_print_task\n\r");
-    //Delay(100);
-    Train train1, train2;
-    train_init(&train1, 58);
-    train_init(&train2, 63);
-
-    //train_setspeed(&train2, 2);
-    //train_reverse(&train1);
-    train_setspeed(&train1, 10);
-    Delay(500);
-
-    train_setspeed(&train1, 0);
-    //train_setspeed(&train1, 10);
-    /*
-    Delay(1000);
-    train_setspeed(&train2, 2);*/
 }
 
 void bootstrap_user_task() {

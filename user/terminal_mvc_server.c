@@ -2,7 +2,6 @@
 
 #include <terminal_gui.h>
 #include <train_logic_task.h>
-#include <train_sensor.h>
 
 #include <syscall.h>
 #include <io.h>
@@ -27,7 +26,6 @@ void terminal_view_server_task() {
     TERMmsg request_msg;
 
     int view_worker_tid = -1;
-    int train_command_tid = -1;
 
     int sender;
 
@@ -45,18 +43,16 @@ void terminal_view_server_task() {
             case DRAW_MODULE: {
                 Reply(sender, 0, 0);
                 char module = request_msg.param[0];
-                int data = request_msg.param[1] << 8 
-                           | request_msg.param[2];
+                int data = request_msg.param[1] << 8 | request_msg.param[2];
 
                 int i;
 
-                TERMmsg draw_msg;
-                draw_msg.opcode = DRAW_SENSOR;
-                draw_msg.param[0] = module;
+                request_msg.opcode = DRAW_SENSOR;
+                request_msg.param[0] = module;
                 for (i = 0; i < 16; i++) {
                     if ((0x8000 >> i) & data) {
-                        draw_msg.param[1] = i + 1;
-                        rq_push_back(&draw_buffer, &draw_msg);
+                        request_msg.param[1] = i + 1;
+                        rq_push_back(&draw_buffer, &request_msg);
                     }
                 }
                 break;
@@ -64,14 +60,11 @@ void terminal_view_server_task() {
             case VIEW_WORKER_READY:
                 view_worker_tid = sender;
                 break;
-            //case TRAIN_CMD_READY:
-            //    train_command_tid = sender;
-            //    break;
             }
 
             if (view_worker_tid > 0 && !rq_empty(&draw_buffer)) {   
-                TERMmsg draw_msg = *((TERMmsg *)rq_pop_front(&draw_buffer));
-                Reply(view_worker_tid, &draw_msg, sizeof(TERMmsg));
+                request_msg = *((TERMmsg *)rq_pop_front(&draw_buffer));
+                Reply(view_worker_tid, &request_msg, sizeof(TERMmsg));
 
                 view_worker_tid = -1;
             }
@@ -153,7 +146,7 @@ void terminal_view_worker_task() {
                     rq_push_front(&triggered_sensors, &sensor);
                     //print_sensor(&cs, index, sensor);
                     int i;
-                    for (i = 0; i < triggered_sensors.size && i < 10; i++) {
+                    for (i = 0; i < triggered_sensors.size; i++) {
                         SensorId* sensor = (SensorId*)rq_get(&triggered_sensors, i);
                         print_sensor(&cs, i, *sensor);
                     }
