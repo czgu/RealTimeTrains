@@ -25,7 +25,7 @@ typedef enum {
 
 typedef struct TERMmsg {
     char opcode;
-    char param[3];
+    char param[7];
 } TERMmsg;
 
 

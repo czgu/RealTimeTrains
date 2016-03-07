@@ -242,7 +242,7 @@ void terminal_kernel_status_listener_task() {
 int parse_command_block(char* str, int str_len, TERMmsg* msg) {
     str[str_len] = 0;
 
-    if (str_len > 10 || str_len == 0) {
+    if (str_len > 25 || str_len == 0) {
         return -1;
     }
     
@@ -287,6 +287,22 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->opcode = CMD_SW;
             msg->param[0] = switch_num;
             msg->param[1] = switch_dir;
+            return 0;
+        } else if(strncmp(str, "cal ", 4) == 0) {
+            int type, train, speed, module, sensor;
+            char* current_c = str + 4;
+            a2i('0', &current_c, 10, &type);
+            a2i('0', &current_c, 10, &train);
+            a2i('0', &current_c, 10, &speed);
+            a2i('0', &current_c, 10, &module);
+            a2i('0', &current_c, 10, &sensor);
+
+            msg->opcode = CMD_CALIBRATE;
+            msg->param[0] = type;
+            msg->param[1] = train;
+            msg->param[2] = speed;
+            msg->param[3] = module;
+            msg->param[4] = sensor;
             return 0;
         }
     } 

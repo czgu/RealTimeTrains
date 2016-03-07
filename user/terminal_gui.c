@@ -19,7 +19,7 @@ void init_switches() {
 	int half = NUM_TRAIN_SWITCH / 2;
 	for (i = 0; i < half; i++) {
 		pprintf(COM2, "\033[%d;%dH", CSSWITCHY + i, CSSWITCHX);
-		pprintf(COM2, "%d:\tC\t%d:\tC", i + 1, i + half + 1);
+		pprintf(COM2, "%d:\tS\t%d:\tS", i + 1, i + half + 1);
 	}
     
 }
@@ -84,10 +84,16 @@ void print_backsp(Cursor* cs) {
 }
 
 void print_msg(Cursor* cs, char* msg) {
-	pprintf(COM2, "\033[%d;%dH", CSMSGY, CSMSGX);
+    static int i = 0;
+
+	pprintf(COM2, "\033[%d;%dH", CSMSGY + i, CSMSGX);
 	PutStr(COM2, "\033[K");				// clear previous message
 	PutStr(COM2, msg);
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);
+
+    if (++i > 15)
+        i = 0;
+
 }
 
 void reset_cursor(Cursor* cs) {

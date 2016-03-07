@@ -12,7 +12,9 @@ typedef enum {
     CMD_SW,
     CMD_WORKER_READY,
     CMD_RV_DONE,
-    CMD_SENSOR_UPDATE
+    CMD_SENSOR_UPDATE,
+    CMD_SENSOR_MODULE_AWAIT,
+    CMD_CALIBRATE
 } COMMAND_OP;
 
 void train_command_server_task();
@@ -23,5 +25,10 @@ void train_sensor_task();
 // little tasks
 void train_reverse_task();
 void train_switch_task();
+
+// send to server
+void train_set_speed(int server_tid, int train, int speed);
+void set_track(int server_tid, int track, int curve);
+
 
 #endif

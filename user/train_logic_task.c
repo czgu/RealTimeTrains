@@ -4,6 +4,8 @@
 #include <syscall.h>
 #include <rqueue.h>
 
+#include <calibration.h>
+
 #include <io.h>
 
 // Server caches all information about the train
@@ -22,12 +24,13 @@ void train_command_server_task() {
 
     // init switch
     for (i = 1; i <= NUM_TRAIN_SWITCH; i++) {
-        train_cmd(SWITCH_DIR_C, i);
+        train_cmd(SWITCH_DIR_S, i);
     }
     train_soloff();
 
     // init sensor
     unsigned short sensor_bitmap[SNLEN + 1] = {0};
+    int sensor_await[SNLEN + 1] = {-1};
 
     // Create worker and its buffer
     Create(10, train_command_worker_task);
@@ -37,6 +40,11 @@ void train_command_server_task() {
     rq_init(&command_buffer, command_buffer_pool, 20, sizeof(TERMmsg));
 
     int command_worker_tid = -1;
+
+    TERMmsg location_buffer_pool[20];
+    RQueue courier_buffer;
+    rq_init(&courier_buffer, location_buffer_pool, 20, sizeof(TERMmsg));
+    
 
     int sender;
     for (;;) {
@@ -48,8 +56,14 @@ void train_command_server_task() {
                     break;
                 case CMD_TR:
                     Reply(sender, 0, 0);
+
+                    // set speed in the model
                     train_setspeed(trains + (int)request_msg.param[0], request_msg.param[1]);
 
+                    rq_push_back(&command_buffer, &request_msg);
+                    break;
+                case CMD_CALIBRATE:
+                    Reply(sender, 0, 0);
                     rq_push_back(&command_buffer, &request_msg);
                     break;
                 case CMD_RV:
@@ -75,18 +89,31 @@ void train_command_server_task() {
                     train_setspeed(trains + (int)request_msg.param[0], request_msg.param[1]);
                     break;
                 case CMD_SENSOR_UPDATE: {
-                    unsigned short old_bitmap = sensor_bitmap[(int)request_msg.param[0]];
+                    int module = request_msg.param[0];
+                    unsigned short old_bitmap = sensor_bitmap[module];
                     unsigned short new_bitmap = request_msg.param[1] << 8 | request_msg.param[2];
-                    sensor_bitmap[(int)request_msg.param[0]] = new_bitmap;
+                    unsigned short delta_bitmap = 0;
+
+                    sensor_bitmap[module] = new_bitmap;
 
                     // bits 1: changed from 0 to 1, bits 0: otherwise
-                    new_bitmap = (new_bitmap ^ old_bitmap) & old_bitmap; 
+                    delta_bitmap = (new_bitmap ^ old_bitmap) & ~old_bitmap; 
 
-                    request_msg.param[1] = new_bitmap >> 8;
-                    request_msg.param[2] = new_bitmap & 0xFF;
+                    request_msg.param[1] = delta_bitmap >> 8;
+                    request_msg.param[2] = delta_bitmap & 0xFF;
 
                     Reply(sender, &request_msg, sizeof(TERMmsg));
 
+                    // FIXME: make it better
+                    if (new_bitmap != 0 && sensor_await[module] >= 0) {
+                        Reply(sensor_await[module], &new_bitmap, sizeof(unsigned short));
+                        sensor_await[module] = -1;
+                    }
+
+                    break;
+                }
+                case CMD_SENSOR_MODULE_AWAIT: {
+                    sensor_await[(int)request_msg.param[0]] = sender;
                     break;
                 }
             }
@@ -114,6 +141,26 @@ void train_command_worker_task() {
         int sz = Send(command_server_tid, &requestOP, sizeof(char), &command, sizeof(TERMmsg));
         if (sz >= sizeof(char)) {
             switch(command.opcode) {
+                case CMD_CALIBRATE: {
+                    int cid;
+
+                    // TODO: switch
+                    if (command.param[0] == 0) {
+                        cid = Create(25, calibrate_stop);
+                    } else if (command.param[0] == 1) {
+                        cid = Create(25, calibrate_velocity);
+                    } else if (command.param[0] == 2) {
+                        cid = Create(25, calibrate_acceleration_move);
+                    } else if (command.param[0] == 3) {
+                        cid = Create(25, calibrate_acceleration_delta);
+                    } else if (command.param[0] == 4) {
+                        cid = Create(25, calibrate_stop_time);
+                    }
+
+                    Send(cid, &command, sizeof(TERMmsg), 0, 0);
+        
+                    break;
+                }
                 case CMD_TR:
                     train_cmd(command.param[1], command.param[0]);
                     break; 
@@ -190,3 +237,22 @@ void train_sensor_task() {
         }
     }
 }
+
+void train_set_speed(int server_tid, int train, int speed) {
+    TERMmsg msg;
+    msg.opcode = CMD_TR;
+    msg.param[0] = train;
+    msg.param[1] = speed;
+
+    Send(server_tid, &msg, sizeof(TERMmsg), 0, 0);
+}
+
+void set_track(int server_tid, int track, int curve) {
+    TERMmsg msg;
+    msg.opcode = CMD_SW;
+    msg.param[0] = track;
+    msg.param[1] = curve ? SWITCH_DIR_C : SWITCH_DIR_S;
+
+    Send(server_tid, &msg, sizeof(TERMmsg), 0, 0);
+}
+

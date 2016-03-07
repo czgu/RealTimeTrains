@@ -7,6 +7,7 @@
 
 #include <terminal_mvc_server.h>
 #include <train_logic_task.h>
+#include <calibration.h>
 
 #include <priority.h>
 
@@ -54,5 +55,6 @@ void first_task() {
 
     // Boot strap user tasks
     bootstrap_user_task();
+
     return;
 }   
