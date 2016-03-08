@@ -6,6 +6,7 @@
 #include <syscall.h>
 #include <io.h>
 
+#include <train.h>
 #include <string.h>
 #include <bqueue.h>
 #include <rqueue.h>
@@ -276,9 +277,9 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             a2i('0', &current_c, 10, &switch_num);
 
             if (*current_c == 'S') {
-                switch_dir = SWITCH_DIR_S;
+                switch_dir = STRAIGHT;
             } else if (*current_c == 'C') {
-                switch_dir = SWITCH_DIR_C;
+                switch_dir = CURVED;
             } else {
                 return -1;
             }

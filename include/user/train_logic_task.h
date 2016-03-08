@@ -20,15 +20,9 @@ typedef enum {
 void train_command_server_task();
 void train_command_worker_task();
 
-void train_sensor_task();
 
 // little tasks
 void train_reverse_task();
 void train_switch_task();
-
-// send to server
-void train_set_speed(int server_tid, int train, int speed);
-void set_track(int server_tid, int track, int curve);
-
 
 #endif

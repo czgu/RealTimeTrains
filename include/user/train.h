@@ -3,7 +3,7 @@
 
 //#include <bqueue.h>
 
-typedef enum { STRAIGHT, CURVED } sw_state;
+typedef enum { STRAIGHT = 0, CURVED } sw_state;
 
 #define SWITCHCODE 0x20
 
@@ -19,13 +19,13 @@ typedef struct Train {
 
 int train_cmd(char c1, char c2);
 void train_init(Train*, int id);
-void train_setspeed(Train*, int speed);
+void train_set_speed(int location_server_tid, int train, int speed);
 
 /*
- * Sends reverse command to train and accelerates to previous speed.
+ * Sends reverse command to train
  */
+void train_reverse(int location_server_tid, int train);
 
-void train_reverse(Train*);
 
 #define SWADDRBASEL 1
 #define SWADDRBASEH 0x99
@@ -41,8 +41,8 @@ typedef struct Track_Switch {
 
 void switch_init(Track_Switch*, char addr);
 // opt = 1 to turn solenoid off after
-void train_setswitch(Track_Switch*, sw_state state, int opt);
-void train_soloff();
+void track_set_switch(int location_server_tid, int track_switch, char curve);
+void track_soloff();
 
 
 #define SNLEN 5

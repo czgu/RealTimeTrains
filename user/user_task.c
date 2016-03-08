@@ -7,6 +7,8 @@
 
 #include <terminal_mvc_server.h>
 #include <train_logic_task.h>
+#include <train_location_server_task.h>
+
 #include <calibration.h>
 
 #include <priority.h>
@@ -32,6 +34,9 @@ void idle_task() {
 }
 
 void bootstrap_user_task() {
+    Create(10, train_location_server_task);
+
+
     Create(10, terminal_view_server_task);
     Create(10, train_command_server_task);
 

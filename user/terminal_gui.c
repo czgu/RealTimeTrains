@@ -125,6 +125,6 @@ void print_sensor(Cursor* cs, int index, SensorId sensor) {
     PutStr(COM2, "\033[K"); // clear previous message
 
     pprintf(COM2, "%d. %c%d", index + 1, 
-            sensor.module + 'A'-1, sensor.id);
+            sensor.module + 'A', sensor.id);
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back
 }
