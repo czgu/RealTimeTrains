@@ -154,10 +154,13 @@ inline void wait_module_add(WaitModule* wm, char sensor ,int tid) {
 inline void wait_module_update(WaitModule* wm, unsigned short bitmap) {
     if (wm->wait_num == 0 || bitmap == 0)
         return;
+
     int i;
     for (i = 0; i < 16; i++) {
         if (wm->sensor_tid[i] >= 0 && (bitmap & (0x8000 >> i))) {
             Reply(wm->sensor_tid[i], 0, 0);
+            wm->sensor_tid[i] = -1;
+            wm->wait_num --;
         }
     }
 
