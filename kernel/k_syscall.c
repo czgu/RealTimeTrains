@@ -292,8 +292,8 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
     Request* receiver_request = receiver->last_request;
 
     // sender isn't reply blocked or waiting on reply from this receiver
-    if (sender->state != REPLY_BLOCKED || 
-        sender_request->param[0] != receiver->tid) {
+    if (sender->state != REPLY_BLOCKED) {
+        //sender_request->param[0] != receiver->tid) {
         RETURN_ACTIVE(-3); 
     }
 

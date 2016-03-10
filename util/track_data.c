@@ -2,6 +2,8 @@
 
 #include <track_data.h>
 
+track_node train_track[TRACK_MAX] = {{0}};
+
 static void *memset(void *s, int c, unsigned int n) {
   unsigned char *p = s;
   while(n --> 0) { *p++ = (unsigned char)c; }

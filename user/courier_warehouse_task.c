@@ -7,7 +7,6 @@ void courier_task() {
 
     char courier_request = COURIER_NOTIF;
 
-
     Receive(&sender, &receiver, sizeof(int));
     Reply(sender, 0, 0);
 

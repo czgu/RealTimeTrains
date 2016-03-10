@@ -20,12 +20,15 @@ typedef enum {
     DRAW_SENSOR,
     DRAW_KERNEL_STATS,
     DRAW_CMD,
+    DRAW_TRAIN_LOC,
     VIEW_WORKER_READY,
 } VIEW_OP;
 
+// size 96 bits
 typedef struct TERMmsg {
     char opcode;
     char param[7];
+    int extra;
 } TERMmsg;
 
 

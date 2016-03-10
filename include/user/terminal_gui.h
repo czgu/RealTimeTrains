@@ -21,6 +21,9 @@
 #define CSMSGX 1
 #define CSMSGY 24
 
+#define CSTRAINX 1
+#define CSTRAINY 25
+
 #include <rqueue.h>
 
 typedef struct Cursor {
@@ -45,5 +48,6 @@ void print_time(Cursor* cs, unsigned int ticks);
 void print_switch(Cursor* cs, char switch_status, int index);
 void print_stats(Cursor* cs, short percent);
 void print_sensor(Cursor* cs, int index, SensorId sensor);
+void print_train(Cursor* cs, int train, int src_type, int src_num, int dest_type, int dest_num, int dist);
 
 #endif

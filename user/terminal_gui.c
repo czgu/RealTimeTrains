@@ -5,6 +5,8 @@
 
 // for constants
 #include <train_logic_task.h>
+#include <track_data.h>
+#include <train.h>
 
 void init_time() {
 	PutStr(COM2, "\033[H");					// move cursor to top-left
@@ -38,6 +40,7 @@ void init_sensors() {
 }
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
+    PutStr(COM2, "\033[?25l");
 	print_clr();				// clear screen
 
 	init_time();
@@ -109,11 +112,11 @@ void print_switch(Cursor* cs, char switch_status, int index) {
 	pprintf(COM2, "\033[%d;%dH", CSSWITCHY + (index % 11), col);
 
 	switch(switch_status) {
-		case SWITCH_DIR_S:
+		case DIR_STRAIGHT:
 			//qputc(out, 'S');
 			Putc(COM2, 'S');
 			break;
-		case SWITCH_DIR_C:
+		case DIR_CURVED:
 			Putc(COM2, 'C');
 			break;
 	}
@@ -128,3 +131,43 @@ void print_sensor(Cursor* cs, int index, SensorId sensor) {
             sensor.module + 'A', sensor.id);
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back
 }
+
+//TODO: need a better way, maybe just pass index of the track is good
+void print_landmark(int type, int num) {
+    switch(type) {
+        case NODE_SENSOR:
+            pprintf(COM2, "%c%d", num / 16 + 'A', num % 16 + 1);
+            break;
+        case NODE_BRANCH:
+            pprintf(COM2, "BR%d", num);
+            break;
+        case NODE_MERGE:
+            pprintf(COM2, "MR%d", num);
+            break;
+        case NODE_ENTER:
+            pprintf(COM2, "EN%d", num);
+            break;
+        case NODE_EXIT:
+            pprintf(COM2, "EX%d", num);
+            break;
+        
+    }
+}
+
+void print_train(Cursor* cs, int train, int src_type, int src_num, int dest_type, int dest_num, int dist) {
+    pprintf(COM2, "\033[%d;%dH", CSTRAINY + train - TRAIN_ID_MIN, CSTRAINX);
+    PutStr(COM2, "\033[K"); // clear previous message
+
+    pprintf(COM2, "%d: ", train);
+    print_landmark(src_type, src_num);
+    PutnStr(COM2, " - ", 3);
+    print_landmark(dest_type, dest_num);
+
+    PutnStr(COM2, ", dist: ", 8);
+    pprintf(COM2, "%d", dist);
+
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
+    
+}
+
+

@@ -21,6 +21,8 @@ inline void wait_module_update(WaitModule* wm, unsigned short bitmap);
 void train_location_server_task();
 void train_sensor_task();
 
+void train_tracer_task();
+
 void wait_sensor(int location_server_tid, char module, int sensor);
 
 #endif

@@ -1,3 +1,6 @@
+#ifndef _TRACK_DATA_H_
+#define _TRACK_DATA_H_
+
 /* THIS FILE IS GENERATED CODE -- DO NOT EDIT */
 
 //#include "track_node.h"
@@ -40,4 +43,6 @@ struct track_node {
 void init_tracka(track_node *track);
 void init_trackb(track_node *track);
 
+extern track_node train_track[TRACK_MAX];
 
+#endif

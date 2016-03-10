@@ -38,6 +38,7 @@ void terminal_view_server_task() {
             case DRAW_CHAR:
             case DRAW_KERNEL_STATS: 
             case DRAW_CMD:
+            case DRAW_TRAIN_LOC:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -153,6 +154,10 @@ void terminal_view_worker_task() {
                     }
                     break;
                 }
+                case DRAW_TRAIN_LOC:
+                    
+                    print_train(&cs, draw_msg.param[0], draw_msg.param[1], draw_msg.param[2], draw_msg.param[3], draw_msg.param[4], (draw_msg.param[5] << 8) | draw_msg.param[6]);
+                    break;
             }    
         }
     }

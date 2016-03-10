@@ -1,7 +1,57 @@
 #ifndef _TRAIN_H_
 #define _TRAIN_H_
 
-//#include <bqueue.h>
+#include <track_data.h>
+
+extern float train_model_speed[15];
+extern float train_model_stop_dist[15];
+
+int train_cmd(char c1, char c2);
+
+typedef struct TrainModelPosition {
+    track_edge* arc;
+    track_node* next_sensor;
+
+    float dist_travelled; // distance travelled
+    int updated_time;
+} TrainModelPosition;
+
+#define TRAIN_ID_MIN 58
+#define TRAIN_ID_MAX 68
+
+typedef struct TrainModel {
+	short id;		// [1,80]
+	short speed;	// [0,14]
+	short previous_speed;
+    int speed_updated_time; // used to calculate acceleration
+
+    short direction_forward;
+
+    short position_known;
+    TrainModelPosition position;
+} TrainModel;
+
+void train_model_init(TrainModel* train, int id);
+
+// Initialization and helper
+void train_model_init_location(TrainModel* train, int time, short* switches, track_node* sensor_start);
+void train_model_update_location(TrainModel* train, int time,  short* switches);
+
+// track helper
+track_edge* track_next_arc(short* switches, track_edge* current, float* dist);
+track_node* track_next_sensor_node(short* switches, track_edge* current);
+
+void train_model_update_speed(TrainModel* train, int time, short* switches, int speed);
+void train_model_reverse_direction(TrainModel* train, int time, short* switches);
+
+void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches);
+
+void train_set_speed(int location_server_tid, int train, int speed);
+
+/*
+ * Sends reverse command to train
+ */
+void train_reverse(int location_server_tid, int train);
 
 typedef enum { STRAIGHT = 0, CURVED } sw_state;
 
@@ -11,20 +61,6 @@ typedef enum { STRAIGHT = 0, CURVED } sw_state;
 #define SMASK 0x1
 #define CMASK 0x2
 
-typedef struct Train {
-	int id;		// [1,80]
-	int speed;	// [0,14]
-	int p_spd;	// previous speed
-} Train;
-
-int train_cmd(char c1, char c2);
-void train_init(Train*, int id);
-void train_set_speed(int location_server_tid, int train, int speed);
-
-/*
- * Sends reverse command to train
- */
-void train_reverse(int location_server_tid, int train);
 
 
 #define SWADDRBASEL 1

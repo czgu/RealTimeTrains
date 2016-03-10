@@ -5,11 +5,164 @@
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
 
-void train_init(Train* train, int id) {
+float train_model_speed[15] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    3.694805195,
+    4.217654987,
+    4.612380251,
+    5.130327869,
+    5.669384058,
+    6.047342995,
+    6.029865125,
+};
+float train_model_stop_dist[15] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    482.8,
+    533.6,
+    594.8,
+    665.75,
+    745.25,
+    808.75,
+    795.5
+};
+
+void train_model_init(TrainModel* train, int id) {
 	train->id = id;
 	train->speed = 0;
-	train->p_spd = 0;
+	train->previous_speed = 0;
+    train->speed_updated_time = 0;
+
+    train->direction_forward = 1;
+
+    train->position_known = 0;
 }
+
+// Train Model
+void train_model_init_location(
+    TrainModel* train, 
+    int time, 
+    short* switches, 
+    track_node* sensor_start) 
+{
+    train->position_known = 1;
+
+    // initialize first sensor node
+    train->position.dist_travelled = 0;
+    train->position.arc = sensor_start->edge + DIR_AHEAD;
+    train->position.next_sensor = track_next_sensor_node(switches, train->position.arc);
+    
+    train->position.updated_time = time;
+}
+
+void train_model_update_location(TrainModel* train, int time, short* switches) {
+    if (train->position_known) {
+        // TODO: consider acceleration and account speed 0
+        if (train->speed > 0) {
+            if (train->speed_updated_time > train->position.updated_time) {
+                train->position.dist_travelled += (time - train->speed_updated_time) * train_model_speed[train->speed];
+                train->position.dist_travelled += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+            } else {
+                train->position.dist_travelled += (time - train->position.updated_time) * train_model_speed[train->speed];
+            }
+        } else {
+            float stop_time = 300; // TODO: get the actual stop time
+            
+            // update the remaining part of speed
+            if (train->speed_updated_time > train->position.updated_time) {
+                train->position.dist_travelled += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+                train->position.updated_time = train->speed_updated_time;
+            }
+
+            // update the stopping distance, assume uniform
+            if (time - train->speed_updated_time < stop_time) {
+                train->position.dist_travelled += (time - train->position.updated_time)/stop_time * train_model_stop_dist[train->previous_speed];
+            }
+        }
+        train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
+
+        if (train->position.arc == (void *)0)
+            train->position_known = 0;    
+
+        train->position.updated_time = time;
+    }
+}
+
+track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
+    while (*dist > current->dist) {
+        *dist -= current->dist;
+
+        track_node* node = current->dest;
+        switch (node->type) {
+            case NODE_MERGE:
+            case NODE_SENSOR:
+            case NODE_ENTER:
+                current = node->edge + DIR_AHEAD;
+                break;
+            case NODE_BRANCH:
+                current = node->edge + switches[node->num];
+                break;
+            case NODE_EXIT:
+            default:
+                return (void *)0;
+        }
+    }
+    return current;
+}
+
+track_node* track_next_sensor_node(short* switches, track_edge* current) {
+    track_node* node = current->dest;
+    while (node->type != NODE_SENSOR) {
+        switch (node->type) {
+            case NODE_BRANCH:
+                node = node->edge[switches[node->num]].dest;
+            break;
+            case NODE_MERGE:
+            case NODE_ENTER:
+                node = node->edge[DIR_AHEAD].dest;
+            break;
+            case NODE_EXIT:
+            default:
+                return 0;
+        }
+    }
+    return node;
+}
+
+
+void train_model_update_speed(TrainModel* train, int time, short* switches, int speed) {
+    train_model_update_location(train, time, switches);
+    
+    train->previous_speed = train->speed;
+    train->speed = speed;
+    train->speed_updated_time = time;
+}
+
+void train_model_reverse_direction(TrainModel* train, int time, short* switches) {
+    train_model_update_location(train, time, switches);
+    train->direction_forward = !train->direction_forward;
+
+    if (train->position_known) {
+        // Reverse arc
+
+        // TODO: more precise constant based on direction
+        train->position.dist_travelled = train->position.arc->dist - train->position.dist_travelled;
+        train->position.arc = train->position.arc->reverse;
+        train->position.next_sensor = track_next_sensor_node(switches, train->position.arc);
+
+        if (train->position.next_sensor == 0)
+            train->position_known = 0;
+
+        train->position.updated_time = time; 
+    }
+}
+
+void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
+    // TODO: calculate error
+
+    train_model_init_location(train, time, switches, train->position.next_sensor);    
+}
+
+
 
 inline int train_cmd(char c1, char c2) {
     char msg[3];
