@@ -41,7 +41,7 @@ typedef struct Track_Switch {
 
 void switch_init(Track_Switch*, char addr);
 // opt = 1 to turn solenoid off after
-void track_set_switch(int location_server_tid, int track_switch, char curve);
+void track_set_switch(int location_server_tid, int track_switch, char curve, int soloff);
 void track_soloff();
 
 

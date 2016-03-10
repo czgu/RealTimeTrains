@@ -124,8 +124,7 @@ void train_command_worker_task() {
                     break;
                 }
                 case CMD_SW: {
-                    track_set_switch(location_server_tid, command.param[0], command.param[1]);
-                    Create(10, train_switch_task);
+                    track_set_switch(location_server_tid, command.param[0], command.param[1], 1);
                     break;
                 }
             }
@@ -153,8 +152,3 @@ void train_reverse_task() {
     }
 }
 
-void train_switch_task() {
-    // turn off solenoid
-    Delay(15);
-    track_soloff();
-}

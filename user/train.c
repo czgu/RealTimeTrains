@@ -47,7 +47,19 @@ void switch_init(Track_Switch* sw, char addr) {
 	// at once
 }
 
-void track_set_switch(int location_server_tid, int track_switch, char curve) {
+void track_soloff() {
+	//qputc(out, 32);		// turn off solenoid
+    Putc(COM1, 32);         // turn off solenoid
+	//delay(out);
+}
+
+void train_switch_task() {
+    // turn off solenoid
+    Delay(15);
+    track_soloff();
+}
+
+void track_set_switch(int location_server_tid, int track_switch, char curve, int soloff) {
     TERMmsg msg;
     msg.opcode = LOC_SWITCH_UPDATE;
     msg.param[0] = track_switch;
@@ -58,12 +70,10 @@ void track_set_switch(int location_server_tid, int track_switch, char curve) {
     char dir = (curve == STRAIGHT) ? SWITCHCODE | SMASK : SWITCHCODE | CMASK;
 
     train_cmd(dir, track_switch);
-}
 
-void track_soloff() {
-	//qputc(out, 32);		// turn off solenoid
-    Putc(COM1, 32);         // turn off solenoid
-	//delay(out);
+    if (soloff) {
+        Create(30, train_switch_task);
+    }
 }
 
 void sensor_reset(SensorData* sn) {
