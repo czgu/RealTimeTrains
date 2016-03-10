@@ -19,15 +19,22 @@ typedef struct TrainModelPosition {
 #define TRAIN_ID_MIN 58
 #define TRAIN_ID_MAX 68
 
+
+#define TRAIN_MODEL_BIT_FWD 0x1
+#define TRAIN_MODEL_BIT_ACT 0x2
+#define TRAIN_MODEL_BIT_POS 0x4
 typedef struct TrainModel {
+
 	short id;		// [1,80]
 	short speed;	// [0,14]
 	short previous_speed;
     int speed_updated_time; // used to calculate acceleration
 
-    short direction_forward;
+    // 0 - direction_forward
+    // 1 - active
+    // 2 - position_known
+    short bitmap;
 
-    short position_known;
     TrainModelPosition position;
 } TrainModel;
 

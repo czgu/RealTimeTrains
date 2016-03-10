@@ -7,7 +7,8 @@ typedef enum {
     LOC_TRAIN_SPEED_REVERSE_UPDATE,
     LOC_SWITCH_UPDATE,
     LOC_SENSOR_MODULE_UPDATE,
-    LOC_WHERE_IS
+    LOC_WHERE_IS,
+    LOC_TIMER_UPDATE
 } LOCATION_OP;
 
 typedef struct WaitModule {
@@ -19,8 +20,10 @@ void wait_module_init(WaitModule* wm);
 inline void wait_module_add(WaitModule* wm, char sensor, int tid);
 inline void wait_module_update(WaitModule* wm, unsigned short bitmap);
 
+void train_location_server_secretary_task();
 void train_location_server_task();
 void train_sensor_task();
+void train_location_ticker();
 
 void train_tracer_task();
 

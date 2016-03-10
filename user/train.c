@@ -32,9 +32,8 @@ void train_model_init(TrainModel* train, int id) {
 	train->previous_speed = 0;
     train->speed_updated_time = 0;
 
-    train->direction_forward = 1;
-
-    train->position_known = 0;
+    train->bitmap = 0;
+    train->bitmap |= TRAIN_MODEL_BIT_FWD;
 }
 
 // Train Model
@@ -44,7 +43,7 @@ void train_model_init_location(
     short* switches, 
     track_node* sensor_start) 
 {
-    train->position_known = 1;
+    train->bitmap |= TRAIN_MODEL_BIT_POS;
 
     // initialize first sensor node
     train->position.dist_travelled = 0;
@@ -55,7 +54,7 @@ void train_model_init_location(
 }
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
-    if (train->position_known) {
+    if (train->bitmap & TRAIN_MODEL_BIT_POS) {
         // TODO: consider acceleration and account speed 0
         if (train->speed > 0) {
             if (train->speed_updated_time > train->position.updated_time) {
@@ -81,7 +80,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
 
         if (train->position.arc == (void *)0)
-            train->position_known = 0;    
+            train->bitmap &= ~TRAIN_MODEL_BIT_POS;    
 
         train->position.updated_time = time;
     }
@@ -139,9 +138,13 @@ void train_model_update_speed(TrainModel* train, int time, short* switches, int 
 
 void train_model_reverse_direction(TrainModel* train, int time, short* switches) {
     train_model_update_location(train, time, switches);
-    train->direction_forward = !train->direction_forward;
 
-    if (train->position_known) {
+    if (train->bitmap & TRAIN_MODEL_BIT_FWD)
+        train->bitmap &= ~TRAIN_MODEL_BIT_FWD;
+    else 
+        train->bitmap |= TRAIN_MODEL_BIT_FWD;
+
+    if (train->bitmap & TRAIN_MODEL_BIT_POS) {
         // Reverse arc
 
         // TODO: more precise constant based on direction
@@ -150,7 +153,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
         train->position.next_sensor = track_next_sensor_node(switches, train->position.arc);
 
         if (train->position.next_sensor == 0)
-            train->position_known = 0;
+            train->bitmap &= ~TRAIN_MODEL_BIT_POS;
 
         train->position.updated_time = time; 
     }

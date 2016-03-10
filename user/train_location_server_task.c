@@ -60,15 +60,17 @@ void train_location_server_secretary_task() {
 
 void train_location_server_task() {
     Create(10, train_location_server_secretary_task);
-
+    Create(10, train_location_ticker);
 
     // init train
-    int i;
+    int i, t;
     int num_train = TRAIN_ID_MAX - TRAIN_ID_MIN + 1;
     TrainModel train_models[num_train];
     for (i = 0; i < num_train; i++) {
         train_model_init(train_models + i, i + TRAIN_ID_MIN);
     }
+    TrainModel* active_train_models[num_train];
+    int num_active_train = 0;
 
     // init switch
     short switches[NUM_TRAIN_SWITCH + 1] = {DIR_STRAIGHT};
@@ -101,6 +103,11 @@ void train_location_server_task() {
                 
                     if (train_index >= 0 && train_index < num_train && speed >= 0 && speed <= 14) 
                     {
+
+                        if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_BIT_ACT)) {
+                            active_train_models[num_active_train++] = train_models + train_index;
+                            train_models[train_index].bitmap |= TRAIN_MODEL_BIT_ACT;
+                        }
                         // set speed in the model
                         train_model_update_speed(train_models + train_index, Time(), switches, speed);
                     }
@@ -142,15 +149,16 @@ void train_location_server_task() {
                         
                         int time = Time();
                     
-                        int t;
-                        for (t = 0; t < TRAIN_ID_MAX - TRAIN_ID_MIN + 1; t++) {
-                            if (train_models[t].position_known) {
-                                int sensor_idx = train_models[t].position.next_sensor->num;
+                        for (t = 0; t < num_active_train; t++) {
+                            TrainModel* train = active_train_models[t];
+
+                            if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+                                int sensor_idx = train->position.next_sensor->num;
                                 if (module == sensor_idx / 16 && 
                                     (new_bitmap & (0x8000 >> (sensor_idx % 16)))) {
-                                    train_model_next_sensor_triggered(train_models + t, time, switches);
+                                    train_model_next_sensor_triggered(train, time, switches);
                                 }
-                            } else if(train_models[t].speed > 0) {
+                            } else if(train->speed > 0) {
                                 int sensor = -1;
 
                                 // we need 1 sensor, and we should get exact 1 sensor
@@ -168,13 +176,12 @@ void train_location_server_task() {
                                 }
 
                                 if (sensor >= 0) {
-                                    train_model_init_location(train_models + t, time, switches, train_track + (module * 16 + sensor));
+                                    train_model_init_location(train, time, switches, train_track + (module * 16 + sensor));
                                     // Create a tracer program 
-                                    int train_id = t + TRAIN_ID_MIN;
+                                    int train_id = train->id;
                                     int cid = Create(15, train_tracer_task);
                                     Send(cid, &train_id, sizeof(int), 0, 0);
                                 }
-                            
                             }
                         }
                     }
@@ -184,11 +191,19 @@ void train_location_server_task() {
                 case LOC_WHERE_IS: {
                     int train = request_msg.param[0] - TRAIN_ID_MIN;   
 
-                    if (train_models[train].position_known) {
-                        train_model_update_location(train_models + train, Time(), switches);
+                    if (train_models[train].bitmap & TRAIN_MODEL_BIT_POS) {
                         Reply(request_msg.extra, &train_models[train].position, sizeof(TrainModelPosition));
                     } else {
                         Reply(request_msg.extra, 0, 0);
+                    }
+                    break;
+                }
+                case LOC_TIMER_UPDATE: {
+                    int time = Time();
+                    
+                    for (t = 0; t < num_active_train; t++) {
+                        TrainModel* train = active_train_models[t];
+                        train_model_update_location(train, time, switches);
                     }
                     break;
                 }
@@ -303,6 +318,17 @@ void train_sensor_task() {
             sensors[i].lo = lo;
             sensors[i].hi = hi;
         }
+    }
+}
+
+void train_location_ticker() {
+    int pid = MyParentTid();
+    TERMmsg msg;
+    msg.opcode = LOC_TIMER_UPDATE;
+    
+    for (;;) {
+        Send(pid, &msg, sizeof(char), 0, 0);
+        Delay(10);
     }
 }
 
