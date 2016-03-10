@@ -14,8 +14,9 @@ typedef struct WaitModule {
     int sensor_tid[16];
     int wait_num;
 } WaitModule;
+
 void wait_module_init(WaitModule* wm);
-inline void wait_module_add(WaitModule* wm, char sensor ,int tid);
+inline void wait_module_add(WaitModule* wm, char sensor, int tid);
 inline void wait_module_update(WaitModule* wm, unsigned short bitmap);
 
 void train_location_server_task();

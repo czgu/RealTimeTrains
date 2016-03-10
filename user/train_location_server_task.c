@@ -209,13 +209,13 @@ void train_tracer_task() {
     int location_server = WhoIs("Location Server");
 
     int sender, train_id;
-    Receive(&sender, &train_id, sizeof(TERMmsg));
+    Receive(&sender, &train_id, sizeof(int));
     Reply(sender, 0, 0);
     //msg.param[0] contains the train #
 
     TERMmsg msg;
-    msg.param[0] = train_id;
     msg.opcode = LOC_WHERE_IS;
+    msg.param[0] = train_id;
 
     TrainModelPosition position;
 
@@ -282,18 +282,21 @@ void train_sensor_task() {
             char dlo = (lo ^ sensors[i].lo) & ~sensors[i].lo;
             char dhi = (hi ^ sensors[i].hi) & ~sensors[i].hi;
 
-            msg.opcode = LOC_SENSOR_MODULE_UPDATE;
-            msg.param[0] = i;
-            msg.param[1] = lo;
-            msg.param[2] = hi;
-
-            Send(location_server, &msg, sizeof(TERMmsg), &msg, sizeof(TERMmsg));
+            // send updates to the location server only if a sensor is triggered
+            if (lo != 0 || hi != 0) {
+                msg.opcode = LOC_SENSOR_MODULE_UPDATE;
+                msg.param[0] = i;
+                msg.param[1] = lo;
+                msg.param[2] = hi;
+                Send(location_server, &msg, sizeof(TERMmsg), 0, 0);
+            }
 
             // we only care all 0->1 changes on screen
             if (dhi != 0 || dlo != 0) {
+                msg.opcode = DRAW_MODULE;
+                msg.param[0] = i;
                 msg.param[1] = dlo;
                 msg.param[2] = dhi;
-                msg.opcode = DRAW_MODULE;
                 Send(view_server, &msg, sizeof(TERMmsg), 0, 0);
             }
 
@@ -319,11 +322,11 @@ void wait_module_init(WaitModule* wm) {
     wm->wait_num = 0;
 }
 
-inline void wait_module_add(WaitModule* wm, char sensor ,int tid) {
+inline void wait_module_add(WaitModule* wm, char sensor, int tid) {
     if (wm->sensor_tid[(int)sensor] >= 0) {
         // TODO: do something to kick out the other waiting task?
     } else {
-        wm->wait_num ++;
+        wm->wait_num++;
     }
     wm->sensor_tid[(int)sensor] = tid;
 }
@@ -342,4 +345,3 @@ inline void wait_module_update(WaitModule* wm, unsigned short bitmap) {
     }
 
 }
-
