@@ -7,6 +7,8 @@
 #include <syscall.h>
 #include <io.h>
 
+void calibrate_stop();
+
 void calibrate_stop() {
     int sender;
     TERMmsg command;
@@ -38,17 +40,29 @@ void calibrate_stop_time() {
     int loc_server = WhoIs("Location Server");
 
     // mm
-    double stop_distances[15] = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        482.8,
-        533.6,
-        594.8,
-        665.75,
-        745.25,
-        808.75,
-        795.5
-    };
-
+    double stop_distances[15] = { 0 };
+    switch (train_id) {
+        case 62:
+            stop_distances[8] = 482.8;
+            stop_distances[9] = 533.6;
+            stop_distances[10] = 594.8;
+            stop_distances[11] = 665.75;
+            stop_distances[12] = 745.25;
+            stop_distances[13] = 808.75;
+            stop_distances[14] = 795.5;
+            break;
+        case 63:
+            stop_distances[8] = 561.8;
+            stop_distances[9] = 643.6;
+            stop_distances[10] = 714.2;
+            stop_distances[11] = 797.4;
+            stop_distances[12] = 856.5;
+            stop_distances[13] = 962;
+            stop_distances[14] = 956;
+            break;
+        default:
+            break;
+    }
     double tol = 27.0;                  // distance from front of train to pickup
     double dist_d8_e8 = 375.0;
     
