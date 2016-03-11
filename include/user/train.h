@@ -12,11 +12,14 @@ typedef struct TrainModelPosition {
     track_edge* arc;
     track_node* next_sensor;
 
+    //track_node* prev_sensor;
+    float prev_sensor_dist;
+    int sensor_triggered_time;
+
     track_node* stop_sensor;
     int stop_dist;
 
     float estimated_next_sensor_dist;
-
 
     float dist_travelled; // distance travelled
     int updated_time;
@@ -102,8 +105,6 @@ void track_soloff();
 typedef struct SensorData {
 	char lo;
 	char hi;
-	//short data;
-    // WARNING: If more data is added here, need to modify train_sensor.c
 } SensorData;
 
 void sensor_reset(SensorData*);

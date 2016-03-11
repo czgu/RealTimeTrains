@@ -74,6 +74,7 @@ void train_location_server_task() {
     int num_active_train = 0;
 
     // init switch
+    // FIXME: why is this a short
     short switches[NUM_TRAIN_SWITCH + 1] = {DIR_STRAIGHT};
 
     // init sensor
@@ -83,6 +84,7 @@ void train_location_server_task() {
     for (i = 0; i < SNLEN; i++)
         wait_module_init(wait_modules + i);
 
+    // TODO: add option or something to init track a
     // init track
     init_tracka(train_track);
 
@@ -92,7 +94,7 @@ void train_location_server_task() {
     for (;;) {
         int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
         if (sz >= sizeof(char)) {
-            // Only courier send to this
+            // Only courier and timer tasks send to this
             Reply(sender, 0, 0);
             switch(request_msg.opcode) {
                 case LOC_WAIT_SENSOR:
@@ -104,7 +106,7 @@ void train_location_server_task() {
                 
                     if (train_index >= 0 && train_index < num_train && speed >= 0 && speed <= 14) 
                     {
-
+                        // FIXME: If a train runs, then stops, is it still running?
                         if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_BIT_ACT)) {
                             active_train_models[num_active_train++] = train_models + train_index;
                             train_models[train_index].bitmap |= TRAIN_MODEL_BIT_ACT;
@@ -112,7 +114,6 @@ void train_location_server_task() {
                         // set speed in the model
                         train_model_update_speed(train_models + train_index, Time(), switches, speed);
                     }
-
                     break;
                 }
                 case LOC_TRAIN_SPEED_REVERSE_UPDATE: {

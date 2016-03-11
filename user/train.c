@@ -50,14 +50,15 @@ void train_model_init_location(
     train->bitmap |= TRAIN_MODEL_BIT_POS;
 
     // initialize first sensor node
+    train->position.prev_sensor_dist = 0;
+    train->position.sensor_triggered_time = 0;
+
     train->position.dist_travelled = 0;
     train->position.arc = sensor_start->edge + DIR_AHEAD;
 
     train->position.next_sensor = track_next_sensor_node(switches, train->position.arc, &train->position.estimated_next_sensor_dist);
     
     train->position.updated_time = time;
-
-
 }
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
@@ -182,13 +183,24 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 }
 
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
+    // dynamically calibrate velocity
+    // We want to wait for the train to accelerate enough after a change of speed before calibration
+    if (time > train->speed_updated_time + 300 && 
+        train->position.prev_sensor_dist != 0) {
+        float velocity = (float) train->position.prev_sensor_dist / (time - train->position.sensor_triggered_time);
+        train_model_speed[train->speed] = train_model_speed[train->speed] * 0.9 + velocity * 0.1;
+    }
+
     // TODO: calculate error
     train_model_update_location(train, time, switches);
     int err = (int)train->position.estimated_next_sensor_dist;
 
     pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, err);
 
-    train_model_init_location(train, time, switches, train->position.next_sensor);
+    train_model_init_location(train, time, switches, train->position.next_sensor);    
+
+    train->position.prev_sensor_dist = train->position.estimated_next_sensor_dist;
+    train->position.sensor_triggered_time = time;
 }
 
 
