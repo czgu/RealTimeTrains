@@ -81,8 +81,11 @@ void train_location_server_task() {
     unsigned short sensor_bitmap[SNLEN] = {0};
 
     WaitModule wait_modules[SNLEN];
-    for (i = 0; i < SNLEN; i++)
+    for (i = 0; i < SNLEN; i++) {
+        //t = i >= 19 ? i - 19 + 153 : i;
         wait_module_init(wait_modules + i);
+
+    }
 
     // TODO: add option or something to init track a
     // init track
@@ -106,7 +109,6 @@ void train_location_server_task() {
                 
                     if (train_index >= 0 && train_index < num_train && speed >= 0 && speed <= 14) 
                     {
-                        // FIXME: If a train runs, then stops, is it still running?
                         if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_BIT_ACT)) {
                             active_train_models[num_active_train++] = train_models + train_index;
                             train_models[train_index].bitmap |= TRAIN_MODEL_BIT_ACT;
