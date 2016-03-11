@@ -84,7 +84,7 @@ void train_location_server_task() {
         wait_module_init(wait_modules + i);
 
     // init track
-    init_trackb(train_track);
+    init_tracka(train_track);
 
     int sender;
     TERMmsg request_msg;

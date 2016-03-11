@@ -184,11 +184,9 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
     // TODO: calculate error
     train_model_update_location(train, time, switches);
-    int err = train->position.estimated_next_sensor_dist;
+    int err = (int)train->position.estimated_next_sensor_dist;
 
-    pprintf(COM2, "\033[%d;%dH", 24 + 8, 1);
-    PutStr(COM2, "\033[K");
-    pprintf(COM2, "error: %d", err);
+    pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, err);
 
     train_model_init_location(train, time, switches, train->position.next_sensor);
 }
