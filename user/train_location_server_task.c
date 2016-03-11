@@ -38,6 +38,7 @@ void train_location_server_secretary_task() {
                 case LOC_TRAIN_SPEED_REVERSE_UPDATE:
                 case LOC_SWITCH_UPDATE:
                 case LOC_SENSOR_MODULE_UPDATE:
+                case LOC_SET_TRAIN_DEST:
                     Reply(sender, 0, 0);
                     rq_push_back(&request_msg_buffer, &request_msg);
                     break;
@@ -203,8 +204,44 @@ void train_location_server_task() {
                     
                     for (t = 0; t < num_active_train; t++) {
                         TrainModel* train = active_train_models[t];
-                        train_model_update_location(train, time, switches);
+
+                        if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+                            train_model_update_location(train, time, switches);
+
+                            if (train->position.stop_sensor != (void *)0) {
+                                float lookahead = train->position.dist_travelled + train_model_stop_dist[train->speed] + TRAIN_LOOK_AHEAD_DIST;
+                                float lookahead_next_arc = lookahead;
+                                track_edge* arc = track_next_arc(switches, train->position.arc, &lookahead_next_arc);
+                                if (arc != (void *)0 && arc->src == train->position.stop_sensor) 
+                                {
+                                    float dist_to_stop_sensor = (lookahead - lookahead_next_arc) + train->position.stop_dist - train->position.dist_travelled - train_model_stop_dist[train->speed] + 35;
+                                    int instruction[2];
+                                    instruction[0] = dist_to_stop_sensor/train_model_speed[train->speed];
+                                    instruction[1] = train->id;
+
+                                    //pprintf(COM2, "\033[%d;%dH", 24 + 8, 1);
+                                    //pprintf(COM2, "found %d %d", instruction[0], (int)dist_to_stop_sensor);
+                                    int cid = Create(10, train_timed_stop_task);
+                                    Send(cid, instruction, sizeof(int) * 2, 0, 0);
+                                    train->position.stop_sensor = (void *)0;
+                                }
+
+
+                            } 
+                        }
                     }
+                    break;
+                }
+                case LOC_SET_TRAIN_DEST: {
+                    int train = request_msg.param[0] - TRAIN_ID_MIN;
+                    int sensor = ((int)request_msg.param[1] - 1) * 16 + ((int)request_msg.param[2] - 1);
+                    int dist = (request_msg.param[3] << 8 | request_msg.param[4]);
+
+                    train_models[train].position.stop_sensor = train_track + sensor;
+                    train_models[train].position.stop_dist = dist;
+
+                    pprintf(COM2, "\033[%d;%dH", 30, 1);
+                    pprintf(COM2, "%d, %d, %d", train,sensor,dist);
                     break;
                 }
             }
@@ -243,6 +280,7 @@ void train_tracer_task() {
     for (;;) {
         sz = Send(location_server, &msg, sizeof(TERMmsg), &position, sizeof(TrainModelPosition));
 
+        // FIXME: seems like if we update too fast, we see weird distance values
         if (sz > 0) {
             draw_msg.param[1] = position.arc->src->type;
             draw_msg.param[2] = position.arc->src->num;
@@ -271,7 +309,6 @@ void train_tracer_task() {
             PutStr(COM2, "Unknown position");
         }        
         */
-
         Delay(100);
     }
 
@@ -330,6 +367,20 @@ void train_location_ticker() {
         Send(pid, &msg, sizeof(char), 0, 0);
         Delay(10);
     }
+}
+
+void train_timed_stop_task() {
+
+    int instruction[2];
+    int sender;
+    Receive(&sender, instruction, sizeof(int) * 2);
+    Reply(sender, 0, 0);
+    
+    int location_server = WhoIs("Location Server");
+
+    Delay(instruction[0]);
+    
+    train_set_speed(location_server, instruction[1], 0);
 }
 
 void wait_sensor(int location_server_tid, char module, int sensor) {

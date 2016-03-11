@@ -310,6 +310,23 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[3] = module;
             msg->param[4] = sensor;
             return 0;
+        } else if(strncmp(str, "st ", 3) == 0) {
+            int train, module, sensor, dist;
+
+            char* current_c = str + 3;
+            a2i('0', &current_c, 10, &train);
+            a2i('0', &current_c, 10, &module);
+            a2i('0', &current_c, 10, &sensor);
+            a2i('0', &current_c, 10, &dist);
+
+            msg->opcode = CMD_STOP_TRAIN;
+            msg->param[0] = train;
+            msg->param[1] = module;
+            msg->param[2] = sensor;
+            msg->param[3] = dist >> 8;
+            msg->param[4] = dist & 0xFF;
+
+            return 0;
         }
     } 
    

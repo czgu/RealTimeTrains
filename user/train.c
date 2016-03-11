@@ -34,6 +34,10 @@ void train_model_init(TrainModel* train, int id) {
 
     train->bitmap = 0;
     train->bitmap |= TRAIN_MODEL_BIT_FWD;
+
+    // useless until the position_known bit is turned on
+    train->position.stop_sensor = (void *)0;
+    train->position.stop_dist = 0;
 }
 
 // Train Model
@@ -48,35 +52,48 @@ void train_model_init_location(
     // initialize first sensor node
     train->position.dist_travelled = 0;
     train->position.arc = sensor_start->edge + DIR_AHEAD;
-    train->position.next_sensor = track_next_sensor_node(switches, train->position.arc);
+
+    train->position.next_sensor = track_next_sensor_node(switches, train->position.arc, &train->position.estimated_next_sensor_dist);
     
     train->position.updated_time = time;
+
+
 }
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
+    float delta_dist = 0;
     if (train->bitmap & TRAIN_MODEL_BIT_POS) {
         // TODO: consider acceleration and account speed 0
         if (train->speed > 0) {
             if (train->speed_updated_time > train->position.updated_time) {
-                train->position.dist_travelled += (time - train->speed_updated_time) * train_model_speed[train->speed];
-                train->position.dist_travelled += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+                delta_dist += (time - train->speed_updated_time) * train_model_speed[train->speed];
+                delta_dist += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
             } else {
-                train->position.dist_travelled += (time - train->position.updated_time) * train_model_speed[train->speed];
+                delta_dist += (time - train->position.updated_time) * train_model_speed[train->speed];
             }
         } else {
             float stop_time = 300; // TODO: get the actual stop time
             
             // update the remaining part of speed
             if (train->speed_updated_time > train->position.updated_time) {
-                train->position.dist_travelled += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+                delta_dist += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
                 train->position.updated_time = train->speed_updated_time;
             }
 
             // update the stopping distance, assume uniform
             if (time - train->speed_updated_time < stop_time) {
-                train->position.dist_travelled += (time - train->position.updated_time)/stop_time * train_model_stop_dist[train->previous_speed];
+                delta_dist += (time - train->position.updated_time)/stop_time * train_model_stop_dist[train->previous_speed];
             }
         }
+
+        // if train is lost
+        train->position.estimated_next_sensor_dist -= delta_dist;
+        if (train->position.estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
+            train->bitmap &= ~TRAIN_MODEL_BIT_POS;
+        }
+
+        train->position.dist_travelled += delta_dist;
+
         train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
 
         if (train->position.arc == (void *)0)
@@ -108,15 +125,18 @@ track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
     return current;
 }
 
-track_node* track_next_sensor_node(short* switches, track_edge* current) {
+track_node* track_next_sensor_node(short* switches, track_edge* current, float* dist) {
+    *dist = 0;
     track_node* node = current->dest;
     while (node->type != NODE_SENSOR) {
         switch (node->type) {
             case NODE_BRANCH:
+                *dist += node->edge[switches[node->num]].dist;
                 node = node->edge[switches[node->num]].dest;
             break;
             case NODE_MERGE:
             case NODE_ENTER:
+                *dist += node->edge[DIR_AHEAD].dist;
                 node = node->edge[DIR_AHEAD].dest;
             break;
             case NODE_EXIT:
@@ -150,7 +170,9 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
         // TODO: more precise constant based on direction
         train->position.dist_travelled = train->position.arc->dist - train->position.dist_travelled;
         train->position.arc = train->position.arc->reverse;
-        train->position.next_sensor = track_next_sensor_node(switches, train->position.arc);
+
+        train->position.next_sensor = track_next_sensor_node(switches, train->position.arc, &train->position.estimated_next_sensor_dist);
+        train->position.estimated_next_sensor_dist -= train->position.dist_travelled;
 
         if (train->position.next_sensor == 0)
             train->bitmap &= ~TRAIN_MODEL_BIT_POS;
@@ -161,8 +183,14 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
     // TODO: calculate error
+    train_model_update_location(train, time, switches);
+    int err = train->position.estimated_next_sensor_dist;
 
-    train_model_init_location(train, time, switches, train->position.next_sensor);    
+    pprintf(COM2, "\033[%d;%dH", 24 + 8, 1);
+    PutStr(COM2, "\033[K");
+    pprintf(COM2, "error: %d", err);
+
+    train_model_init_location(train, time, switches, train->position.next_sensor);
 }
 
 

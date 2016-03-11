@@ -51,6 +51,7 @@ void train_command_server_task() {
                     train_speed[(int)request_msg.param[0]] = request_msg.param[1];
                     break;
                 case CMD_CALIBRATE:
+                case CMD_STOP_TRAIN:
                     Reply(sender, 0, 0);
                     rq_push_back(&command_buffer, &request_msg);
                     break;
@@ -113,6 +114,10 @@ void train_command_worker_task() {
         
                     break;
                 }
+                case CMD_STOP_TRAIN:
+                    command.opcode = LOC_SET_TRAIN_DEST;
+                    Send(location_server_tid, &command, sizeof(TERMmsg), 0, 0);
+                    break;
                 case CMD_TR:
                     train_set_speed(location_server_tid, command.param[0], command.param[1]);
                     break; 
