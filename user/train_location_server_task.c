@@ -17,6 +17,7 @@ void train_location_server_secretary_task() {
     int sender;
     TERMmsg request_msg;
     
+    // FIXME: Make msg pool size larger?
     TERMmsg request_msg_pool[20];
     RQueue request_msg_buffer;
     rq_init(&request_msg_buffer, request_msg_pool, 20, sizeof(TERMmsg));
@@ -75,7 +76,10 @@ void train_location_server_task() {
 
     // init switch
     // FIXME: why is this a short
-    short switches[NUM_TRAIN_SWITCH + 1] = {DIR_STRAIGHT};
+    short switches[NUM_TRAIN_SWITCH + 1];
+    for (i = 0; i < NUM_TRAIN_SWITCH + 1; i++) {
+        switches[i] = DIR_STRAIGHT;
+    }
 
     // init sensor
     unsigned short sensor_bitmap[SNLEN] = {0};

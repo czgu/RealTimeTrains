@@ -94,9 +94,12 @@ typedef struct Track_Switch {
 
 void switch_init(Track_Switch*, char addr);
 // opt = 1 to turn solenoid off after
+// track_switch is in range[1, 22]
 void track_set_switch(int location_server_tid, int track_switch, char curve, int soloff);
 void track_soloff();
 
+// switch_index is in range[1, 22]
+inline void set_switch_normalized(int switch_index, char curve);
 
 #define SNLEN 5
 #define SNSIZE 2

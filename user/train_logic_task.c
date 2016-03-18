@@ -20,11 +20,9 @@ void train_command_server_task() {
     // Train Track initialization - Done in server
     short train_speed[81] = {0};
 
-
     // init switch to straight
     for (i = 1; i <= NUM_TRAIN_SWITCH; i++) {
-        //t = i >= 19 ? i - 19 + 153 : i;
-        train_cmd(SWITCH_DIR_S, i);
+        set_switch_normalized(i, STRAIGHT);
     }
     track_soloff();    
 

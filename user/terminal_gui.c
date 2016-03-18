@@ -107,8 +107,8 @@ void reset_cursor(Cursor* cs) {
 }
 
 void print_switch(Cursor* cs, char switch_status, int index) {
-    index --;
-	int col = (index < 12)? CSSWITCHL : CSSWITCHR;
+    index--;
+	int col = (index < 11)? CSSWITCHL : CSSWITCHR;
 	pprintf(COM2, "\033[%d;%dH", CSSWITCHY + (index % 11), col);
 
 	switch(switch_status) {

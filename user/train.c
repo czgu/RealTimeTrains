@@ -261,6 +261,16 @@ void train_switch_task() {
     track_soloff();
 }
 
+inline void set_switch(int track_switch, char curve) {
+    train_cmd((curve == STRAIGHT) ? SWITCHCODE | SMASK : SWITCHCODE | CMASK, 
+              track_switch);
+}
+
+inline void set_switch_normalized(int track_switch, char curve) {
+    //int tswitch = (track_switch > SWLENL)? track_switch - SWLENL + SWADDRBASEH - 1 : track_switch;
+    set_switch((track_switch > SWLENL)? track_switch - SWLENL + SWADDRBASEH - 1 : track_switch, curve);
+}
+
 void track_set_switch(int location_server_tid, int track_switch, char curve, int soloff) {
     TERMmsg msg;
     msg.opcode = LOC_SWITCH_UPDATE;
@@ -269,9 +279,7 @@ void track_set_switch(int location_server_tid, int track_switch, char curve, int
 
     Send(location_server_tid, &msg, sizeof(TERMmsg), 0, 0);
 
-    char dir = (curve == STRAIGHT) ? SWITCHCODE | SMASK : SWITCHCODE | CMASK;
-
-    train_cmd(dir, track_switch);
+    set_switch_normalized(track_switch, curve);
 
     if (soloff) {
         Create(30, train_switch_task);

@@ -120,8 +120,8 @@ void calibrate_velocity() {
 
     //set_track(command_server_tid, 11, 1);
 
-    track_set_switch(location_server_tid, 154, CURVED, 0);
-    track_set_switch(location_server_tid, 153, STRAIGHT, 0);
+    track_set_switch(location_server_tid, 20, CURVED, 0);
+    track_set_switch(location_server_tid, 19, STRAIGHT, 0);
     track_set_switch(location_server_tid, 10, CURVED, 0);
     track_set_switch(location_server_tid, 9, CURVED, 1);
 
@@ -183,8 +183,8 @@ void calibrate_acceleration_delta() {
     int loc_server = WhoIs("Location Server");
 
     // make switches 13, 14 curved
-    track_set_switch(loc_server, 154, STRAIGHT, 0);
-    track_set_switch(loc_server, 153, CURVED, 0);
+    track_set_switch(loc_server, 20, STRAIGHT, 0);
+    track_set_switch(loc_server, 19, CURVED, 0);
     track_set_switch(loc_server, 13, CURVED, 0);
     track_set_switch(loc_server, 14, CURVED, 1);
 
