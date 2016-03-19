@@ -10,6 +10,7 @@
 #include <train.h>
 #include <track_data.h>
 #include <rqueue.h>
+#include <priority.h>
 
 void train_location_server_secretary_task() {
     RegisterAs("Location Server");
@@ -17,13 +18,12 @@ void train_location_server_secretary_task() {
     int sender;
     TERMmsg request_msg;
     
-    // FIXME: Make msg pool size larger?
-    TERMmsg request_msg_pool[20];
+    TERMmsg request_msg_pool[40];
     RQueue request_msg_buffer;
-    rq_init(&request_msg_buffer, request_msg_pool, 20, sizeof(TERMmsg));
+    rq_init(&request_msg_buffer, request_msg_pool, 40, sizeof(TERMmsg));
 
     int location_server = MyParentTid();
-    int courier = Create(10, courier_task);
+    int courier = Create(TRAIN_LOCATION_SERVER_COURIER_PRIORITY, courier_task);
     int courier_ready = 0;
 
     Send(courier, &location_server, sizeof(int), 0, 0);    
@@ -61,8 +61,9 @@ void train_location_server_secretary_task() {
 }
 
 void train_location_server_task() {
-    Create(10, train_location_server_secretary_task);
-    Create(10, train_location_ticker);
+    Create(TRAIN_LOCATION_SERVER_SECRETARY_PRIORITY, 
+           train_location_server_secretary_task);
+    Create(TRAIN_LOCATION_TICKER_PRIORITY, train_location_ticker);
 
     // init train
     int i, t;
@@ -187,7 +188,7 @@ void train_location_server_task() {
                                     train_model_init_location(train, time, switches, train_track + (module * 16 + sensor));
                                     // Create a tracer program 
                                     int train_id = train->id;
-                                    int cid = Create(15, train_tracer_task);
+                                    int cid = Create(TRAIN_TRACER_TASK_PRIORITY, train_tracer_task);
                                     Send(cid, &train_id, sizeof(int), 0, 0);
                                 }
                             }
@@ -316,11 +317,9 @@ void train_tracer_task() {
             PutStr(COM2, "Unknown position");
         }        
         */
+        // TODO: might want to change this later
         Delay(100);
     }
-
-
-
 }
 
 void train_sensor_task() {

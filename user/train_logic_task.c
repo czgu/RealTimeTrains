@@ -9,6 +9,7 @@
 #include <calibration.h>
 
 #include <io.h>
+#include <priority.h>
 
 // Server caches all information about the train
 void train_command_server_task() {
@@ -27,7 +28,7 @@ void train_command_server_task() {
     track_soloff();    
 
     // Create worker and its buffer
-    Create(10, train_command_worker_task);
+    Create(MED_WORKER_PRIORITY, train_command_worker_task);
     
     TERMmsg command_buffer_pool[20];
     RQueue command_buffer;
@@ -97,15 +98,15 @@ void train_command_worker_task() {
 
                     // TODO: switch
                     if (command.param[0] == 0) {
-                        cid = Create(25, calibrate_stop);
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_stop);
                     } else if (command.param[0] == 1) {
-                        cid = Create(25, calibrate_velocity);
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_velocity);
                     } else if (command.param[0] == 2) {
-                        cid = Create(25, calibrate_acceleration_move);
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_acceleration_move);
                     } else if (command.param[0] == 3) {
-                        cid = Create(25, calibrate_acceleration_delta);
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_acceleration_delta);
                     } else if (command.param[0] == 4) {
-                        cid = Create(25, calibrate_stop_time);
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_stop_time);
                     }
 
                     if (cid > 0)

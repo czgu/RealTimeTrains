@@ -10,15 +10,16 @@
 #include <string.h>
 #include <bqueue.h>
 #include <rqueue.h>
+#include <priority.h>
 
 #define MAX_RECENT_SENSORS 10
 
 void terminal_view_server_task() {
     RegisterAs("View Server");
 
-    Create(10, terminal_time_listener_task);
-    Create(10, terminal_kernel_status_listener_task);
-    Create(10, terminal_view_worker_task);
+    Create(HI_WORKER_PRIORITY, terminal_time_listener_task);
+    Create(LOW_WORKER_PRIORITY, terminal_kernel_status_listener_task);
+    Create(HI_WORKER_PRIORITY, terminal_view_worker_task);
     
     TERMmsg draw_buffer_pool[20];
     RQueue draw_buffer;

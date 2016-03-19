@@ -1,6 +1,7 @@
 #include <train.h>
 #include <io.h>
 #include <syscall.h>
+#include <priority.h>
 
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
@@ -282,7 +283,7 @@ void track_set_switch(int location_server_tid, int track_switch, char curve, int
     set_switch_normalized(track_switch, curve);
 
     if (soloff) {
-        Create(30, train_switch_task);
+        Create(LOW_WORKER_PRIORITY, train_switch_task);
     }
 }
 

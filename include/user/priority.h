@@ -1,6 +1,11 @@
 #ifndef _PRIORITY_H_
 #define _PRIORITY_H_
 
+#define HIHI_WORKER_PRIORITY 27
+#define HI_WORKER_PRIORITY   28
+#define MED_WORKER_PRIORITY  29
+#define LOW_WORKER_PRIORITY  30
+
 #define CLOCKSERVER_PRIORITY    1
 #define CLOCKNOTIFIER_PRIORITY  0
 
@@ -10,9 +15,25 @@
 
 #define TERMINAL_SERVER_PRIORITY 2
 #define TERMINAL_NOTIFIER_PRIORITY 1
-#define TERMINAL_COURIER_PRIORITY 2
+//#define TERMINAL_COURIER_PRIORITY 2   // deprecated
 
 #define TRAIN_SERVER_PRIORITY 2
 #define TRAIN_NOTIFIER_PRIORITY 1
+
+#define TRAIN_LOCATION_TICKER_PRIORITY 7
+#define TRAIN_SENSOR_TASK_PRIORITY 8
+#define TRAIN_LOCATION_SERVER_COURIER_PRIORITY 8
+#define TRAIN_LOCATION_SERVER_PRIORITY 9
+#define TRAIN_LOCATION_SERVER_SECRETARY_PRIORITY 10
+
+// TODO: If tracer task has more responsibilities, should make this higher priority
+#define TRAIN_TRACER_TASK_PRIORITY 15
+
+// TODO: set priorities for these - 10 is default
+#define TRAIN_COMMAND_SERVER_PRIORITY 16
+
+// Terminal tasks should be lower priority than train tasks
+#define TERMINAL_VIEW_SERVER_PRIORITY 11
+#define TERMINAL_INPUT_LISTENER_PRIORITY 17
 
 #endif
