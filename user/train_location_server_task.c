@@ -117,6 +117,11 @@ void train_location_server_task() {
                         if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_BIT_ACT)) {
                             active_train_models[num_active_train++] = train_models + train_index;
                             train_models[train_index].bitmap |= TRAIN_MODEL_BIT_ACT;
+
+                            // Create a tracer program 
+                            int train_id = train_models[train_index].id;
+                            int cid = Create(15, train_tracer_task);
+                            Send(cid, &train_id, sizeof(int), 0, 0);
                         }
                         // set speed in the model
                         train_model_update_speed(train_models + train_index, Time(), switches, speed);
@@ -186,10 +191,6 @@ void train_location_server_task() {
 
                                 if (sensor >= 0) {
                                     train_model_init_location(train, time, switches, train_track + (module * 16 + sensor));
-                                    // Create a tracer program 
-                                    int train_id = train->id;
-                                    int cid = Create(TRAIN_TRACER_TASK_PRIORITY, train_tracer_task);
-                                    Send(cid, &train_id, sizeof(int), 0, 0);
                                 }
                             }
                         }
@@ -265,13 +266,14 @@ void train_location_server_task() {
 }
 
 void train_tracer_task() {
-    int view_server = WhoIs("View Server");
-    int location_server = WhoIs("Location Server");
-
     int sender, train_id;
     Receive(&sender, &train_id, sizeof(int));
     Reply(sender, 0, 0);
     //msg.param[0] contains the train #
+
+    // weird sychronization bug which cause it to be indefinitely blocked
+    int view_server = WhoIs("View Server");
+    int location_server = WhoIs("Location Server");
 
     TERMmsg msg;
     msg.opcode = LOC_WHERE_IS;
@@ -376,7 +378,6 @@ void train_location_ticker() {
 }
 
 void train_timed_stop_task() {
-
     int instruction[2];
     int sender;
     Receive(&sender, instruction, sizeof(int) * 2);
