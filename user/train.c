@@ -128,9 +128,14 @@ track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
             case NODE_ENTER:
                 current = node->edge + DIR_AHEAD;
                 break;
-            case NODE_BRANCH:
-                current = node->edge + switches[node->num];
+            case NODE_BRANCH: {
+                int switch_num = node->num;
+                if (switch_num >= 153) {
+                    switch_num -= 153 + 19;
+                }
+                current = node->edge + switches[switch_num];
                 break;
+            }
             case NODE_EXIT:
             default:
                 return (void *)0;
@@ -206,7 +211,7 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
     if (time > train->speed_updated_time + 300 && 
         train->position.prev_sensor_dist != 0) {
         float velocity = (float) train->position.prev_sensor_dist / (time - train->position.sensor_triggered_time);
-        //train_model_speed[train->speed] = train_model_speed[train->speed] * 0.9 + velocity * 0.1;
+        //train->profile.velocity[train->speed] = train->profile.velocity[train->speed] * 0.9 + velocity * 0.1;
         //pprintf(COM2, "\033[%d;%dH\033[Ktimediff: %d\n\r", 24 + 10, 1, time - train->position.sensor_triggered_time);
         pprintf(COM2, "\033[%d;%dH\033[Kdist: %d\n\r", 24 + 19, 1, (int)train->position.prev_sensor_dist);
         pprintf(COM2, "\033[%d;%dH\033[Kvel: %d\n\r", 24 + 20, 1, (int)(velocity*100));
