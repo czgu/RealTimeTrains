@@ -8,6 +8,15 @@ extern float train_model_stop_dist[15];
 
 int train_cmd(char c1, char c2);
 
+typedef struct TrainCalibrationProfile {
+    float velocity[15];
+    float stop_distance[15];
+
+    // TODO: add acceleration profile
+} TrainCalibrationProfile;
+
+void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
+
 typedef struct TrainModelPosition {
     track_edge* arc;
     track_node* next_sensor;
@@ -26,26 +35,24 @@ typedef struct TrainModelPosition {
 } TrainModelPosition;
 
 #define TRAIN_ID_MIN 58
-#define TRAIN_ID_MAX 68
+#define TRAIN_ID_MAX 69
 
 #define TRAIN_SENSOR_HIT_TOLERANCE -500
 #define TRAIN_LOOK_AHEAD_DIST 200
 
-#define TRAIN_MODEL_BIT_FWD 0x1
-#define TRAIN_MODEL_BIT_ACT 0x2
-#define TRAIN_MODEL_BIT_POS 0x4
 typedef struct TrainModel {
 	short id;		// [1,80]
 	short speed;	// [0,14]
 	short previous_speed;
     int speed_updated_time; // used to calculate acceleration
 
-    // 0 - direction_forward
-    // 1 - active
-    // 2 - position_known
+#define TRAIN_MODEL_DIRECTION_FWD 0x1
+#define TRAIN_MODEL_ACTIVE 0x2
+#define TRAIN_MODEL_POSITION_KNOWN 0x4
     short bitmap;
 
     TrainModelPosition position;
+    TrainCalibrationProfile profile;
 } TrainModel;
 
 void train_model_init(TrainModel* train, int id);

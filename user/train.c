@@ -6,26 +6,33 @@
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
 
-float train_model_speed[15] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    3.745661281,
-    4.304676754,
-    4.774218154,
-    5.286317568,
-    5.79537037,
-    6.265265265,
-    6.303121853
-};
-float train_model_stop_dist[15] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    561.8,
-    643.6,
-    714.2,
-    797.4,
-    856.5,
-    962,
-    956
-};
+void train_calibration_profile_init(TrainCalibrationProfile* profile, int id) {
+    int i;
+    for (i = 0; i < 8; i++) {
+        profile->velocity[i] = 0;
+        profile->stop_distance[i] = 0;
+    }
+    switch(id) {
+        // TODO: Add more train calibration data
+        case 63:
+        default:
+            profile->velocity[8]  = 3.745661281;
+            profile->velocity[9]  = 4.304676754;
+            profile->velocity[10] = 4.774218154;
+            profile->velocity[11] = 5.286317568;
+            profile->velocity[12] = 5.79537037;
+            profile->velocity[13] = 6.265265265;
+            profile->velocity[14] = 6.303121853;
+
+            profile->stop_distance[8] = 561.8;
+            profile->stop_distance[8] = 643.6;
+            profile->stop_distance[8] = 714.2;
+            profile->stop_distance[8] = 797.4;
+            profile->stop_distance[8] = 856.5;
+            profile->stop_distance[8] = 962;
+            profile->stop_distance[8] = 956;
+    }
+}
 
 void train_model_init(TrainModel* train, int id) {
 	train->id = id;
@@ -34,11 +41,13 @@ void train_model_init(TrainModel* train, int id) {
     train->speed_updated_time = 0;
 
     train->bitmap = 0;
-    train->bitmap |= TRAIN_MODEL_BIT_FWD;
+    train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
 
     // useless until the position_known bit is turned on
     train->position.stop_sensor = (void *)0;
     train->position.stop_dist = 0;
+
+    train_calibration_profile_init(&train->profile, id);
 }
 
 // Train Model
@@ -48,7 +57,7 @@ void train_model_init_location(
     short* switches, 
     track_node* sensor_start) 
 {
-    train->bitmap |= TRAIN_MODEL_BIT_POS;
+    train->bitmap |= TRAIN_MODEL_POSITION_KNOWN;
 
     // initialize first sensor node
     train->position.prev_sensor_dist = 0;
@@ -64,34 +73,37 @@ void train_model_init_location(
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
     float delta_dist = 0;
-    if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+    if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
         // TODO: consider acceleration and account speed 0
         if (train->speed > 0) {
             if (train->speed_updated_time > train->position.updated_time) {
-                delta_dist += (time - train->speed_updated_time) * train_model_speed[train->speed];
-                delta_dist += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+                delta_dist += (time - train->speed_updated_time) * train->profile.velocity[train->speed];
+                delta_dist += (train->speed_updated_time - train->position.updated_time) 
+                            * train->profile.velocity[train->previous_speed];
             } else {
-                delta_dist += (time - train->position.updated_time) * train_model_speed[train->speed];
+                delta_dist += (time - train->position.updated_time) * train->profile.velocity[train->speed];
             }
         } else {
             float stop_time = 300; // TODO: get the actual stop time
             
             // update the remaining part of speed
             if (train->speed_updated_time > train->position.updated_time) {
-                delta_dist += (train->speed_updated_time - train->position.updated_time) * train_model_speed[train->previous_speed];
+                delta_dist += (train->speed_updated_time - train->position.updated_time) 
+                            * train->profile.velocity[train->previous_speed];
                 train->position.updated_time = train->speed_updated_time;
             }
 
             // update the stopping distance, assume uniform
             if (time - train->speed_updated_time < stop_time) {
-                delta_dist += (time - train->position.updated_time)/stop_time * train_model_stop_dist[train->previous_speed];
+                delta_dist += (time - train->position.updated_time)/stop_time 
+                            * train->profile.stop_distance[train->previous_speed];
             }
         }
 
         // if train is lost
         train->position.estimated_next_sensor_dist -= delta_dist;
         if (train->position.estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
-            train->bitmap &= ~TRAIN_MODEL_BIT_POS;
+            train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
         }
 
         train->position.dist_travelled += delta_dist;
@@ -99,7 +111,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
 
         if (train->position.arc == (void *)0)
-            train->bitmap &= ~TRAIN_MODEL_BIT_POS;    
+            train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
 
         train->position.updated_time = time;
     }
@@ -166,12 +178,12 @@ void train_model_update_speed(TrainModel* train, int time, short* switches, int 
 void train_model_reverse_direction(TrainModel* train, int time, short* switches) {
     train_model_update_location(train, time, switches);
 
-    if (train->bitmap & TRAIN_MODEL_BIT_FWD)
-        train->bitmap &= ~TRAIN_MODEL_BIT_FWD;
+    if (train->bitmap & TRAIN_MODEL_DIRECTION_FWD)
+        train->bitmap &= ~TRAIN_MODEL_DIRECTION_FWD;
     else 
-        train->bitmap |= TRAIN_MODEL_BIT_FWD;
+        train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
 
-    if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+    if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
         // Reverse arc
 
         // TODO: more precise constant based on direction
@@ -182,7 +194,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
         train->position.estimated_next_sensor_dist -= train->position.dist_travelled;
 
         if (train->position.next_sensor == 0)
-            train->bitmap &= ~TRAIN_MODEL_BIT_POS;
+            train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
 
         train->position.updated_time = time; 
     }

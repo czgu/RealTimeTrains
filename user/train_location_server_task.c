@@ -114,9 +114,10 @@ void train_location_server_task() {
                 
                     if (train_index >= 0 && train_index < num_train && speed >= 0 && speed <= 14) 
                     {
-                        if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_BIT_ACT)) {
+                        if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_ACTIVE)) {
                             active_train_models[num_active_train++] = train_models + train_index;
-                            train_models[train_index].bitmap |= TRAIN_MODEL_BIT_ACT;
+
+                            train_models[train_index].bitmap |= TRAIN_MODEL_ACTIVE;
 
                             // Create a tracer program 
                             int train_id = train_models[train_index].id;
@@ -166,7 +167,7 @@ void train_location_server_task() {
                         for (t = 0; t < num_active_train; t++) {
                             TrainModel* train = active_train_models[t];
 
-                            if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+                            if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                                 int sensor_idx = train->position.next_sensor->num;
                                 if (module == sensor_idx / 16 && 
                                     (new_bitmap & (0x8000 >> (sensor_idx % 16)))) {
@@ -201,7 +202,7 @@ void train_location_server_task() {
                 case LOC_WHERE_IS: {
                     int train = request_msg.param[0] - TRAIN_ID_MIN;   
 
-                    if (train_models[train].bitmap & TRAIN_MODEL_BIT_POS) {
+                    if (train_models[train].bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                         Reply(request_msg.extra, &train_models[train].position, sizeof(TrainModelPosition));
                     } else {
                         Reply(request_msg.extra, 0, 0);
@@ -214,18 +215,21 @@ void train_location_server_task() {
                     for (t = 0; t < num_active_train; t++) {
                         TrainModel* train = active_train_models[t];
 
-                        if (train->bitmap & TRAIN_MODEL_BIT_POS) {
+                        if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                             train_model_update_location(train, time, switches);
 
                             if (train->position.stop_sensor != (void *)0) {
-                                float lookahead = train->position.dist_travelled + train_model_stop_dist[train->speed] + TRAIN_LOOK_AHEAD_DIST;
+                                float lookahead = train->position.dist_travelled 
+                                    + train->profile.stop_distance[train->speed] + TRAIN_LOOK_AHEAD_DIST;
                                 float lookahead_next_arc = lookahead;
                                 track_edge* arc = track_next_arc(switches, train->position.arc, &lookahead_next_arc);
                                 if (arc != (void *)0 && arc->src == train->position.stop_sensor) 
                                 {
-                                    float dist_to_stop_sensor = (lookahead - lookahead_next_arc) + train->position.stop_dist - train->position.dist_travelled - train_model_stop_dist[train->speed] + 35;
+                                    float dist_to_stop_sensor = (lookahead - lookahead_next_arc) 
+                                        + train->position.stop_dist - train->position.dist_travelled 
+                                        - train->profile.stop_distance[train->speed] + 35;
                                     int instruction[2];
-                                    instruction[0] = dist_to_stop_sensor/train_model_speed[train->speed];
+                                    instruction[0] = dist_to_stop_sensor/train->profile.velocity[train->speed];
                                     instruction[1] = train->id;
 
                                     //pprintf(COM2, "\033[%d;%dH", 24 + 8, 1);
