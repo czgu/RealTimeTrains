@@ -171,15 +171,18 @@ void k_create(unsigned int priority, void (*code)(), Task_Scheduler* task_schedu
 
     // simulate return from hardware interrupt
     // as if stmfd {r0-r3} happened
+    for(i = 0; i >= -3; i--) {
+        *sp-- = 0;
+    }
 
     sp[0] = (unsigned int)Exit; // lr
     sp[-2] = (unsigned int)sp; // fp
 
-    for(i = -3; i >= -13; i--) {
+    for(i = -3; i >= -9; i--) {
         sp[i] = 0;
     }
 
-    new_task->sp = (int) (sp - 13); // {r4-r12, lr}
+    new_task->sp = (int) (sp - 9); // {r4-r12, lr}
     scheduler_push(task_scheduler, new_task);
 
     //bwprintf(COM2, "Created: %d\n\r", new_task->tid);

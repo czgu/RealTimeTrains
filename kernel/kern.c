@@ -82,7 +82,7 @@ int main() {
             break;
         }
         
-        // DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
+        //DEBUG_MSG("activiate task %d %d %d %d\n\r", task_scheduler.active->tid, task_scheduler.active->lr, task_scheduler.active->sp, task_scheduler.active->spsr);
         total_time_passed += get_time_passed(timer_val, &timer_last);
         /*
         time_passed = get_time_passed(timer_val, &timer_last);
