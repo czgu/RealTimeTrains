@@ -10,6 +10,7 @@ int train_cmd(char c1, char c2);
 
 typedef struct TrainCalibrationProfile {
     float velocity[15];
+    //float calibration_weight[15];
     float stop_distance[15];
 
     // TODO: add acceleration profile
@@ -19,10 +20,11 @@ void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
 
 typedef struct TrainModelPosition {
     track_edge* arc;
+    track_edge* prev_arc;
     track_node* next_sensor;
 
     //track_node* prev_sensor;
-    float prev_sensor_dist;
+    //float prev_sensor_dist;
     int sensor_triggered_time;
 
     track_node* stop_sensor;
