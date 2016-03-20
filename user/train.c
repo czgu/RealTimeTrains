@@ -131,7 +131,7 @@ track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
             case NODE_BRANCH: {
                 int switch_num = node->num;
                 if (switch_num >= 153) {
-                    switch_num -= 153 + 19;
+                    switch_num -= (153 - 19);
                 }
                 current = node->edge + switches[switch_num];
                 break;
@@ -152,7 +152,7 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
             case NODE_BRANCH: {
                 int switch_num = node->num;
                 if (switch_num >= 153) {
-                    switch_num -= 153 + 19;
+                    switch_num -= (153 - 19);
                 }
                 *dist += node->edge[switches[switch_num]].dist;
                 node = node->edge[switches[switch_num]].dest;
