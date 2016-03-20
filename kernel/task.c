@@ -1,6 +1,7 @@
 #include <bwio.h>
 #include <task.h>
 #include <memory.h>
+#include <assert.h>
 
 inline unsigned int ctz(unsigned int v) {
     unsigned int c;     // c will be the number of zero bits on the right,
@@ -51,7 +52,7 @@ unsigned int merge_tid(unsigned short index, unsigned short generation) {
 }
 
 void send_queue_push(Task* receiver, Task* sender) {
-    assert(receiver->state != SEND_BLOCKED, "receiver should not be send blocked");
+    ASSERT(receiver->state != SEND_BLOCKED);
     sender->state = RECEIVE_BLOCKED;
 
     // for safety, may not be necessary
@@ -66,7 +67,7 @@ void send_queue_push(Task* receiver, Task* sender) {
 }
 
 int send_queue_pop(Task* receiver, Task** sender) {
-    assert(receiver->state != SEND_BLOCKED, "receiver should not be send blocked");
+    ASSERT(receiver->state != SEND_BLOCKED);
 
     if (receiver->send_queue_next == 0) { 
         return -1; // send_queue_empty       

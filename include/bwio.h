@@ -17,8 +17,6 @@ int bwsetfifo( int channel, int state );
 
 int bwsetspeed( int channel, int speed );
 
-void assert(int cond, char* msg);
-
 int bwputc( int channel, char c );
 
 int bwgetc( int channel );

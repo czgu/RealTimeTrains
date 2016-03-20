@@ -224,13 +224,3 @@ void bwprintf( int channel, char *fmt, ... ) {
         bwformat( channel, fmt, va );
         va_end(va);
 }
-
-void assert(int cond, char* msg) {
-    #ifdef _ASSERT
-    if (cond == 0) {
-        bwputstr(COM2, "ASERTION FAILED: ");
-        bwputstr(COM2, msg);
-    }
-    #endif
-}
-
