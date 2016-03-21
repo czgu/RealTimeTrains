@@ -244,14 +244,20 @@ void calibrate_acceleration_move() {
     Receive(&sender, &command, sizeof(TERMmsg));
     Reply(sender, 0, 0);
 
+    pprintf(COM2, "\033[%d;%dH\033[K calib\n\r", 
+        24 + 18, 1);
     int train_id = command.param[1];
     //int command_server_tid = WhoIs("Command Server");
     int location_server_tid = WhoIs("Location Server");
 
     train_set_speed(location_server_tid, train_id, command.param[2]);
 
-    Delay(command.param[3]);
+    int time1 = Time();
+
+    Delay(command.extra);
+    int time2 = Time();
 
     train_set_speed(location_server_tid, train_id, 0);
-
+    pprintf(COM2, "\033[%d;%dH\033[Kdt: (%d, %d)\n\r", 
+        24 + 19, 1, command.extra, time2 - time1);
 }

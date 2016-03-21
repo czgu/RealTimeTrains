@@ -296,13 +296,14 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[1] = switch_dir;
             return 0;
         } else if(strncmp(str, "cal ", 4) == 0) {
-            int type, train, speed, module, sensor;
+            int type, train, speed, module, sensor, param5;
             char* current_c = str + 4;
             a2i('0', &current_c, 10, &type);
             a2i('0', &current_c, 10, &train);
             a2i('0', &current_c, 10, &speed);
             a2i('0', &current_c, 10, &module);
             a2i('0', &current_c, 10, &sensor);
+            a2i('0', &current_c, 10, &param5);
 
             msg->opcode = CMD_CALIBRATE;
             msg->param[0] = type;
@@ -310,6 +311,7 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[2] = speed;
             msg->param[3] = module;
             msg->param[4] = sensor;
+            msg->extra = param5;
             return 0;
         } else if(strncmp(str, "st ", 3) == 0) {
             int train, module, sensor, dist;

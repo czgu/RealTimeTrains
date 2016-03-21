@@ -29,12 +29,12 @@ void train_calibration_profile_init(TrainCalibrationProfile* profile, int id) {
             profile->velocity[14] = 6.303121853;
 
             profile->stop_distance[8] = 561.8;
-            profile->stop_distance[8] = 643.6;
-            profile->stop_distance[8] = 714.2;
-            profile->stop_distance[8] = 797.4;
-            profile->stop_distance[8] = 856.5;
-            profile->stop_distance[8] = 962;
-            profile->stop_distance[8] = 956;
+            profile->stop_distance[9] = 643.6;
+            profile->stop_distance[10] = 714.2;
+            profile->stop_distance[11] = 797.4;
+            profile->stop_distance[12] = 856.5;
+            profile->stop_distance[13] = 962;
+            profile->stop_distance[14] = 956;
     }
 }
 
