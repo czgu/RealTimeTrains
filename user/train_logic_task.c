@@ -11,6 +11,10 @@
 #include <io.h>
 #include <priority.h>
 
+#include <string.h>
+#include <dijkstra.h>
+#include <track_data.h>
+
 // Server caches all information about the train
 void train_command_server_task() {
     RegisterAs("Command Server");
@@ -52,6 +56,7 @@ void train_command_server_task() {
                     break;
                 case CMD_CALIBRATE:
                 case CMD_STOP_TRAIN:
+                case CMD_CALCULATE_PATH:
                     Reply(sender, 0, 0);
                     rq_push_back(&command_buffer, &request_msg);
                     break;
@@ -89,6 +94,9 @@ void train_command_worker_task() {
 
     TERMmsg command;
 
+    char reserved_nodes[TRACK_MAX];
+    memset(reserved_nodes, 0, TRACK_MAX*sizeof(char));
+
     for (;;) {
         int sz = Send(command_server_tid, &requestOP, sizeof(char), &command, sizeof(TERMmsg));
         if (sz >= sizeof(char)) {
@@ -107,11 +115,27 @@ void train_command_worker_task() {
                         cid = Create(MED_WORKER_PRIORITY, calibrate_acceleration_delta);
                     } else if (command.param[0] == 4) {
                         cid = Create(MED_WORKER_PRIORITY, calibrate_stop_time);
+                    } else if (command.param[0] == 5) {
+                        //pprintf(COM2, "\033[%d;%dH\033[K reservered %d to %d", 35, 1, command.param[1], command.param[2]);
+                        reserved_nodes[(unsigned int)command.param[1]] = command.param[2];
                     }
 
                     if (cid > 0)
                         Send(cid, &command, sizeof(TERMmsg), 0, 0);
         
+                    break;
+                }
+                case CMD_CALCULATE_PATH: {
+                    Path path;
+
+                    dijkstra_find(train_track + (unsigned int)command.param[0], train_track + (unsigned int)command.param[1], &path, reserved_nodes);
+
+                    pprintf(COM2, "\033[%d;%dH\033[K", 35, 1);
+                    int i;
+                    for (i = path.path_len - 1; i >= 0; i--) {
+                        pprintf(COM2, "%s (%d) %d -> ", path.nodes[i]->name, path.edges[i], reserved_nodes[path.nodes[i]->id]);
+                    }
+
                     break;
                 }
                 case CMD_STOP_TRAIN:

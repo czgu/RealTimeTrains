@@ -23,6 +23,9 @@
 #include <syscall.h>
 #include <string.h>
 
+#include <dijkstra.h>
+#include <track_data.h>
+
 void empty_task() {
 }
 

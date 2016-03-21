@@ -33,6 +33,7 @@ struct track_edge {
 };
 
 struct track_node {
+  int id; /* index */
   const char *name;
   node_type type;
   int num;              /* sensor or switch number */

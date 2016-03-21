@@ -328,6 +328,18 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[4] = dist & 0xFF;
 
             return 0;
+        } else if(strncmp(str, "pa ", 3) == 0) {
+            int src, dest;
+
+            char* current_c = str + 3;
+            a2i('0', &current_c, 10, &src);
+            a2i('0', &current_c, 10, &dest);
+            
+            msg->opcode = CMD_CALCULATE_PATH;
+            msg->param[0] = src;
+            msg->param[1] = dest;
+
+            return 0;
         }
     } 
    

@@ -165,6 +165,12 @@ void* memcpy(void* d, void* s, unsigned int size) {
     return d;
 }
 
+void* memset(void *s, int c, unsigned int n) {
+    unsigned char *p = s;
+    while(n --> 0) { *p++ = (unsigned char)c; }
+    return s;
+}
+
 char* strcat(char* destination, const char * source) {
     return strncat(destination, source, strlen(source));
 }

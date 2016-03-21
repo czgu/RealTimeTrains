@@ -1,13 +1,15 @@
 /* THIS FILE IS GENERATED CODE -- DO NOT EDIT */
 
 #include <track_data.h>
+#include <string.h>
 
 track_node train_track[TRACK_MAX] = {{0}};
 
-static void *memset(void *s, int c, unsigned int n) {
-  unsigned char *p = s;
-  while(n --> 0) { *p++ = (unsigned char)c; }
-  return s;
+static void init_id(track_node* track) {
+    int i;
+    for (i = 0; i < TRACK_MAX; i++) {
+        track[i].id = i;
+    }
 }
 
 void init_track_edge_weights(track_node *track) {
@@ -31,6 +33,7 @@ void init_track_edge_weights(track_node *track) {
 
 void init_tracka(track_node *track) {
   memset(track, 0, TRACK_MAX*sizeof(track_node));
+  init_id(track);
 
   track[0].name = "A1";
   track[0].type = NODE_SENSOR;
@@ -1219,6 +1222,7 @@ void init_tracka(track_node *track) {
 
 void init_trackb(track_node *track) {
   memset(track, 0, TRACK_MAX*sizeof(track_node));
+  init_id(track);
 
   track[0].name = "A1";
   track[0].type = NODE_SENSOR;
