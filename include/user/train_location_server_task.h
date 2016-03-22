@@ -11,7 +11,8 @@ typedef enum {
     LOC_SENSOR_MODULE_UPDATE,
     LOC_WHERE_IS,
     LOC_TIMER_UPDATE,
-    LOC_SET_TRAIN_DEST
+    LOC_SET_TRAIN_DEST,
+    LOC_QUERY
 } LOCATION_OP;
 
 typedef struct WaitModule {
@@ -34,7 +35,7 @@ void train_tracer_task();
 void wait_sensor(int location_server_tid, char module, int sensor);
 int where_is(int location_server_tid, int train_id, TrainModelPosition* position);
 void stop_train_at(int location_server_tid, int train_id, int node_id, int dist);
-
+int location_query(int location_server_tid, int query_type, int query_val);
 
 
 #endif

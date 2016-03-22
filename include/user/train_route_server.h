@@ -7,7 +7,8 @@
 typedef enum {
     RESERVE_NODE,
     RELEASE_NODE,
-    RELEASE_ALL
+    RELEASE_ALL,
+    GET_RESERVE_DATA
 } ROUTE_OP;
 
 
@@ -23,24 +24,29 @@ typedef struct RouteNode {
     */
     // dist to next node
     int arc_dist;
+
+    #define ROUTE_NODE_RESERVED 0x1
+    #define ROUTE_NODE_ACTION_COMPLETED 0x2
+    char bitmap;
 } RouteNode;
 
-typedef struct RoutePath {
+typedef struct Route {
     RouteNode nodes[TRACK_MAX];
     short route_len;
-} RoutePath;
+} Route;
 
-void path_to_route(Path* path, RoutePath* route);
+void path_to_route(Path* path, Route* route);
 
 void train_route_server();
 void train_route_worker();
 
 int reserve_track(int route_server, int train_id, int track_id);
 void release_track(int route_server, int train_id, int track_id);
-void release_all_track(int route_server, int train_id);
+void release_all_track(int route_server, int train_id, int node);
 
 int next_stop_loc(Path* path, int current);
-
+int lookahead_node(Route* route, int current, int lookahead, int location_server, int route_server, int train_id);
+void lookbehind_node(Route* route, int current, int lookbehind, int route_server, int train_id);
 
 
 

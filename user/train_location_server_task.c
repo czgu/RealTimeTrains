@@ -47,6 +47,7 @@ void train_location_server_secretary_task() {
                     break;
                 case LOC_WAIT_SENSOR:
                 case LOC_WHERE_IS:
+                case LOC_QUERY:
                     request_msg.extra = sender;
                     rq_push_back(&request_msg_buffer, &request_msg);
                     break;
@@ -245,6 +246,7 @@ void train_location_server_task() {
                                     int cid = Create(10, train_timed_stop_task);
                                     Send(cid, instruction, sizeof(int) * 2, 0, 0);
                                     train->position.stop_node = (void *)0;
+                                    train->position.stop_dist = -1;
                                 }
 
 
@@ -264,6 +266,21 @@ void train_location_server_task() {
                     pprintf(COM2, "\033[%d;%dH", 43, 1);
                     pprintf(COM2, "got %d, %d, %d.", train, node ,dist);
                     break;
+                }
+                case LOC_QUERY: {
+                    int reply = 0;
+                    switch(request_msg.param[0]) {
+                        case 0: // switch
+                            reply = sensor_bitmap[(int)request_msg.param[1]];
+                            break;
+                        case 1: // train speed
+                            reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].speed;
+                            break;
+                        case 2: // stop dist
+                            reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].position.stop_dist;
+                            break;
+                    }
+                    Reply(sender, &reply, sizeof(int));
                 }
             }
             /*
@@ -457,4 +474,12 @@ inline void wait_module_update(WaitModule* wm, unsigned short bitmap) {
         }
     }
 
+}
+
+
+int location_query(int location_server_tid, int query_type, int query_val) {
+    TERMmsg msg;
+    msg.opcode = LOC_QUERY;
+    msg.param[0] = query_type;
+    msg.param[1] = query_val;
 }
