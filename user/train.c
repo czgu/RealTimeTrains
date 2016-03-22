@@ -43,6 +43,8 @@ void train_model_init(TrainModel* train, int id) {
 	train->speed = 0;
 	train->previous_speed = 0;
     train->speed_updated_time = 0;
+    train->velocity = 0;
+    train->accel_const = 0;
 
     train->bitmap = 0;
     train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
@@ -78,26 +80,40 @@ void train_model_init_location(
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
     float delta_dist = 0;
+    if (train->accel_const != 0) {
+        // train is accelerating
+        train->velocity = train->velocity + train->accel_const * TRAIN_ACCELERATION_DELTA;
+        // TODO: I'm not sure how good floating point operations are
+        if (train->accel_const * train->velocity >= train->accel_const * train->profile.velocity[train->speed]) {
+            train->accel_const = 0;
+            train->velocity = train->profile.velocity[train->speed];
+            //pprintf(COM2, "\033[%d;%dH\033[K[%d] (done acceleration)\n\r", 
+            //    24 + 19, 1, Time());
+        }
+    }
     if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
         float vel_multiplier = 1.0 / train->position.arc->weight_factor;
         // TODO: consider acceleration and account speed 0
+#if 1
+        delta_dist += (time - train->position.updated_time) * train->velocity * vel_multiplier;
+#else
         if (train->speed > 0) {
+            /*
             if (train->speed_updated_time > train->position.updated_time) {
                 delta_dist += (time - train->speed_updated_time) 
-                            * train->profile.velocity[train->speed] * vel_multiplier;
+                            * train->velocity * vel_multiplier;
                 delta_dist += (train->speed_updated_time - train->position.updated_time) 
-                            * train->profile.velocity[train->previous_speed] * vel_multiplier;
-            } else {
-                delta_dist += (time - train->position.updated_time) 
-                            * train->profile.velocity[train->speed] * vel_multiplier;
-            }
+                            * train->velocity * vel_multiplier;
+            } else {*/
+            delta_dist += (time - train->position.updated_time) * train->velocity * vel_multiplier;
+            //}
         } else {
             float stop_time = 300; // TODO: get the actual stop time
             
             // update the remaining part of speed
             if (train->speed_updated_time > train->position.updated_time) {
                 delta_dist += (train->speed_updated_time - train->position.updated_time) 
-                            * train->profile.velocity[train->previous_speed] * vel_multiplier;
+                            * train->velocity * vel_multiplier;
                 train->position.updated_time = train->speed_updated_time;
             }
 
@@ -107,7 +123,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
                             * train->profile.stop_distance[train->previous_speed];
             }
         }
-
+#endif
         // if train is lost
         train->position.estimated_next_sensor_dist -= delta_dist;
         if (train->position.estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
@@ -183,9 +199,15 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
 void train_model_update_speed(TrainModel* train, int time, short* switches, int speed) {
     train_model_update_location(train, time, switches);
     
-    train->previous_speed = train->speed;
-    train->speed = speed;
-    train->speed_updated_time = time;
+    if (speed != train->speed) {
+        train->previous_speed = train->speed;
+        train->speed = speed;
+        train->speed_updated_time = time;
+    
+        train->accel_const = (train->previous_speed < train->speed)? 1 : -1;
+        //pprintf(COM2, "\033[%d;%dH\033[K[%d] (start acceleration)\n\r", 
+        //    24 + 19, 1, Time());
+    }
 }
 
 void train_model_reverse_direction(TrainModel* train, int time, short* switches) {
@@ -217,7 +239,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
     // dynamically calibrate velocity and track
     // We want to wait for the train to accelerate enough after a change of speed before calibration
-    if (time > train->speed_updated_time + 300 && train->position.prev_arc == train->position.arc) {
+    if (train->accel_const == 0 && train->position.prev_arc == train->position.arc) {
         int time_delta = time - train->position.sensor_triggered_time;
         int distance = train->position.prev_arc->dist;
         float agg_velocity = (float) distance / time_delta;
@@ -231,6 +253,7 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
         if (train->speed > 0) {
             train->profile.velocity[train->speed] = velocity_old * 0.9 
                 + agg_velocity * train->position.prev_arc->weight_factor * 0.1;
+            train->velocity = train->profile.velocity[train->speed];
         }
         /*
         pprintf(COM2, "\033[%d;%dH\033[K[%d] v: (%d -> %d)\n\r", 

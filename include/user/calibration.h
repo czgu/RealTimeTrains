@@ -12,7 +12,7 @@ void calibrate_stop();
 void calibrate_velocity();
 
 /**
- *  cal 2 <train_id> <train speed> <delay time>
+ *  cal 2 <train_id> <train speed> <0> <0> <delay time>
  */
 void calibrate_acceleration_move();
 

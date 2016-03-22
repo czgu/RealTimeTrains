@@ -39,6 +39,7 @@ typedef struct TrainModelPosition {
 #define TRAIN_ID_MIN 58
 #define TRAIN_ID_MAX 69
 
+#define TRAIN_LOCATION_UPDATE_TIME_INTERVAL 10
 #define TRAIN_SENSOR_HIT_TOLERANCE -500
 #define TRAIN_LOOK_AHEAD_DIST 200
 
@@ -46,7 +47,11 @@ typedef struct TrainModel {
 	short id;		// [1,80]
 	short speed;	// [0,14]
 	short previous_speed;
+
     int speed_updated_time; // used to calculate acceleration
+    float velocity;
+#define TRAIN_ACCELERATION_DELTA 0.02 * TRAIN_LOCATION_UPDATE_TIME_INTERVAL
+    int accel_const;        // -1 for deceleration, 0 for no acceleration, 1 for acceleration
 
 #define TRAIN_MODEL_DIRECTION_FWD 0x1
 #define TRAIN_MODEL_ACTIVE 0x2

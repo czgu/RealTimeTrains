@@ -377,7 +377,7 @@ void train_location_ticker() {
     
     for (;;) {
         Send(pid, &msg, sizeof(char), 0, 0);
-        Delay(10);
+        Delay(TRAIN_LOCATION_UPDATE_TIME_INTERVAL);
     }
 }
 
