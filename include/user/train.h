@@ -27,7 +27,7 @@ typedef struct TrainModelPosition {
     //float prev_sensor_dist;
     int sensor_triggered_time;
 
-    track_node* stop_sensor;
+    track_node* stop_node;
     int stop_dist;
 
     float estimated_next_sensor_dist;
@@ -56,6 +56,7 @@ typedef struct TrainModel {
 #define TRAIN_MODEL_DIRECTION_FWD 0x1
 #define TRAIN_MODEL_ACTIVE 0x2
 #define TRAIN_MODEL_POSITION_KNOWN 0x4
+#define TRAIN_MODEL_TRACKED 0x8
     short bitmap;
 
     TrainModelPosition position;
@@ -71,6 +72,8 @@ void train_model_update_location(TrainModel* train, int time,  short* switches);
 // track helper
 track_edge* track_next_arc(short* switches, track_edge* current, float* dist);
 track_node* track_next_sensor_node(short* switches, track_edge* current, float* dist);
+int track_ahead_contain_node(track_node* node, short* switches, track_node* current, float lookahead_dist, float *dist_to_node);
+
 
 void train_model_update_speed(TrainModel* train, int time, short* switches, int speed);
 void train_model_reverse_direction(TrainModel* train, int time, short* switches);

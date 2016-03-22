@@ -324,10 +324,9 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
 
             msg->opcode = CMD_STOP_TRAIN;
             msg->param[0] = train;
-            msg->param[1] = module;
-            msg->param[2] = sensor;
-            msg->param[3] = dist >> 8;
-            msg->param[4] = dist & 0xFF;
+            msg->param[1] = (module - 1) * 16 + sensor - 1;
+            msg->param[2] = dist >> 8;
+            msg->param[3] = dist & 0xFF;
 
             return 0;
         } else if(strncmp(str, "pa ", 3) == 0) {

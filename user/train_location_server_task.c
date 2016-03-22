@@ -12,6 +12,8 @@
 #include <rqueue.h>
 #include <priority.h>
 
+#include <assert.h>
+
 void train_location_server_secretary_task() {
     RegisterAs("Location Server");
 
@@ -163,7 +165,8 @@ void train_location_server_task() {
                         wait_module_update(wait_modules + module, new_bitmap);
                         
                         int time = Time();
-                    
+                        TrainModel* lost_train = (void *)0;
+
                         for (t = 0; t < num_active_train; t++) {
                             TrainModel* train = active_train_models[t];
 
@@ -172,27 +175,30 @@ void train_location_server_task() {
                                 if (module == sensor_idx / 16 && 
                                     (new_bitmap & (0x8000 >> (sensor_idx % 16)))) {
                                     train_model_next_sensor_triggered(train, time, switches);
-                                }
-                            } else if(train->speed > 0) {
-                                int sensor = -1;
 
-                                // we need 1 sensor, and we should get exact 1 sensor
-                                
-                                for (i = 0; i < 16; i++) {
-                                    if (new_bitmap & (0x8000 >> i)) {
-                                        if (sensor == -1) {
-                                            sensor = i;
-                                        }
-                                        else {
-                                            sensor = -1;
-                                            break;
-                                        }
-                                    }
+                                    // Sensor gets 'consumed'
+                                    new_bitmap &= ~(0x8000 >> (sensor_idx % 16));
                                 }
+                            } else if (train->speed > 0) {
+                                lost_train = train;
+                            }
+                        }
 
-                                if (sensor >= 0) {
-                                    train_model_init_location(train, time, switches, train_track + (module * 16 + sensor));
+                        // This is for one lost train
+                        if (lost_train != (void *)0 && new_bitmap != 0) {
+                            int sensor = -1;
+
+                            // we need 1 sensor, and we should get exact 1 sensor?
+                            for (i = 0; i < 16; i++) {
+                                if (new_bitmap & (0x8000 >> i)) {
+                                    sensor = i;
+                                    break;
                                 }
+                            }
+
+                            if (sensor >= 0) {
+                                lost_train->bitmap |= TRAIN_MODEL_TRACKED;
+                                train_model_init_location(lost_train, time, switches, train_track + (module * 16 + sensor));
                             }
                         }
                     }
@@ -202,7 +208,7 @@ void train_location_server_task() {
                 case LOC_WHERE_IS: {
                     int train = request_msg.param[0] - TRAIN_ID_MIN;   
 
-                    if (train_models[train].bitmap & TRAIN_MODEL_POSITION_KNOWN) {
+                    if (train_models[train].bitmap & TRAIN_MODEL_TRACKED) {
                         Reply(request_msg.extra, &train_models[train].position, sizeof(TrainModelPosition));
                     } else {
                         Reply(request_msg.extra, 0, 0);
@@ -218,25 +224,27 @@ void train_location_server_task() {
                         if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                             train_model_update_location(train, time, switches);
 
-                            if (train->position.stop_sensor != (void *)0) {
-                                float lookahead = train->position.dist_travelled 
-                                    + train->profile.stop_distance[train->speed] + TRAIN_LOOK_AHEAD_DIST;
-                                float lookahead_next_arc = lookahead;
-                                track_edge* arc = track_next_arc(switches, train->position.arc, &lookahead_next_arc);
-                                if (arc != (void *)0 && arc->src == train->position.stop_sensor) 
+                            if (train->position.stop_node != (void *)0) {
+                                float lookahead = train->profile.stop_distance[train->speed] + TRAIN_LOOK_AHEAD_DIST;
+                                float dist_to_node;
+                                if (track_ahead_contain_node(
+                                        train->position.stop_node, 
+                                        switches, 
+                                        train->position.arc->dest, 
+                                        lookahead, 
+                                        &dist_to_node))
                                 {
-                                    float dist_to_stop_sensor = (lookahead - lookahead_next_arc) 
-                                        + train->position.stop_dist - train->position.dist_travelled 
-                                        - train->profile.stop_distance[train->speed] + 35;
+                                    dist_to_node = dist_to_node + train->position.arc->dist - train->position.dist_travelled - train->profile.stop_distance[train->speed];
+                                    // ASSERT(dist_to_node > 0);
                                     int instruction[2];
-                                    instruction[0] = dist_to_stop_sensor/train->profile.velocity[train->speed];
+                                    instruction[0] = dist_to_node /train->profile.velocity[train->speed];
                                     instruction[1] = train->id;
 
-                                    //pprintf(COM2, "\033[%d;%dH", 24 + 8, 1);
-                                    //pprintf(COM2, "found %d %d", instruction[0], (int)dist_to_stop_sensor);
+                                    pprintf(COM2, "\033[%d;%dH", 44, 1);
+                                    pprintf(COM2, "[%d] found %d %d.", Time(), instruction[0], (int)dist_to_node);
                                     int cid = Create(10, train_timed_stop_task);
                                     Send(cid, instruction, sizeof(int) * 2, 0, 0);
-                                    train->position.stop_sensor = (void *)0;
+                                    train->position.stop_node = (void *)0;
                                 }
 
 
@@ -247,14 +255,14 @@ void train_location_server_task() {
                 }
                 case LOC_SET_TRAIN_DEST: {
                     int train = request_msg.param[0] - TRAIN_ID_MIN;
-                    int sensor = ((int)request_msg.param[1] - 1) * 16 + ((int)request_msg.param[2] - 1);
-                    int dist = (request_msg.param[3] << 8 | request_msg.param[4]);
+                    int node = (int)request_msg.param[1];
+                    int dist = (request_msg.param[2] << 8 | request_msg.param[3]);
 
-                    train_models[train].position.stop_sensor = train_track + sensor;
+                    train_models[train].position.stop_node = train_track + node;
                     train_models[train].position.stop_dist = dist;
 
-                    pprintf(COM2, "\033[%d;%dH", 30, 1);
-                    pprintf(COM2, "%d, %d, %d", train,sensor,dist);
+                    pprintf(COM2, "\033[%d;%dH", 43, 1);
+                    pprintf(COM2, "got %d, %d, %d.", train, node ,dist);
                     break;
                 }
             }
@@ -279,23 +287,19 @@ void train_tracer_task() {
     int view_server = WhoIs("View Server");
     int location_server = WhoIs("Location Server");
 
-    TERMmsg msg;
-    msg.opcode = LOC_WHERE_IS;
-    msg.param[0] = train_id;
-
     TrainModelPosition position;
 
     TERMmsg draw_msg;
     draw_msg.opcode = DRAW_TRAIN_LOC;
     draw_msg.param[0] = train_id;
 
-    int sz;
+    int known_position;
 
     for (;;) {
-        sz = Send(location_server, &msg, sizeof(TERMmsg), &position, sizeof(TrainModelPosition));
+        known_position = where_is(location_server, train_id, &position);
 
         // FIXME: seems like if we update too fast, we see weird distance values
-        if (sz > 0) {
+        if (known_position) {
             draw_msg.param[1] = position.arc->src->type;
             draw_msg.param[2] = position.arc->src->num;
 
@@ -394,11 +398,32 @@ void train_timed_stop_task() {
     train_set_speed(location_server, instruction[1], 0);
 }
 
+int where_is(int location_server_tid, int train_id, TrainModelPosition* position) {
+    TERMmsg msg;
+    msg.opcode = LOC_WHERE_IS;
+    msg.param[0] = train_id;
+
+    int sz = Send(location_server_tid, &msg, sizeof(TERMmsg), position, sizeof(TrainModelPosition));
+    
+    return sz;
+}
+
 void wait_sensor(int location_server_tid, char module, int sensor) {
     TERMmsg msg;
     msg.opcode = LOC_WAIT_SENSOR;
     msg.param[0] = module - 1;
     msg.param[1] = sensor - 1;
+
+    Send(location_server_tid, &msg, sizeof(TERMmsg), 0, 0);
+}
+
+void stop_train_at(int location_server_tid, int train_id, int node_id, int dist) {
+    TERMmsg msg;
+    msg.opcode = LOC_SET_TRAIN_DEST;
+    msg.param[0] = train_id;
+    msg.param[1] = node_id;
+    msg.param[2] = dist >> 8;
+    msg.param[3] = dist & 0xFF;
 
     Send(location_server_tid, &msg, sizeof(TERMmsg), 0, 0);
 }

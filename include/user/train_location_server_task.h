@@ -1,6 +1,8 @@
 #ifndef _TRAIN_LOCATION_SERVER_TASK_H_
 #define _TRAIN_LOCATION_SERVER_TASK_H_
 
+#include <train.h>
+
 typedef enum {
     LOC_WAIT_SENSOR = 0,
     LOC_TRAIN_SPEED_UPDATE,
@@ -30,5 +32,9 @@ void train_timed_stop_task();
 void train_tracer_task();
 
 void wait_sensor(int location_server_tid, char module, int sensor);
+int where_is(int location_server_tid, int train_id, TrainModelPosition* position);
+void stop_train_at(int location_server_tid, int train_id, int node_id, int dist);
+
+
 
 #endif

@@ -50,7 +50,7 @@ void train_model_init(TrainModel* train, int id) {
     train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
 
     // useless until the position_known bit is turned on
-    train->position.stop_sensor = (void *)0;
+    train->position.stop_node = (void *)0;
     train->position.stop_dist = 0;
 
     train_calibration_profile_init(&train->profile, id);
@@ -195,6 +195,43 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
     return node;
 }
 
+int track_ahead_contain_node(
+    track_node* node, short* switches, track_node* current, 
+    float lookahead_dist, float *dist_to_node) {
+
+    *dist_to_node = 0;
+    while (node != current) {
+        track_edge* next_arc;
+        switch (current->type) {
+            case NODE_MERGE:
+            case NODE_SENSOR:
+            case NODE_ENTER:
+                next_arc = current->edge + DIR_AHEAD;
+                break;
+            case NODE_BRANCH: {
+                int switch_num = node->num;
+                if (switch_num >= 153) {
+                    switch_num -= (153 - 19);
+                }
+                next_arc = current->edge + switches[switch_num];
+                break;
+            }
+            case NODE_EXIT:
+            default: // can't search no more
+                return 0;
+        }
+
+        lookahead_dist -= next_arc->dist;
+        *dist_to_node += next_arc->dist;
+
+        if (lookahead_dist < 0)
+            break;
+
+        current = next_arc->dest;
+        
+    }
+    return node == current;   
+}
 
 void train_model_update_speed(TrainModel* train, int time, short* switches, int speed) {
     train_model_update_location(train, time, switches);
@@ -268,7 +305,8 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
 
         pprintf(COM2, "\033[%d;%dH\033[K[%d] e: %d\n\r", 24 + 19 + (line % 10), 55,
             Time(), (int)train->position.estimated_next_sensor_dist);
-        line++;*/
+        line++;
+        */
 
         //pprintf(COM2, "\033[%d;%dH\033[Kdist: %d\n\r", 24 + 19, 1, train->position.prev_arc->dist);
         //pprintf(COM2, "\033[%d;%dH\033[Kvel: %d\n\r", 24 + 20, 1, (int)(agg_velocity * 100));

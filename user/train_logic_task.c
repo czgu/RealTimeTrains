@@ -1,6 +1,10 @@
 #include <train_logic_task.h>
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
+
+#include <train_route_server.h>
+
+
 #include <train.h>
 #include <syscall.h>
 #include <rqueue.h>
@@ -126,6 +130,7 @@ void train_command_worker_task() {
                     break;
                 }
                 case CMD_CALCULATE_PATH: {
+                    /*
                     Path path;
 
                     dijkstra_find(train_track + (unsigned int)command.param[0], train_track + (unsigned int)command.param[1], &path, reserved_nodes);
@@ -135,7 +140,10 @@ void train_command_worker_task() {
                     for (i = path.path_len - 1; i >= 0; i--) {
                         pprintf(COM2, "%s (%d) %d -> ", path.nodes[i]->name, path.edges[i], reserved_nodes[path.nodes[i]->id]);
                     }
+                    */
 
+                    int cid = Create(10, train_route_worker);
+                    Send(cid, command.param, sizeof(char) * 2, 0, 0);
                     break;
                 }
                 case CMD_STOP_TRAIN:
