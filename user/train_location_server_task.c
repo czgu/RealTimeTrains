@@ -238,7 +238,8 @@ void train_location_server_task() {
                                     dist_to_node = dist_to_node + train->position.arc->dist - train->position.dist_travelled - train->profile.stop_distance[train->speed];
                                     // ASSERT(dist_to_node > 0);
                                     int instruction[2];
-                                    instruction[0] = dist_to_node /train->profile.velocity[train->speed];
+                                    instruction[0] = train->position.arc->weight_factor * dist_to_node
+                                                   / train->profile.velocity[train->speed];
                                     instruction[1] = train->id;
 
                                     pprintf(COM2, "\033[%d;%dH", 44, 1);

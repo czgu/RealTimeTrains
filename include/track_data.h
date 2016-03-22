@@ -28,8 +28,8 @@ typedef struct track_edge track_edge;
 struct track_edge {
   track_edge *reverse;
   track_node *src, *dest;
-  int dist;             /* in millimetres */
-  float weight_factor;    // effective distance = dist * weight_factor
+  int dist;                 /* in millimetres */
+  float weight_factor;      // effective distance = dist * weight_factor
 };
 
 struct track_node {
