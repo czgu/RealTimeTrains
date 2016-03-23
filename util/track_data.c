@@ -2228,7 +2228,7 @@ void init_trackb(track_node *track) {
   track[115].edge[DIR_AHEAD].dist = 187;
   track[116].name = "BR153";
   track[116].type = NODE_BRANCH;
-  track[116].num = 153;
+  track[116].num = 19;
   track[116].reverse = &track[117];
   track[116].edge[DIR_STRAIGHT].reverse = &track[124].edge[DIR_AHEAD];
   track[116].edge[DIR_STRAIGHT].src = &track[116];
@@ -2240,7 +2240,7 @@ void init_trackb(track_node *track) {
   track[116].edge[DIR_CURVED].dist = 228;
   track[117].name = "MR153";
   track[117].type = NODE_MERGE;
-  track[117].num = 153;
+  track[117].num = 19;
   track[117].reverse = &track[116];
   track[117].edge[DIR_AHEAD].reverse = &track[118].edge[DIR_STRAIGHT];
   track[117].edge[DIR_AHEAD].src = &track[117];
@@ -2248,7 +2248,7 @@ void init_trackb(track_node *track) {
   track[117].edge[DIR_AHEAD].dist = 24;
   track[118].name = "BR154";
   track[118].type = NODE_BRANCH;
-  track[118].num = 154;
+  track[118].num = 20;
   track[118].reverse = &track[119];
   track[118].edge[DIR_STRAIGHT].reverse = &track[117].edge[DIR_AHEAD];
   track[118].edge[DIR_STRAIGHT].src = &track[118];
@@ -2260,7 +2260,7 @@ void init_trackb(track_node *track) {
   track[118].edge[DIR_CURVED].dist = 224;
   track[119].name = "MR154";
   track[119].type = NODE_MERGE;
-  track[119].num = 154;
+  track[119].num = 20;
   track[119].reverse = &track[118];
   track[119].edge[DIR_AHEAD].reverse = &track[123].edge[DIR_AHEAD];
   track[119].edge[DIR_AHEAD].src = &track[119];
@@ -2268,7 +2268,7 @@ void init_trackb(track_node *track) {
   track[119].edge[DIR_AHEAD].dist = 32;
   track[120].name = "BR155";
   track[120].type = NODE_BRANCH;
-  track[120].num = 155;
+  track[120].num = 21;
   track[120].reverse = &track[121];
   track[120].edge[DIR_STRAIGHT].reverse = &track[126].edge[DIR_AHEAD];
   track[120].edge[DIR_STRAIGHT].src = &track[120];
@@ -2280,7 +2280,7 @@ void init_trackb(track_node *track) {
   track[120].edge[DIR_CURVED].dist = 227;
   track[121].name = "MR155";
   track[121].type = NODE_MERGE;
-  track[121].num = 155;
+  track[121].num = 21;
   track[121].reverse = &track[120];
   track[121].edge[DIR_AHEAD].reverse = &track[122].edge[DIR_STRAIGHT];
   track[121].edge[DIR_AHEAD].src = &track[121];
@@ -2288,7 +2288,7 @@ void init_trackb(track_node *track) {
   track[121].edge[DIR_AHEAD].dist = 24;
   track[122].name = "BR156";
   track[122].type = NODE_BRANCH;
-  track[122].num = 156;
+  track[122].num = 22;
   track[122].reverse = &track[123];
   track[122].edge[DIR_STRAIGHT].reverse = &track[121].edge[DIR_AHEAD];
   track[122].edge[DIR_STRAIGHT].src = &track[122];
@@ -2300,7 +2300,7 @@ void init_trackb(track_node *track) {
   track[122].edge[DIR_CURVED].dist = 222;
   track[123].name = "MR156";
   track[123].type = NODE_MERGE;
-  track[123].num = 156;
+  track[123].num = 22;
   track[123].reverse = &track[122];
   track[123].edge[DIR_AHEAD].reverse = &track[119].edge[DIR_AHEAD];
   track[123].edge[DIR_AHEAD].src = &track[123];
