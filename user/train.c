@@ -7,6 +7,10 @@
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
 
+#include <assert.h>
+
+//static int line = 0;
+
 void train_calibration_profile_init(TrainCalibrationProfile* profile, int id) {
     int i;
     for (i = 0; i < 8; i++) {
@@ -209,11 +213,15 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
 
 int track_ahead_contain_node(
     track_node* node, short* switches, track_node* current, 
-    float lookahead_dist, float *dist_to_node) {
+    int lookahead_dist, int *dist_to_node) {
 
-    *dist_to_node = 0;
+    int total_arc_dist = 0;
+
+    //int time = Time();
+
     while (node != current) {
-        track_edge* next_arc;
+        //pprintf(COM2, "\033[%d;%dH [%d]search %s to %s.", 40 + line++ % 10, 1, time, current->name, node->name);
+        track_edge* next_arc = (void *)0;
         switch (current->type) {
             case NODE_MERGE:
             case NODE_SENSOR:
@@ -221,11 +229,8 @@ int track_ahead_contain_node(
                 next_arc = current->edge + DIR_AHEAD;
                 break;
             case NODE_BRANCH: {
-                int switch_num = node->num;
-                if (switch_num >= 153) {
-                    switch_num -= (153 - 19);
-                }
-                next_arc = current->edge + switches[switch_num];
+                //pprintf(COM2, "\033[%d;%dH [%d] switches[%d] = %d.", 40 + line++ % 10, 1, time, node->num, switches[node->num]);
+                next_arc = current->edge + switches[current->num];
                 break;
             }
             case NODE_EXIT:
@@ -233,15 +238,28 @@ int track_ahead_contain_node(
                 return 0;
         }
 
-        lookahead_dist -= next_arc->dist;
-        *dist_to_node += next_arc->dist;
+        lookahead_dist = lookahead_dist - next_arc->dist;
+        total_arc_dist = total_arc_dist + next_arc->dist;
+
+        if (total_arc_dist <= 0) {
+            //pprintf(COM2, "\033[%d;%dH [%d] WTF %d, node %s type:%d, edge:%d,%d.", 40 + line++ % 10, 1, time, next_arc->dist, current->name, current->type, (int)current->edge, (int)next_arc);
+            Delay(50);
+        }
+        ASSERT(total_arc_dist > 0);
 
         if (lookahead_dist < 0)
             break;
 
         current = next_arc->dest;
-        
     }
+
+    if (node == current && total_arc_dist == 0) {
+        pprintf(COM2, "\033[%d;%dH found total arc_dist: %d", 43, 1, total_arc_dist);
+        //Delay(30);
+        //ASSERT(total_arc_dist > 0);
+    }
+
+    *dist_to_node = total_arc_dist;
     return node == current;   
 }
 

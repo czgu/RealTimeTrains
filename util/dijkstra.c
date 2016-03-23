@@ -1,5 +1,4 @@
 #include <dijkstra.h>
-
 #include <io.h>
 
 inline static void min_heap_swap(MinHeap* heap, int idx1, int idx2) {
@@ -88,7 +87,7 @@ void dijkstra_init_heap(MinHeap* heap, NodePair* nodes) {
     heap->size = TRACK_MAX;
 }
 
-void dijkstra_find(track_node* src, track_node* dest, Path* path, char* reserved_nodes) {
+void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_bitmap) {
     NodePair nodes[TRACK_MAX];
     MinHeap heap;
     int alt_dist, id, i;    
@@ -128,7 +127,7 @@ void dijkstra_find(track_node* src, track_node* dest, Path* path, char* reserved
             id = np->node->edge[i].dest->id;
             alt_dist = np->dist + np->node->edge[i].dist;
 
-            if (alt_dist < nodes[id].dist && (reserved_nodes[np->node->id] & (0x1 << i)) == 0 ) {
+            if (alt_dist < nodes[id].dist && (reserved_bitmap[id/sizeof(int)] & (0x1 << (id % sizeof(int)))) == 0 ) {
                 nodes[id].prev = np->node;
                 nodes[id].prev_edge = i;
                 min_heap_decrease_key(&heap, nodes[id].index, alt_dist);

@@ -26,4 +26,9 @@ void calibrate_acceleration_delta();
  */
 void calibrate_stop_time();
 
+/**
+ *  cal 6 <train_id>
+ */
+void calibrate_find_train();
+
 #endif

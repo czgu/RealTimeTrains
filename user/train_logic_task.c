@@ -120,8 +120,14 @@ void train_command_worker_task() {
                     } else if (command.param[0] == 4) {
                         cid = Create(MED_WORKER_PRIORITY, calibrate_stop_time);
                     } else if (command.param[0] == 5) {
-                        //pprintf(COM2, "\033[%d;%dH\033[K reservered %d to %d", 35, 1, command.param[1], command.param[2]);
-                        reserved_nodes[(unsigned int)command.param[1]] = command.param[2];
+                        // init track, don't do it unless on start up
+                        if (command.param[1] == 0) {
+                            init_tracka(train_track);
+                        } else {
+                            init_trackb(train_track);
+                        }
+                    } else if (command.param[0] == 6) {
+                        cid = Create(MED_WORKER_PRIORITY, calibrate_find_train);
                     }
 
                     if (cid > 0)

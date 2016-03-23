@@ -77,7 +77,7 @@ void train_model_update_location(TrainModel* train, int time,  short* switches);
 // track helper
 track_edge* track_next_arc(short* switches, track_edge* current, float* dist);
 track_node* track_next_sensor_node(short* switches, track_edge* current, float* dist);
-int track_ahead_contain_node(track_node* node, short* switches, track_node* current, float lookahead_dist, float *dist_to_node);
+int track_ahead_contain_node(track_node* node, short* switches, track_node* current, int lookahead_dist, int* dist_to_node);
 
 
 void train_model_update_speed(TrainModel* train, int time, short* switches, int speed);

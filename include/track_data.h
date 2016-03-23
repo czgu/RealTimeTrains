@@ -7,6 +7,7 @@
 
 // The track initialization functions expect an array of this size.
 #define TRACK_MAX 144
+extern const int TRACK_BITMAP_MAX;
 
 typedef enum {
   NODE_NONE,

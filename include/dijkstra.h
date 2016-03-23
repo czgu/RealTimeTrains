@@ -28,7 +28,6 @@ typedef struct Path {
 
 } Path;
 
-
 /* Private
 inline static void min_heap_swap(MinHeap* heap, int idx1, int idx2)
 inline static void min_heap_bubble_up(MinHeap* heap, int index);
@@ -49,6 +48,6 @@ void dijkstra_init_heap(MinHeap* heap, NodePair* nodes);
     0 - forward/straight edge reservered
     1 - curve edge reservered
 */
-void dijkstra_find(track_node* src, track_node* dest, Path* path, char* reserved_nodes);
+void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_bitmap);
 
 #endif

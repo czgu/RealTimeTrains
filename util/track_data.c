@@ -3,6 +3,8 @@
 #include <track_data.h>
 #include <string.h>
 
+const int TRACK_BITMAP_MAX = (TRACK_MAX/sizeof(int)) + 1;
+
 track_node train_track[TRACK_MAX] = {{0}};
 
 static void init_id(track_node* track) {

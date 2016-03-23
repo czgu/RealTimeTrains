@@ -226,8 +226,8 @@ void train_location_server_task() {
                             train_model_update_location(train, time, switches);
 
                             if (train->position.stop_node != (void *)0) {
-                                float lookahead = train->profile.stop_distance[train->speed] + TRAIN_LOOK_AHEAD_DIST;
-                                float dist_to_node;
+                                int lookahead = ((int)train->profile.stop_distance[train->speed]) + TRAIN_LOOK_AHEAD_DIST;
+                                int dist_to_node;
                                 if (track_ahead_contain_node(
                                         train->position.stop_node, 
                                         switches, 
@@ -235,15 +235,15 @@ void train_location_server_task() {
                                         lookahead, 
                                         &dist_to_node))
                                 {
-                                    dist_to_node = dist_to_node + train->position.arc->dist - train->position.dist_travelled - train->profile.stop_distance[train->speed];
+                                    float dist_left = (float)dist_to_node + train->position.arc->dist - train->position.dist_travelled - train->profile.stop_distance[train->speed];
                                     // ASSERT(dist_to_node > 0);
                                     int instruction[2];
-                                    instruction[0] = train->position.arc->weight_factor * dist_to_node
-                                                   / train->profile.velocity[train->speed];
+                                    // TODO: might change this to train->velocity
+                                    instruction[0] = dist_left * train->position.arc->weight_factor / train->profile.velocity[train->speed];
                                     instruction[1] = train->id;
 
                                     pprintf(COM2, "\033[%d;%dH", 44, 1);
-                                    pprintf(COM2, "[%d] found %d %d.", Time(), instruction[0], (int)dist_to_node);
+                                    pprintf(COM2, "[%d] found %d %d %d %d %d.", Time(), instruction[0], (int)dist_to_node, (int)dist_left, (int)lookahead, (int)(train->position.arc->dist - train->position.dist_travelled));
                                     int cid = Create(10, train_timed_stop_task);
                                     Send(cid, instruction, sizeof(int) * 2, 0, 0);
                                     train->position.stop_node = (void *)0;
@@ -483,4 +483,10 @@ int location_query(int location_server_tid, int query_type, int query_val) {
     msg.opcode = LOC_QUERY;
     msg.param[0] = query_type;
     msg.param[1] = query_val;
+
+    int ret = 0;
+
+    Send(location_server_tid, &msg, sizeof(TERMmsg), &ret, sizeof(int));
+
+    return ret;
 }

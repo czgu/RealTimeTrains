@@ -12,7 +12,7 @@
 
 int execute_route(Route* route, int train_id, int location_server, int route_server, TrainModelPosition* position);
 
-int line = 0;
+static int line = 0;
 
 void train_route_server() {
     RegisterAs("Route Server");
@@ -25,8 +25,8 @@ void train_route_server() {
     memset(reserved_nodes, 0, TRACK_MAX*sizeof(char));
 
     // reservation bitmap
-    int reservation_bitmap[TRACK_MAX/sizeof(int)];
-    memset(reservation_bitmap, 0, (TRACK_MAX/sizeof(int))*sizeof(int));
+    int reservation_bitmap[TRACK_BITMAP_MAX];
+    memset(reservation_bitmap, 0, TRACK_BITMAP_MAX*sizeof(int));
 
     for (;;) {
         int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
@@ -35,37 +35,46 @@ void train_route_server() {
                 case RESERVE_NODE: {
                     int success = 0;
 
-                    if (reserved_nodes[(int)request_msg.param[0]] == 0) {
-                        reserved_nodes[(int)request_msg.param[0]] = request_msg.param[1];
+                    int node_id = (int)request_msg.param[0];
+                    int train_id = (int)request_msg.param[1];
 
-                        track_node* reverse_node = train_track[(int)request_msg.param[0]].reverse;
+                    if (reserved_nodes[node_id] == 0) {
+                        reserved_nodes[node_id] = train_id;
+
+                        track_node* reverse_node = train_track[node_id].reverse;
                         if (reverse_node != (void *)0) {
-                            reserved_nodes[reverse_node->id] = request_msg.param[1];
+                            reservation_bitmap[reverse_node->id/sizeof(int)] |= (0x1 << (reverse_node->id % 32));
+                            reserved_nodes[reverse_node->id] = train_id;
                         }
                     
 
                         success = 1;
-                    } else if (reserved_nodes[(int)request_msg.param[0]] == request_msg.param[1]) {
+                    } else if (reserved_nodes[node_id] == train_id) {
                         success = 1;
+                    } else {
+                        pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
                     }
 
-                    reservation_bitmap[(int)request_msg.param[0]/sizeof(int)] |= (0x1 << ((int)request_msg.param[0] % 32));
-
-                    pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, status:%d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1], success);
-
+                    reservation_bitmap[node_id/sizeof(int)] |= (0x1 << (node_id % 32));
                     Reply(sender, &success, sizeof(int));
                     break;
                 }
                 case RELEASE_NODE: {
                     Reply(sender, 0, 0);
-                    if (reserved_nodes[(int)request_msg.param[0]] == request_msg.param[1]) {
-                        reserved_nodes[(int)request_msg.param[0]] = 0;
-                        track_node* reverse_node = train_track[(int)request_msg.param[0]].reverse;
+
+                    int node_id = (int)request_msg.param[0];
+                    int train_id = (int)request_msg.param[1];
+
+                    if (reserved_nodes[node_id] == train_id) {
+                        reserved_nodes[node_id] = 0;
+                        reservation_bitmap[node_id/sizeof(int)] &= ~(0x1 << (node_id % 32));
+
+                        track_node* reverse_node = train_track[node_id].reverse;
                         if (reverse_node != (void *)0) {
+                            reservation_bitmap[reverse_node->id/sizeof(int)] &= ~(0x1 << (reverse_node->id % 32));
                             reserved_nodes[reverse_node->id] = 0;
                         }
                     }
-                    reservation_bitmap[(int)request_msg.param[0]/sizeof(int)] &= ~(0x1 << ((int)request_msg.param[0] % 32));
 
                     pprintf(COM2, "\033[%d;%dH\033[K Free: %d train: %d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1]);
                     break;
@@ -73,16 +82,29 @@ void train_route_server() {
                 case RELEASE_ALL: {
                     Reply(sender, 0, 0);
                     int i;
+
+                    int train_id = (int)request_msg.param[0];
+                    int node_id = (int)request_msg.param[1];
+
                     for (i = 0; i < TRACK_MAX; i++) {
-                        reservation_bitmap[i] &= ~(0x1 << (i % 32));
-                        if (reserved_nodes[i] == request_msg.param[0] && i != request_msg.param[1]) {
+                        if (reserved_nodes[i] == train_id) {
+                            reservation_bitmap[i] &= ~(0x1 << (i % 32));
                             reserved_nodes[i] = 0;
                         }
                     }
+
+                    reserved_nodes[node_id] = train_id;
+                    track_node* reverse_node = train_track[node_id].reverse;
+                    if (reverse_node != (void *)0) {
+                        reservation_bitmap[reverse_node->id/sizeof(int)] |= (0x1 << (reverse_node->id % 32));
+                        reserved_nodes[reverse_node->id] = train_id;
+                    }
+
                     break;
                 }
                 case GET_RESERVE_DATA: {
-                    Reply(sender, reservation_bitmap, TRACK_MAX/sizeof(int));
+                    Reply(sender, reservation_bitmap, TRACK_BITMAP_MAX * sizeof(int));
+                    break;
                 }
             }
         }
@@ -96,10 +118,12 @@ void train_route_worker() {
     Receive(&sender, instruction, sizeof(char) * 2);
     Reply(sender, 0, 0);
 
-    pprintf(COM2, "\033[%d;%dH\033[KRoute start", 35 + line++ % 10, 1);
+    int time = Time();
 
-    char reserved_nodes[TRACK_MAX];
-    memset(reserved_nodes, 0, TRACK_MAX*sizeof(char));    
+    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route start",35 + line++ % 10, 1, time);
+
+    int track_taken[TRACK_BITMAP_MAX];
+    memset(track_taken, 0, TRACK_BITMAP_MAX*sizeof(int));    
 
     int train_id = instruction[0];
     int dest_idx = instruction[1];
@@ -117,13 +141,23 @@ void train_route_worker() {
         return;
     }
 
+    release_all_track(route_server, train_id, position.arc->dest->id);
+
     Path path; // path in graph theory model
     Route route; // route for actual execution
 
     // 0: good, -1 : bad
     int path_status = -1;
+
+    int tries = 0;
+
     while (path_status < 0) {
-        dijkstra_find(position.arc->src, train_track + dest_idx, &path, reserved_nodes);
+        //get_track_reservation(route_server, track_taken);
+        // turn off destination bit
+        track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
+
+
+        dijkstra_find(position.arc->src, train_track + dest_idx, &path, track_taken);
         path_to_route(&path, &route);
 
         pprintf(COM2, "\033[%d;%dH\033[K Path [%d] : ", 33, 1, train_id);
@@ -134,20 +168,26 @@ void train_route_worker() {
         PutStr(COM2, " END\n\r");
 
         if (route.route_len <= 1) {
-            pprintf(COM2, "\033[%d;%dH\033[KNo path. ", 35, 1);
+            pprintf(COM2, "\033[%d;%dH\033[K[%d] No path. ", 35, 1, time);
             break;
         } else {
             path_status = execute_route(&route, train_id, location_server, route_server, &position);
 
             // Release the root except the current node
             Delay(300);
+            tries ++;
 
             where_is(location_server, train_id, &position);
             release_all_track(route_server, train_id, position.arc->dest->id);
         }
+
+        if (tries > 5) {
+            pprintf(COM2, "\033[%d;%dH\033[K[%d]Route find failed", 35 + line++ % 10, 1, time);
+            break;
+        }
     }
 
-    pprintf(COM2, "\033[%d;%dH\033[KRoute end", 35 + line++ % 10, 1);
+    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route end", 35 + line++ % 10, 1, time);
 }
 
 int execute_route(Route* route, int train_id, int location_server, int route_server, TrainModelPosition* position) {
@@ -193,11 +233,11 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
 
         if (status != 0) {
             if (status == -1) {
-                pprintf(COM2, "\033[%d;%dH\033[KReservation fail.\n\r", 35 + line++ % 10, 1);
                 return -1;
             }
+
             if(status == 1) {
-                pprintf(COM2, "\033[%d;%dH\033[Kexecute_route done.\n\r", 35 + line++ % 10, 1);
+                pprintf(COM2, "\033[%d;%dH\033[KExecute_route done.\n\r", 35 + line++ % 10, 1);
                 return 0;
             }
         }
@@ -239,6 +279,13 @@ void release_all_track(int route_server, int train_id, int node) {
     msg.param[1] = node;
 
     Send(route_server, &msg, sizeof(TERMmsg), 0, 0);
+}
+
+void get_track_reservation(int route_server, int *bitmap) {
+    TERMmsg msg;
+    msg.opcode = GET_RESERVE_DATA;
+    
+    Send(route_server, &msg, sizeof(TERMmsg), bitmap, TRACK_BITMAP_MAX * sizeof(int));
 }
 
 void path_to_route(Path* path, Route* route) {
@@ -293,6 +340,7 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 3) { // try kept failing, restart route
+                    pprintf(COM2, "\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 10, 1, route->nodes[current].node->name);
                     return -1;
                 }
                 tries ++;
@@ -319,7 +367,7 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
         }
 
         // Compute successor
-        if (current == route->route_len)
+        if (current == route->route_len - 1)
             return 1;
 
         if (lookahead == 0)
@@ -343,6 +391,9 @@ void lookbehind_node(Route* route, int current, int lookbehind, int route_server
             break;
         }
     }
+
+    if (lookbehind >= 0)
+        return;
 
     while (current >= 0) {
         if (route->nodes[current].bitmap & ROUTE_NODE_RESERVED) {

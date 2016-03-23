@@ -261,3 +261,23 @@ void calibrate_acceleration_move() {
     pprintf(COM2, "\033[%d;%dH\033[Kdt: (%d, %d)\n\r", 
         24 + 19, 1, command.extra, time2 - time1);
 }
+void calibrate_find_train() {
+    int sender;
+    TERMmsg command;
+
+    Receive(&sender, &command, sizeof(TERMmsg));
+    Reply(sender, 0, 0);
+
+    int train_id = command.param[1];
+    int location_server_tid = WhoIs("Location Server");
+
+    TrainModelPosition position;
+    train_set_speed(location_server_tid, train_id, 10);
+    while (where_is(location_server_tid, train_id, &position) == 0) {
+        Delay(50);
+    }
+
+    train_set_speed(location_server_tid, train_id, 0);
+}
+
+
