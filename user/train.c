@@ -10,7 +10,7 @@
 void train_calibration_profile_init(TrainCalibrationProfile* profile, int id) {
     int i;
     for (i = 0; i < 8; i++) {
-        //profile->velocity[i] = 0;
+        profile->velocity[i] = 0;
         profile->stop_distance[i] = 0;
     }
     /*
