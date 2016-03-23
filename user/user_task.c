@@ -38,6 +38,8 @@ void idle_task() {
 }
 
 void bootstrap_user_task() {
+    Create(10, train_route_server);
+
     Create(TRAIN_LOCATION_SERVER_PRIORITY, train_location_server_task);
 
 
@@ -47,7 +49,6 @@ void bootstrap_user_task() {
     Create(TERMINAL_INPUT_LISTENER_PRIORITY, terminal_input_listener_task);
     Create(TRAIN_SENSOR_TASK_PRIORITY, train_sensor_task);
 
-    Create(10, train_route_server);
 }
 
 void first_task() {

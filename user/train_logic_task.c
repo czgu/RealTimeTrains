@@ -94,6 +94,7 @@ void train_command_server_task() {
 void train_command_worker_task() {
     int command_server_tid = WhoIs("Command Server");
     int location_server_tid = WhoIs("Location Server");
+    int route_server = WhoIs("Route Server");
     char requestOP = CMD_WORKER_READY;
 
     TERMmsg command;
@@ -128,6 +129,20 @@ void train_command_worker_task() {
                         }
                     } else if (command.param[0] == 6) {
                         cid = Create(MED_WORKER_PRIORITY, calibrate_find_train);
+                    } else if (command.param[0] == 7) {
+                        switch (command.param[1]) {
+                            case 0:
+                                reserve_track(route_server, 1, command.param[2]);
+                                break;
+                            case 1:
+                                release_track(route_server, 1, command.param[2]);
+                                break;
+                            case 2:
+                                release_all_track(route_server, 1, -1);
+                                break;
+                            default:
+                                break;    
+                        }
                     }
 
                     if (cid > 0)

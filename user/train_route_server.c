@@ -93,6 +93,9 @@ void train_route_server() {
                         }
                     }
 
+                    if (node_id < 0 || node_id > TRACK_MAX)
+                        break;
+
                     reserved_nodes[node_id] = train_id;
                     track_node* reverse_node = train_track[node_id].reverse;
                     if (reverse_node != (void *)0) {
@@ -111,11 +114,38 @@ void train_route_server() {
     }
 }
 
+void random_route_server() {
+    RegisterAs("Random Route");
+
+    int sender;
+    TERMmsg request_msg;
+
+    // reservation bitmap
+    char train_status[TRAIN_ID_MAX - TRAIN_ID_MIN + 1];
+    memset(train_status, 0, (TRAIN_ID_MAX - TRAIN_ID_MIN + 1) * sizeof(char));
+    
+
+    for (;;) {
+        int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
+        if (sz >= sizeof(char)) {
+            switch(request_msg.opcode) {
+                case MOVE_RANDOM_TRAIN:
+                    break;
+                case STOP_RANDOM_TRAIN:
+                    break;
+                case TRAIN_MOVED:
+                    break;
+            }
+        }
+    }
+
+}
+
 void train_route_worker() {
-    char instruction[2];
+    char instruction[3];
     int sender;
 
-    Receive(&sender, instruction, sizeof(char) * 2);
+    Receive(&sender, instruction, sizeof(char) * 3);
     Reply(sender, 0, 0);
 
     int time = Time();
@@ -127,6 +157,7 @@ void train_route_worker() {
 
     int train_id = instruction[0];
     int dest_idx = instruction[1];
+    int send_after_complete = instruction[2];
 
     TrainModelPosition position;
 

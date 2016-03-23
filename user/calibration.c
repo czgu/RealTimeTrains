@@ -274,7 +274,7 @@ void calibrate_find_train() {
     TrainModelPosition position;
     train_set_speed(location_server_tid, train_id, 10);
     while (where_is(location_server_tid, train_id, &position) == 0) {
-        Delay(50);
+        Delay(100);
     }
 
     train_set_speed(location_server_tid, train_id, 0);

@@ -369,16 +369,14 @@ void train_sensor_task() {
             char dhi = (hi ^ sensors[i].hi) & ~sensors[i].hi;
 
             // send updates to the location server only if a sensor is triggered
-            if (lo != 0 || hi != 0) {
-                msg.opcode = LOC_SENSOR_MODULE_UPDATE;
-                msg.param[0] = i;
-                msg.param[1] = lo;
-                msg.param[2] = hi;
-                Send(location_server, &msg, sizeof(TERMmsg), 0, 0);
-            }
-
             // we only care all 0->1 changes on screen
             if (dhi != 0 || dlo != 0) {
+                msg.opcode = LOC_SENSOR_MODULE_UPDATE;
+                msg.param[0] = i;
+                msg.param[1] = dlo;
+                msg.param[2] = dhi;
+                Send(location_server, &msg, sizeof(TERMmsg), 0, 0);
+
                 msg.opcode = DRAW_MODULE;
                 msg.param[0] = i;
                 msg.param[1] = dlo;
@@ -476,7 +474,6 @@ inline void wait_module_update(WaitModule* wm, unsigned short bitmap) {
     }
 
 }
-
 
 int location_query(int location_server_tid, int query_type, int query_val) {
     TERMmsg msg;

@@ -17,9 +17,9 @@ UTIL_DIR = util
 TASK_DIR = user
 
 USER = $(shell whoami)
-FILE = train1
+FILE = train2
 
-DEBUGFLAGS = -D_ASSERT -D_DEBUG
+DEBUGFLAGS = -D_NASSERT -D_DEBUG
 OPTIMIZATION = 2
 CFLAGS  = -c -fPIC -Wall -I. $(INCLUDE) -mcpu=arm920t -msoft-float -O$(OPTIMIZATION) $(DEBUGFLAGS)
 

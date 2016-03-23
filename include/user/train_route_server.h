@@ -11,6 +11,12 @@ typedef enum {
     GET_RESERVE_DATA
 } ROUTE_OP;
 
+typedef enum {
+    MOVE_RANDOM_TRAIN,
+    STOP_RANDOM_TRAIN,
+    TRAIN_MOVED
+} RANDOM_ROUTE;
+
 
 typedef struct RouteNode {
     track_node* node;
@@ -38,6 +44,7 @@ typedef struct Route {
 void path_to_route(Path* path, Route* route);
 
 void train_route_server();
+void random_route_server();
 void train_route_worker();
 
 int reserve_track(int route_server, int train_id, int track_id);
