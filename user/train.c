@@ -141,7 +141,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
             && train->position.estimated_next_sensor_dist > 0) {    // the train has not passed the second sensor
 
             ASSERT(train->position.arcs_passed[0]->src->type == NODE_SENSOR);
-            ASSERTP(train->position.num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, "expected %d", train->position.num_arcs_passed);
+            ASSERTP(train->position.num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, "%d num_arcs_passed reached limit, passed another arc", train->position.num_arcs_passed);
 
             train->position.arcs_passed[train->position.num_arcs_passed] = train->position.arc;
             train->position.num_arcs_passed = train->position.num_arcs_passed + 1;
@@ -304,7 +304,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 
 //int line = 1;
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
-    ASSERTP(train->position.num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, "expected %d", train->position.num_arcs_passed);
+    ASSERTP(train->position.num_arcs_passed <= TRACK_MAX_EDGES_BTW_SENSORS, "num_arcs_passed exceeded limit, got %d", train->position.num_arcs_passed);
 
     // dynamically calibrate velocity and track
     // We want to wait for the train to accelerate enough after a change of speed before calibration
