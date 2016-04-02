@@ -133,8 +133,7 @@ void terminal_view_worker_task() {
                     break;
                 }
                 case DRAW_KERNEL_STATS: {
-                    short val = (draw_msg.param[0] << 8) | draw_msg.param[1]; // hack
-                    print_stats(&cs, val);
+                    print_stats(&cs, draw_msg.extra);
                     break;
                 }   
                 case DRAW_SENSOR: {
@@ -236,9 +235,7 @@ void terminal_kernel_status_listener_task() {
     msg.opcode = DRAW_KERNEL_STATS;
 
     for (;;) {
-        short stat = AwaitEvent(KERNEL_STATS);
-        msg.param[0] = (stat & 0xFF00) >> 8; // upper 8
-        msg.param[1] = (stat & 0xFF); // lower 8
+        msg.extra = AwaitEvent(KERNEL_STATS);
 
         Send(view_server_tid, &msg, sizeof(TERMmsg), 0, 0);
     }

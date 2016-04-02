@@ -50,7 +50,7 @@ void train_command_server_task() {
         if (sz >= sizeof(char)) {
             switch(request_msg.opcode) {
                 case CMD_Q:
-                    Halt();
+                    Halt(1);
                     break;
                 case CMD_TR:
                     Reply(sender, 0, 0);

@@ -47,10 +47,18 @@ void train_route_server();
 void random_route_server();
 void train_route_worker();
 
+// Route server
 int reserve_track(int route_server, int train_id, int track_id);
 void release_track(int route_server, int train_id, int track_id);
 void release_all_track(int route_server, int train_id, int node);
 void get_track_reservation(int route_server, int *bitmap);
+
+//Random route server
+/*
+void train_moved(
+void move_random_train(
+void 
+*/
 
 int next_stop_loc(Path* path, int current);
 int lookahead_node(Route* route, int current, int lookahead, int location_server, int route_server, int train_id);

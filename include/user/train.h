@@ -42,7 +42,7 @@ typedef struct TrainModelPosition {
 } TrainModelPosition;
 
 #define TRAIN_ID_MIN 58
-#define TRAIN_ID_MAX 69
+#define TRAIN_ID_MAX 72
 
 #define TRAIN_LOCATION_UPDATE_TIME_INTERVAL 10
 #define TRAIN_SENSOR_HIT_TOLERANCE -500

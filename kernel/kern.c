@@ -137,6 +137,10 @@ int main() {
             last_printed_time = total_time_passed;            
         }
 
+        if (task_scheduler.halt > 0) {
+            kernel_end();
+        }
+
         /*
 
         time_passed = get_time_passed(timer_val, &timer_last);

@@ -9,17 +9,19 @@
 
 #define ASSERT(expr)    \
 if (!(expr)) {\
+    Halt(2);\
     bwprintf(COM2, "\033[31massertion fail: %s, line %d\n\r", __FILE__, __LINE__);\
     bwprintf(COM2, "\033[0m");\
-    Halt();\
+    Halt(1);\
 }
 
-#define ASSERTP(expr, format, ...)    \
+#define ASSERTP(expr, ...)    \
 if (!(expr)) {\
+    Halt(2);\
     bwprintf(COM2, "\033[31massertion fail: %s, line %d\n\r", __FILE__, __LINE__);\
-    bwprintf(COM2, format, __VA_ARGS__);\
+    bwprintf(COM2, __VA_ARGS__);\
     bwprintf(COM2, "\033[0m");\
-    Halt();\
+    Halt(1);\
 }
 
 #else

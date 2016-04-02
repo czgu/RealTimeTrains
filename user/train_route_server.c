@@ -10,6 +10,8 @@
 #include <string.h>
 #include <dijkstra.h>
 
+#include <assert.h>
+
 int execute_route(Route* route, int train_id, int location_server, int route_server, TrainModelPosition* position);
 
 static int line = 0;
@@ -29,7 +31,9 @@ void train_route_server() {
     memset(reservation_bitmap, 0, TRACK_BITMAP_MAX*sizeof(int));
 
     for (;;) {
+        sender = 0;
         int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
+        ASSERT(sender != 0);
         if (sz >= sizeof(char)) {
             switch(request_msg.opcode) {
                 case RESERVE_NODE: {
@@ -52,7 +56,7 @@ void train_route_server() {
                     } else if (reserved_nodes[node_id] == train_id) {
                         success = 1;
                     } else {
-                        pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
+                        //pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
                     }
 
                     reservation_bitmap[node_id/sizeof(int)] |= (0x1 << (node_id % 32));
@@ -65,6 +69,9 @@ void train_route_server() {
                     int node_id = (int)request_msg.param[0];
                     int train_id = (int)request_msg.param[1];
 
+                    if (node_id < 0 || node_id > TRACK_MAX)
+                        break;
+
                     if (reserved_nodes[node_id] == train_id) {
                         reserved_nodes[node_id] = 0;
                         reservation_bitmap[node_id/sizeof(int)] &= ~(0x1 << (node_id % 32));
@@ -76,11 +83,12 @@ void train_route_server() {
                         }
                     }
 
-                    pprintf(COM2, "\033[%d;%dH\033[K Free: %d train: %d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1]);
+                    //pprintf(COM2, "\033[%d;%dH\033[K Free: %d train: %d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1]);
                     break;
                 }
                 case RELEASE_ALL: {
-                    Reply(sender, 0, 0);
+                    int s = Reply(sender, 0, 0);
+                    pprintf(COM2, "\033[%d;%dH\033[K release all train: %d, node %d, sender %d %d", 35 + line ++ % 20, 1,  request_msg.param[0], request_msg.param[1], sender, s );
                     int i;
 
                     int train_id = (int)request_msg.param[0];
@@ -148,9 +156,9 @@ void train_route_worker() {
     Receive(&sender, instruction, sizeof(char) * 3);
     Reply(sender, 0, 0);
 
-    int time = Time();
+    int time = Time(); int tid = MyTid();
 
-    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route start",35 + line++ % 10, 1, time);
+    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start",35 + line++ % 20, 1, time, tid);
 
     int track_taken[TRACK_BITMAP_MAX];
     memset(track_taken, 0, TRACK_BITMAP_MAX*sizeof(int));    
@@ -168,11 +176,13 @@ void train_route_worker() {
     Delay(300);
 
     if (where_is(location_server, train_id, &position) <= 0) {
-        pprintf(COM2, "\033[%d;%dH\033[KCan't find train %d.", 35 + line++ % 10, 1, train_id);
+        pprintf(COM2, "\033[%d;%dH\033[KCan't find train %d. ", 35 + line++ % 20, 1, train_id);
         return;
     }
 
-    release_all_track(route_server, train_id, position.arc->dest->id);
+    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start one. ",35 + line++ % 20, 1, time, tid);
+    release_all_track(route_server, train_id, -1);
+    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start two. ",35 + line++ % 20, 1, time, tid);
 
     Path path; // path in graph theory model
     Route route; // route for actual execution
@@ -183,6 +193,7 @@ void train_route_worker() {
     int tries = 0;
 
     while (path_status < 0) {
+        pprintf(COM2, "\033[%d;%dH\033[K[%d]Compute path. ",35 + line++ % 20, 1, time);
         //get_track_reservation(route_server, track_taken);
         // turn off destination bit
         track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
@@ -190,50 +201,58 @@ void train_route_worker() {
 
         dijkstra_find(position.arc->src, train_track + dest_idx, &path, track_taken);
         path_to_route(&path, &route);
-
-        pprintf(COM2, "\033[%d;%dH\033[K Path [%d] : ", 33, 1, train_id);
+        /*
+        pprintf(COM2, "\033[%d;%dH\033[K Path [%d] : ", 35 + line++ % 20, 1, train_id);
         int i;
         for (i = 0; i < route.route_len; i++) {
             pprintf(COM2, "%s (%d) -> ", route.nodes[i].node->name, route.nodes[i].action );
         }
         PutStr(COM2, " END\n\r");
-
+        */
+        // Start the actual route finding
         if (route.route_len <= 1) {
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] No path. ", 35, 1, time);
-            break;
+            pprintf(COM2, "\033[%d;%dH\033[K[%d] No path. ", 35 + line ++ % 10, 1, time);
         } else {
             path_status = execute_route(&route, train_id, location_server, route_server, &position);
 
             // Release the root except the current node
-            Delay(300);
-            tries ++;
+            train_set_speed(location_server, train_id, 0);
+            Delay(250);
+        }
+        tries ++;
 
+        if (path_status < 0 || route.route_len == 0) {
+            pprintf(COM2, "\033[%d;%dH\033[K[%d] Reversing. ", 35 + line++ % 20, 1, time);
+            train_reverse(location_server, train_id);
+            Delay(20);
             where_is(location_server, train_id, &position);
-            release_all_track(route_server, train_id, position.arc->dest->id);
+            release_all_track(route_server, train_id, -1);
+            pprintf(COM2, "\033[%d;%dH\033[K[%d] Reversing done. ", 35 + line++ % 20, 1, time);
         }
 
-        if (tries > 5) {
-            pprintf(COM2, "\033[%d;%dH\033[K[%d]Route find failed", 35 + line++ % 10, 1, time);
+        if (tries > 4) {
+            pprintf(COM2, "\033[%d;%dH\033[K[%d]Route find failed", 35 + line++ % 20, 1, time);
             break;
         }
     }
 
-    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route end", 35 + line++ % 10, 1, time);
+    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route end", 35 + line++ % 20, 1, time);
 }
 
 int execute_route(Route* route, int train_id, int location_server, int route_server, TrainModelPosition* position) {
     //int time = Time();
+    //pprintf(COM2, "\033[%d;%dH\033[KExecute route begin", 35 + line++ % 20, 1, train_id);
     int current_route = 0;
     int route_len = route->route_len;
     //int i; 
-    int lookahead = 800;
+    int lookahead = 600;
     int lookbehind = 300;
     int status = 0;
 
     train_set_speed(location_server, train_id, 8);
     for (;;) {
         if (where_is(location_server, train_id, position) <= 0) {
-            pprintf(COM2, "\033[%d;%dH\033[K Cant find train %d", 35 + line++ % 10, 1, train_id);
+            //pprintf(COM2, "\033[%d;%dH\033[K Cant find train %d", 35 + line++ % 20, 1, train_id);
             Delay(25);
             continue;
         }
@@ -244,7 +263,7 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
         }
 
         if (current_route >= route_len) {
-            pprintf(COM2, "\033[%d;%dH\033[KCan't find node %s.", 35 + line++ % 10, 1, position->arc->src->name);
+            //pprintf(COM2, "\033[%d;%dH\033[KCan't find node %s.", 35 + line++ % 20, 1, position->arc->src->name);
             return -1; 
         } else if (current_route >= route_len - 2) {
             //train_set_speed(location_server, train_id, 0);
@@ -268,7 +287,13 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
             }
 
             if(status == 1) {
-                pprintf(COM2, "\033[%d;%dH\033[KExecute_route done.\n\r", 35 + line++ % 10, 1);
+                while(where_is(location_server, train_id, position) > 0) {
+                    if (position->stop_dist == -1)
+                        break;
+                    else
+                        Delay(50);
+                }
+                //pprintf(COM2, "\033[%d;%dH\033[KExecute_route done.\n\r", 35 + line++ % 20, 1);
                 return 0;
             }
         }
@@ -371,7 +396,7 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 3) { // try kept failing, restart route
-                    pprintf(COM2, "\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 10, 1, route->nodes[current].node->name);
+                    //pprintf(COM2, "\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->name);
                     return -1;
                 }
                 tries ++;
@@ -387,10 +412,10 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
         // if need to do action
         if ((route->nodes[current].bitmap & ROUTE_NODE_ACTION_COMPLETED) == 0 && route->nodes[current].action > 0) {
             if (route->nodes[current].action < 3) { // turn switch
-                pprintf(COM2, "\033[%d;%dH\033[KMake switch %d to %d.\n\r", 35 + line++ % 10, 1, route->nodes[current].node->num, route->nodes[current].action - 1 );
+                //pprintf(COM2, "\033[%d;%dH\033[KMake switch %d to %d.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->num, route->nodes[current].action - 1 );
                 track_set_switch(location_server, route->nodes[current].node->num, route->nodes[current].action - 1, 1);
             } else { // stop train
-                pprintf(COM2, "\033[%d;%dH\033[KStop train at %d.", 35 + line++ % 10, 1, route->nodes[current].node->id);
+                //pprintf(COM2, "\033[%d;%dH\033[KStop train at %d.", 35 + line++ % 20, 1, route->nodes[current].node->id);
                 stop_train_at(location_server, train_id, route->nodes[current].node->id, route->nodes[current].action == 3? 35 : 15);
             }
 
@@ -400,14 +425,10 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
         // Compute successor
         if (current == route->route_len - 1)
             return 1;
-
-        if (lookahead == 0)
+        ASSERT(current >= 0);
+        lookahead -= route->nodes[current].arc_dist;
+        if (lookahead < 0)
             break;
-        else if (lookahead > 0) {
-            lookahead -= route->nodes[current].arc_dist;
-            if (lookahead < 0)
-                lookahead = 0;
-        }
         current++;
     }
     return 0;    

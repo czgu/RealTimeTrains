@@ -97,7 +97,7 @@ void train_location_server_task() {
 
     // TODO: add option or something to init track a
     // init track
-    init_tracka(train_track);
+    init_trackb(train_track);
 
     int sender;
     TERMmsg request_msg;
@@ -209,7 +209,7 @@ void train_location_server_task() {
                 case LOC_WHERE_IS: {
                     int train = request_msg.param[0] - TRAIN_ID_MIN;   
 
-                    if (train_models[train].bitmap & TRAIN_MODEL_TRACKED) {
+                    if (train >= 0 && train_models[train].bitmap & TRAIN_MODEL_TRACKED) {
                         Reply(request_msg.extra, &train_models[train].position, sizeof(TrainModelPosition));
                     } else {
                         Reply(request_msg.extra, 0, 0);
@@ -226,6 +226,7 @@ void train_location_server_task() {
                             train_model_update_location(train, time, switches);
 
                             if (train->position.stop_node != (void *)0) {
+                                ASSERTP((((int)train->profile.stop_distance[train->speed]) > 0), "train %d speed %d", train->id, train->speed);
                                 int lookahead = ((int)train->profile.stop_distance[train->speed]) + TRAIN_LOOK_AHEAD_DIST;
                                 int dist_to_node;
                                 if (track_ahead_contain_node(
@@ -239,7 +240,7 @@ void train_location_server_task() {
                                     // ASSERT(dist_to_node > 0);
                                     int instruction[2];
                                     // TODO: might change this to train->velocity
-                                    instruction[0] = dist_left * train->position.arc->weight_factor / train->profile.velocity[train->speed];
+                                    instruction[0] = ((int)(dist_left * train->position.arc->weight_factor / train->profile.velocity[train->speed]));
                                     instruction[1] = train->id;
 
                                     pprintf(COM2, "\033[%d;%dH", 44, 1);

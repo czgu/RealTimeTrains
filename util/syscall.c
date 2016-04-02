@@ -248,9 +248,9 @@ int GetLine(int tid, char* str, int len) {
     return Send(tid, &msg, sizeof(IOOP), str, sizeof(char) * len);
 }
 
-void Halt() {
+void Halt(int op) {
     Request request;
     request.opcode = HALT;
-
+    request.param[0] = op;
     swi_jump(&request);
 }

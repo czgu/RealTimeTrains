@@ -6,6 +6,7 @@
 #include <task.h>
 
 #include <ts7200.h>
+#include <assert.h>
 
 void handle(Request* request, Task_Scheduler* task_scheduler) {
     task_scheduler->active->last_request = request;
@@ -125,7 +126,7 @@ void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
         k_awaitevent(param[0], task_scheduler);
         break;
     case HALT:
-        task_scheduler->halt = 1;
+        task_scheduler->halt = param[0];
         break;
     default:
         // bwprintf(COM2, "Invalid syscall");
@@ -221,6 +222,7 @@ void send_message(Task* receiver, Task* sender, Task_Scheduler* task_scheduler) 
     );
 
     *((int *)receiver_request->param[0]) = sender->tid;
+    ASSERTP(*((int *)receiver_request->param[0]) == sender->tid, "sender tid: %d, actual: %d", sender->tid, *((int *)receiver_request->param[0])); 
 
     // sender is replied block
     sender->state = REPLY_BLOCKED;
