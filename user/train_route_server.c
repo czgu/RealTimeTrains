@@ -220,15 +220,7 @@ void train_route_worker() {
             Delay(250);
         }
         tries ++;
-
-        if (path_status < 0 || route.route_len == 0) {
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] Reversing. ", 35 + line++ % 20, 1, time);
-            train_reverse(location_server, train_id);
-            Delay(20);
-            where_is(location_server, train_id, &position);
-            release_all_track(route_server, train_id, -1);
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] Reversing done. ", 35 + line++ % 20, 1, time);
-        }
+        release_all_track(route_server, train_id, -1);
 
         if (tries > 4) {
             pprintf(COM2, "\033[%d;%dH\033[K[%d]Route find failed", 35 + line++ % 20, 1, time);
@@ -248,6 +240,13 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
     int lookahead = 600;
     int lookbehind = 300;
     int status = 0;
+
+    if (route->nodes[current_route].action == 3) {
+        pprintf(COM2, "\033[%d;%dH\033[K[] Reversing. ", 35 + line++ % 20, 1);
+        train_reverse(location_server, train_id);
+        Delay(20);
+        pprintf(COM2, "\033[%d;%dH\033[K[] Reversing done. ", 35 + line++ % 20, 1);
+    }
 
     train_set_speed(location_server, train_id, 8);
     for (;;) {
@@ -372,6 +371,8 @@ void path_to_route(Path* path, Route* route) {
                 break;
             case 2:
                 //TODO: handle reverse
+                route->nodes[route->route_len].action = 3;
+                route->nodes[route->route_len].arc_dist = 0;
                 break;
         } 
         route->route_len++;

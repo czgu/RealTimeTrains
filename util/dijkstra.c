@@ -113,12 +113,14 @@ void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_
         }
 
         // Consider reverse
-        alt_dist = np->dist; //TODO: add some reverse distance?
-        id = np->node->reverse->id;
-        if (alt_dist < nodes[id].dist) {
-            nodes[id].prev = np->node;
-            nodes[id].prev_edge = 2;
-            min_heap_decrease_key(&heap, nodes[id].index, alt_dist);
+        if (np->node == src) {
+            alt_dist = np->dist; //TODO: add some reverse distance?
+            id = np->node->reverse->id;
+            if (alt_dist < nodes[id].dist) {
+                nodes[id].prev = np->node;
+                nodes[id].prev_edge = 2;
+                min_heap_decrease_key(&heap, nodes[id].index, alt_dist);
+            }
         }
 
         // Consider straight edges

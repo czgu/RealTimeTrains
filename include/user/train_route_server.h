@@ -25,7 +25,7 @@ typedef struct RouteNode {
         0 - no action
         1 - switch straight
         2 - switch curved
-        3 - stop, reverse
+        3 - reverse
         4 - stop (destination)
     */
     // dist to next node
