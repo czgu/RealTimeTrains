@@ -80,6 +80,7 @@ void handle_irq(Task_Scheduler* task_scheduler) {
         break;
     default:
         // DEBUG_MSG("unhandled hardware request\n\r");
+        RETURN_ACTIVE(0);
         break;
     }
 
@@ -127,6 +128,9 @@ void handle_swi(Request* request, Task_Scheduler* task_scheduler) {
         break;
     case HALT:
         task_scheduler->halt = param[0];
+        if (param[0] != 1) {
+            k_pass(task_scheduler);
+        }
         break;
     default:
         // bwprintf(COM2, "Invalid syscall");
@@ -319,7 +323,7 @@ void k_reply(unsigned int tid, Task_Scheduler* task_scheduler) {
 }
 
 void k_awaitevent(int eventType, Task_Scheduler* task_scheduler) {
-    if (eventType < TIMER_IRQ || eventType > NONE_IRQ) {
+    if (eventType < TIMER_IRQ || eventType >= NONE_IRQ) {
         RETURN_ACTIVE(-1);   
     }
 

@@ -137,7 +137,7 @@ int main() {
             last_printed_time = total_time_passed;            
         }
 
-        if (task_scheduler.halt > 0) {
+        if (task_scheduler.halt == 2) {
             kernel_end();
         }
 
