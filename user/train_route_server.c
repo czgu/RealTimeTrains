@@ -19,8 +19,6 @@ static int line = 0;
 void train_route_server() {
     RegisterAs("Route Server");
 
-    int sender;
-    TERMmsg request_msg;
 
     // reserve nodes
     char reserved_nodes[TRACK_MAX];
@@ -30,10 +28,13 @@ void train_route_server() {
     int reservation_bitmap[TRACK_BITMAP_MAX];
     memset(reservation_bitmap, 0, TRACK_BITMAP_MAX*sizeof(int));
 
+    int sender;
+    TERMmsg request_msg;
+
     for (;;) {
         sender = 0;
         int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
-        ASSERT(sender != 0);
+        ASSERTP(sender != 0, "%d, unexpected sender value", sender);
         if (sz >= sizeof(char)) {
             switch(request_msg.opcode) {
                 case RESERVE_NODE: {
@@ -56,7 +57,7 @@ void train_route_server() {
                     } else if (reserved_nodes[node_id] == train_id) {
                         success = 1;
                     } else {
-                        //pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
+                        pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
                     }
 
                     reservation_bitmap[node_id/sizeof(int)] |= (0x1 << (node_id % 32));
@@ -96,7 +97,7 @@ void train_route_server() {
 
                     for (i = 0; i < TRACK_MAX; i++) {
                         if (reserved_nodes[i] == train_id) {
-                            reservation_bitmap[i] &= ~(0x1 << (i % 32));
+                            reservation_bitmap[i/sizeof(int)] &= ~(0x1 << (i % 32));
                             reserved_nodes[i] = 0;
                         }
                     }
@@ -174,15 +175,13 @@ void train_route_worker() {
 
     train_set_speed(location_server, train_id, 0);
     Delay(300);
-
     if (where_is(location_server, train_id, &position) <= 0) {
         pprintf(COM2, "\033[%d;%dH\033[KCan't find train %d. ", 35 + line++ % 20, 1, train_id);
         return;
     }
 
-    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start one. ",35 + line++ % 20, 1, time, tid);
     release_all_track(route_server, train_id, -1);
-    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start two. ",35 + line++ % 20, 1, time, tid);
+
 
     Path path; // path in graph theory model
     Route route; // route for actual execution

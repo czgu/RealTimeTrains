@@ -18,7 +18,7 @@ typedef struct TrainCalibrationProfile {
 
 void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
 
-#define TRACK_MAX_EDGES_BTW_SENSORS 5
+#define TRACK_MAX_EDGES_BTW_SENSORS (5+1)
 
 typedef struct TrainModelPosition {
     track_edge* arc;

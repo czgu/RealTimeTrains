@@ -226,7 +226,7 @@ void send_message(Task* receiver, Task* sender, Task_Scheduler* task_scheduler) 
     );
 
     *((int *)receiver_request->param[0]) = sender->tid;
-    ASSERTP(*((int *)receiver_request->param[0]) == sender->tid, "sender tid: %d, actual: %d", sender->tid, *((int *)receiver_request->param[0])); 
+    //ASSERTP(*((int *)receiver_request->param[0]) == sender->tid, "sender tid: %d, actual: %d", sender->tid, *((int *)receiver_request->param[0])); 
 
     // sender is replied block
     sender->state = REPLY_BLOCKED;
