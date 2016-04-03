@@ -2,7 +2,8 @@
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
 
-#include <train_route_server.h>
+#include <train_route_worker.h>
+#include <train_route_reservation_server.h>
 
 
 #include <train.h>
@@ -94,7 +95,7 @@ void train_command_server_task() {
 void train_command_worker_task() {
     int command_server_tid = WhoIs("Command Server");
     int location_server_tid = WhoIs("Location Server");
-    int route_server = WhoIs("Route Server");
+    int reservation_server = WhoIs("Route Reservation");
     char requestOP = CMD_WORKER_READY;
 
     TERMmsg command;
@@ -132,13 +133,13 @@ void train_command_worker_task() {
                     } else if (command.param[0] == 7) {
                         switch (command.param[1]) {
                             case 0:
-                                reserve_track(route_server, 1, command.param[2]);
+                                reserve_track(reservation_server, 1, command.param[2]);
                                 break;
                             case 1:
-                                release_track(route_server, 1, command.param[2]);
+                                release_track(reservation_server, 1, command.param[2]);
                                 break;
                             case 2:
-                                release_all_track(route_server, 1, -1);
+                                release_all_track(reservation_server, 1, (void *)0);
                                 break;
                             default:
                                 break;    

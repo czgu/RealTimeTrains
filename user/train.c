@@ -67,7 +67,7 @@ void train_model_init(TrainModel* train, int id) {
 
     // useless until the position_known bit is turned on
     train->position.stop_node = (void *)0;
-    train->position.stop_dist = 0;
+    train->position.stop_dist = -1;
 
     train->position.num_arcs_passed = 0;
     int i;
