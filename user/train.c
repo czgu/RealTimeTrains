@@ -391,7 +391,6 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
     // initialize variables for next round of dynamic calibration
     train->position.arcs_passed[0] = train->position.arc;
 
-    // FIXME: debug, uncomment after
     train->position.num_arcs_passed = 1;
     train->position.dist_from_last_sensor = train->position.arc->dist;
     train->position.weight_factors = train->position.arc->dist * train->position.arc->weight_factor;

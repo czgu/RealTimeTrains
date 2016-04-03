@@ -19,6 +19,7 @@ typedef enum {
     DRAW_MODULE,
     DRAW_SENSOR,
     DRAW_KERNEL_STATS,
+    DRAW_TRACK,
     DRAW_CMD,
     DRAW_TRAIN_LOC,
     VIEW_WORKER_READY,

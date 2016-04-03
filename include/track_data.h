@@ -5,6 +5,9 @@
 
 //#include "track_node.h"
 
+#define TRACK_A 0
+#define TRACK_B 1
+
 // The track initialization functions expect an array of this size.
 #define TRACK_MAX 144
 extern const int TRACK_BITMAP_MAX;

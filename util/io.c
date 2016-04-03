@@ -59,12 +59,9 @@ void stringbuffer_putw(StringBuffer *sb, int n, char fc, char *bf ) {
 	while( ( ch = *bf++ ) ) stringbuffer_putc(sb, ch );
 }
 
-void pretty_format (int channel, char *fmt, va_list va ) {
-    #define OUTPUT_BUFFER_SIZE 200
-    char output_buffer[OUTPUT_BUFFER_SIZE];
-
+void pretty_format(char *fmt, va_list va, char* output_buffer, int buffer_size, int* out_len) {
     StringBuffer sb;    
-    stringbuffer_init(&sb, output_buffer, OUTPUT_BUFFER_SIZE);
+    stringbuffer_init(&sb, output_buffer, buffer_size);
 
 	char bf[12];
 	char ch, lz;
@@ -118,16 +115,21 @@ void pretty_format (int channel, char *fmt, va_list va ) {
 			}
 		}
 	}
-
-    PutnStr(channel, output_buffer, sb.len);
+    *out_len = sb.len;
 }
 
 void pprintf(int channel, char *fmt, ... ) {
-        va_list va;
+    #define OUTPUT_BUFFER_SIZE 200
+    char output_buffer[OUTPUT_BUFFER_SIZE];
+    int string_len;
 
-        va_start(va,fmt);
-        pretty_format(channel, fmt, va );
-        va_end(va);
+    va_list va;
+    va_start(va,fmt);
+
+    pretty_format(fmt, va, output_buffer, OUTPUT_BUFFER_SIZE, &string_len);
+    va_end(va);
+
+    PutnStr(channel, output_buffer, string_len);
 }
 
 /*

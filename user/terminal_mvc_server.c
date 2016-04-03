@@ -12,8 +12,6 @@
 #include <rqueue.h>
 #include <priority.h>
 
-#define MAX_RECENT_SENSORS 10
-
 void terminal_view_server_task() {
     RegisterAs("View Server");
 
@@ -38,6 +36,7 @@ void terminal_view_server_task() {
             case DRAW_TIME:
             case DRAW_CHAR:
             case DRAW_KERNEL_STATS: 
+            case DRAW_TRACK:
             case DRAW_CMD:
             case DRAW_TRAIN_LOC:
                 Reply(sender, 0, 0);
@@ -135,7 +134,10 @@ void terminal_view_worker_task() {
                 case DRAW_KERNEL_STATS: {
                     print_stats(&cs, draw_msg.extra);
                     break;
-                }   
+                }
+                case DRAW_TRACK:
+                    print_track(&cs, draw_msg.param[0]);
+                    break;
                 case DRAW_SENSOR: {
                     //print_msg(&cs, "draw sensor\n\r");
                     SensorId sensor;
@@ -154,10 +156,24 @@ void terminal_view_worker_task() {
                     }
                     break;
                 }
-                case DRAW_TRAIN_LOC:
-                    
-                    print_train(&cs, draw_msg.param[0], draw_msg.param[1], draw_msg.param[2], draw_msg.param[3], draw_msg.param[4], (draw_msg.param[5] << 8) | draw_msg.param[6]);
+                case DRAW_TRAIN_LOC: {
+                    int train = draw_msg.param[0];
+                    int src_node = draw_msg.param[1];
+                    int dst_node = draw_msg.param[2];
+                    int distance = (draw_msg.param[3] << 8) | draw_msg.param[4];
+                    int next_sensor = draw_msg.param[5];
+                    // TODO: assign and cache train row mappings
+                    print_train_bulk(&cs, 0, TRAIN_ID, TRAIN_ID, 
+                                     "%d", train);
+                    print_train_bulk(&cs, 0, TRAIN_ARC, TRAIN_NEXT_SENSOR,
+                                     "(%s->%s)\t%d\t%s", 
+                                     train_track[src_node].name,
+                                     train_track[dst_node].name,
+                                     distance,
+                                     train_track[next_sensor].name);
+                    //print_train(&cs, draw_msg.param[0], draw_msg.param[1], draw_msg.param[2], draw_msg.param[3], draw_msg.param[4], (draw_msg.param[5] << 8) | draw_msg.param[6]);
                     break;
+                }
             }    
         }
     }

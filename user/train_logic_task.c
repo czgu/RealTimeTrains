@@ -95,6 +95,7 @@ void train_command_worker_task() {
     int location_server_tid = WhoIs("Location Server");
     int reservation_server = WhoIs("Route Reservation");
     int scheduler_server = WhoIs("Route Scheduler");
+    int view_server_tid = WhoIs("View Server");
 
     char requestOP = CMD_WORKER_READY;
 
@@ -128,6 +129,10 @@ void train_command_worker_task() {
                         } else {
                             init_trackb(train_track);
                         }
+                        TERMmsg msg;
+                        msg.opcode = DRAW_TRACK;
+                        msg.param[0] = command.param[1];
+                        Send(view_server_tid, &msg, sizeof(TERMmsg), 0, 0);
                     } else if (command.param[0] == 6) {
                         cid = Create(MED_WORKER_PRIORITY, calibrate_find_train);
                     } else if (command.param[0] == 7) {

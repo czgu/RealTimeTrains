@@ -324,19 +324,24 @@ void train_tracer_task() {
 
         // FIXME: seems like if we update too fast, we see weird distance values
         if (known_position) {
-            draw_msg.param[1] = position.arc->src->type;
-            draw_msg.param[2] = position.arc->src->num;
+            draw_msg.param[1] = position.arc->src->id;      // src node id
+            draw_msg.param[2] = position.arc->dest->id;     // dest node id
 
+            short dist = (short)position.dist_travelled;
+            draw_msg.param[3] = dist >> 8;
+            draw_msg.param[4] = dist & 0xFF;
+
+            draw_msg.param[5] = position.next_sensor->id;   // next sensor id
+            /*
+            draw_msg.param[1] = position.arc->src->type;
+            draw_msg.param[2] = position.arc->src->num;*/
+
+            /*
             draw_msg.param[3] = position.next_sensor->type;
-            draw_msg.param[4] = position.next_sensor->num;
+            draw_msg.param[4] = position.next_sensor->num;*/
 
             //draw_msg.param[3] = position.arc->dest->type;
             //draw_msg.param[4] = position.arc->dest->num;
-
-            short dist = (short)position.dist_travelled;
-
-            draw_msg.param[5] = dist >> 8;
-            draw_msg.param[6] = dist & 0xFF;
 
             Send(view_server, &draw_msg, sizeof(TERMmsg), 0, 0);
         }

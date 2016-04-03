@@ -53,7 +53,63 @@ void bootstrap_user_task() {
 
 }
 
+void print_b() {
+    // save cursor
+    bwprintf(COM2, "\0337");
+    
+    // move cursor
+    bwprintf(COM2, "\033[%d;%dHb start ", 10, 1);
+    bwprintf(COM2, "\0337");
+    bwprintf(COM2, "\0338");
+    //print_a();
+
+    bwprintf(COM2, "b end");
+
+    // restore cursor
+    bwprintf(COM2, "\0338");
+}
+void print_c() {
+    //<ESC>[{start};{end}r
+    // enable scrolling
+    //bwprintf(COM2, "\033[10;30r");
+    //bwprintf(COM2, "\033[?30h");
+    //CSI ? Pm h  
+
+    bwprintf(COM2, "\033[2J\033[H");
+    bwprintf(COM2, "Train\tSpeed\tError");
+    bwprintf(COM2, "\033[%d;%dH", 2, 1);
+    bwprintf(COM2, "ab\t1234567\tab");
+    bwprintf(COM2, "\033[%d;%dH", 3, 1);
+    bwprintf(COM2, "cd\tcd\tcd");
+
+    // try overwriting values in the table
+    bwprintf(COM2, "\033[%d;%dH", 2, 1);    // first row
+    bwprintf(COM2, "\033[I");              // tab forward 1
+    bwprintf(COM2, "\033[8X");
+    bwprintf(COM2, "EL");
+    //bwprintf(COM2, "\033[3g");               // clear
+    //bwprintf(COM2, "\033[0g");              // clear first row, second cell
+
+    //bwprintf(COM2, "\033[%d;%dH", 10, 1);
+    /*
+    int i;
+    for (i = 0; i < 50; i++) {
+        bwprintf(COM2, "\033[%d;%dHhello world %d\n\r", 10, 1, i);
+    }*/
+    //print_b();
+    //bwprintf(COM2, "c end ");
+}
+
 void first_task() {
+    /*
+    // reset terminal settings
+    bwprintf(COM2, "\033c");
+    print_c();
+    //for(;;);
+    //bwprintf(COM2, "\033c");
+    bwprintf(COM2, "\033F");    // move cursor to lower left corner
+    //for (;;);
+    return;*/
     Create(IDLE_TASK_PRIORITY, idle_task);
 
     Create(NAMESERVER_PRIORITY, nameserver_task);
