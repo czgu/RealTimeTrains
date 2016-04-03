@@ -91,10 +91,17 @@ void train_model_init_location(
     train->position.sensor_triggered_time = 0;
 
     train->position.dist_travelled = 0;
+
+    ASSERT(sensor_start != (void *)0);
+
     train->position.arc = sensor_start->edge + DIR_AHEAD;
 
     train->position.next_sensor = track_next_sensor_node(switches, train->position.arc, &train->position.estimated_next_sensor_dist);
-    
+    // if train is going to an exit, stop tracking its location
+    if (train->position.next_sensor == 0) {
+        train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
+    }
+
     train->position.num_arcs_passed = 0;
     train->position.dist_from_last_sensor = 0;
     train->position.weight_factors = 0;
@@ -120,6 +127,8 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         }
     }
     if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
+        ASSERT(train->position.arc != (void *)0);
+        ASSERT(train->position.next_sensor != (void *)0);
         float vel_multiplier = 1.0 / train->position.arc->weight_factor;
         float delta_dist = (time - train->position.updated_time) * train->velocity * vel_multiplier;
 
@@ -136,10 +145,12 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
 
         // keep track of the arcs a train passed by between two sensors
-        if (train->position.num_arcs_passed > 0      // the train passed by the first arc's sensor
+        if (train->position.arc != (void *)0
+            && train->position.num_arcs_passed > 0      // the train passed by the first arc's sensor
             && train->position.arc != train->position.arcs_passed[train->position.num_arcs_passed - 1] // this is a new arc
             && train->position.estimated_next_sensor_dist > 0) {    // the train has not passed the second sensor
 
+            ASSERT(train->position.arc != (void *)0);
             ASSERT(train->position.arcs_passed[0]->src->type == NODE_SENSOR);
             ASSERTP(train->position.num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, "%d num_arcs_passed reached limit, passed another arc", train->position.num_arcs_passed);
 
@@ -191,9 +202,6 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
         switch (node->type) {
             case NODE_BRANCH: {
                 int switch_num = node->num;
-                if (switch_num >= 153) {
-                    switch_num -= (153 - 19);
-                }
                 *dist += node->edge[switches[switch_num]].dist;
                 node = node->edge[switches[switch_num]].dest;
             break;
@@ -205,7 +213,7 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
             break;
             case NODE_EXIT:
             default:
-                return 0;
+                return (void *)0;
         }
     }
     return node;
