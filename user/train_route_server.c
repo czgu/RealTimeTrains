@@ -57,7 +57,7 @@ void train_route_server() {
                     } else if (reserved_nodes[node_id] == train_id) {
                         success = 1;
                     } else {
-                        pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
+                        //pprintf(COM2, "\033[%d;%dH\033[K Alloc: %d train: %d, owner: %d, status:%d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id], success);
                     }
 
                     reservation_bitmap[node_id/sizeof(int)] |= (0x1 << (node_id % 32));
@@ -89,7 +89,7 @@ void train_route_server() {
                 }
                 case RELEASE_ALL: {
                     int s = Reply(sender, 0, 0);
-                    pprintf(COM2, "\033[%d;%dH\033[K release all train: %d, node %d, sender %d %d", 35 + line ++ % 20, 1,  request_msg.param[0], request_msg.param[1], sender, s );
+                    //pprintf(COM2, "\033[%d;%dH\033[K release all train: %d, node %d, sender %d %d", 35 + line ++ % 20, 1,  request_msg.param[0], request_msg.param[1], sender, s );
                     int i;
 
                     int train_id = (int)request_msg.param[0];
@@ -192,7 +192,7 @@ void train_route_worker() {
     int tries = 0;
 
     while (path_status < 0) {
-        pprintf(COM2, "\033[%d;%dH\033[K[%d]Compute path. ",35 + line++ % 20, 1, time);
+        //pprintf(COM2, "\033[%d;%dH\033[K[%d]Compute path. ",35 + line++ % 20, 1, time);
         //get_track_reservation(route_server, track_taken);
         // turn off destination bit
         track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
@@ -241,13 +241,14 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
     int status = 0;
 
     if (route->nodes[current_route].action == 3) {
-        pprintf(COM2, "\033[%d;%dH\033[K[] Reversing. ", 35 + line++ % 20, 1);
+        //pprintf(COM2, "\033[%d;%dH\033[K[] Reversing. ", 35 + line++ % 20, 1);
         train_reverse(location_server, train_id);
         Delay(20);
-        pprintf(COM2, "\033[%d;%dH\033[K[] Reversing done. ", 35 + line++ % 20, 1);
+        //pprintf(COM2, "\033[%d;%dH\033[K[] Reversing done. ", 35 + line++ % 20, 1);
     }
-
+             
     train_set_speed(location_server, train_id, 8);
+
     for (;;) {
         if (where_is(location_server, train_id, position) <= 0) {
             //pprintf(COM2, "\033[%d;%dH\033[K Cant find train %d", 35 + line++ % 20, 1, train_id);
@@ -277,7 +278,6 @@ int execute_route(Route* route, int train_id, int location_server, int route_ser
         
         // reserve track and do action
         status = lookahead_node(route, current_route, lookahead, location_server, route_server, train_id);
-        
 
         if (status != 0) {
             if (status == -1) {
@@ -410,13 +410,13 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
         }
         
         // if need to do action
-        if ((route->nodes[current].bitmap & ROUTE_NODE_ACTION_COMPLETED) == 0 && route->nodes[current].action > 0) {
-            if (route->nodes[current].action < 3) { // turn switch
+        int action = route->nodes[current].action;
+        if ((route->nodes[current].bitmap & ROUTE_NODE_ACTION_COMPLETED) == 0 && action > 0) {
+            if (action < 3) { // turn switch
                 //pprintf(COM2, "\033[%d;%dH\033[KMake switch %d to %d.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->num, route->nodes[current].action - 1 );
                 track_set_switch(location_server, route->nodes[current].node->num, route->nodes[current].action - 1, 1);
-            } else { // stop train
-                //pprintf(COM2, "\033[%d;%dH\033[KStop train at %d.", 35 + line++ % 20, 1, route->nodes[current].node->id);
-                stop_train_at(location_server, train_id, route->nodes[current].node->id, route->nodes[current].action == 3? 35 : 15);
+            } else if (action == 4) { // stop train
+                stop_train_at(location_server, train_id, route->nodes[current].node->id, 20);
             }
 
             route->nodes[current].bitmap |= ROUTE_NODE_ACTION_COMPLETED;

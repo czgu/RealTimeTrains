@@ -226,7 +226,7 @@ int track_ahead_contain_node(
     int total_arc_dist = 0;
 
     //int time = Time();
-
+    int arc_travelled = 0;
     while (node != current) {
         //pprintf(COM2, "\033[%d;%dH [%d]search %s to %s.", 40 + line++ % 10, 1, time, current->name, node->name);
         track_edge* next_arc = (void *)0;
@@ -249,23 +249,22 @@ int track_ahead_contain_node(
         lookahead_dist = lookahead_dist - next_arc->dist;
         total_arc_dist = total_arc_dist + next_arc->dist;
 
-        if (total_arc_dist <= 0) {
-            //pprintf(COM2, "\033[%d;%dH [%d] WTF %d, node %s type:%d, edge:%d,%d.", 40 + line++ % 10, 1, time, next_arc->dist, current->name, current->type, (int)current->edge, (int)next_arc);
-            Delay(50);
-        }
         ASSERT(total_arc_dist > 0);
 
         if (lookahead_dist < 0)
             break;
-
+        arc_travelled ++;
         current = next_arc->dest;
     }
 
+    /*
+    pprintf(COM2, "\033[%d;%dH arc_travelled: %d.", 43, 1, arc_travelled);
     if (node == current && total_arc_dist == 0) {
         pprintf(COM2, "\033[%d;%dH found total arc_dist: %d", 43, 1, total_arc_dist);
         //Delay(30);
         //ASSERT(total_arc_dist > 0);
     }
+    */
 
     *dist_to_node = total_arc_dist;
     return node == current;   

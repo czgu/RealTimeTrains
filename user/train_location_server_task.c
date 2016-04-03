@@ -227,21 +227,26 @@ void train_location_server_task() {
 
                             if (train->position.stop_node != (void *)0) {
                                 ASSERTP((((int)train->profile.stop_distance[train->speed]) > 0), "train %d speed %d", train->id, train->speed);
-                                int lookahead = ((int)train->profile.stop_distance[train->speed]) + TRAIN_LOOK_AHEAD_DIST;
+                                int lookahead = ((int)train->profile.stop_distance[train->speed]) + TRAIN_LOOK_AHEAD_DIST + train->position.dist_travelled + train->position.stop_dist;
                                 int dist_to_node;
                                 if (track_ahead_contain_node(
                                         train->position.stop_node, 
                                         switches, 
-                                        train->position.arc->dest, 
+                                        train->position.arc->src, 
                                         lookahead, 
                                         &dist_to_node))
                                 {
-                                    float dist_left = (float)dist_to_node + train->position.arc->dist - train->position.dist_travelled - train->profile.stop_distance[train->speed];
+                                    float dist_left = (float)dist_to_node
+                                        + train->position.stop_dist 
+                                        - train->position.dist_travelled 
+                                        - train->profile.stop_distance[train->speed];
+
                                     // ASSERT(dist_to_node > 0);
                                     int instruction[2];
                                     // TODO: might change this to train->velocity
                                     instruction[0] = ((int)(dist_left * train->position.arc->weight_factor / train->profile.velocity[train->speed]));
                                     instruction[1] = train->id;
+                                    //ASSERTP(dist_left > 0, " dist_to_node %d, arc_dist %d, dist_travelled %d, stop_dist %d, lookahead %d", (int)dist_to_node, (int)train->position.arc->dist, (int)train->position.dist_travelled, (int)train->profile.stop_distance[train->speed], lookahead);
 
                                     pprintf(COM2, "\033[%d;%dH", 44, 1);
                                     pprintf(COM2, "[%d] found %d %d %d %d %d.", Time(), instruction[0], (int)dist_to_node, (int)dist_left, (int)lookahead, (int)(train->position.arc->dist - train->position.dist_travelled));
@@ -410,7 +415,8 @@ void train_timed_stop_task() {
     
     int location_server = WhoIs("Location Server");
 
-    Delay(instruction[0]);
+    if (instruction[0] > 0)
+        Delay(instruction[0]);
     
     train_set_speed(location_server, instruction[1], 0);
 }
