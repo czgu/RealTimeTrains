@@ -63,6 +63,7 @@ all: $(ASMFILES) $(KER_DIR)/$(FILE).elf copy_ftp
 .PHONY:
 	copy_ftp
 	clean
+	new
 
 $(KER_DIR)/$(FILE).elf: $(CBUILD) $(ASMBUILD)
 	$(LD) $(LDFLAGS) -o $@ $(CBUILD) $(ASMBUILD) -lgcc
@@ -89,3 +90,5 @@ clean:
 	rm -f $(TASK_DIR)/*.o
 	rm -f $(UTIL_DIR)/*.s
 	rm -f $(UTIL_DIR)/*.o
+
+new: clean all
