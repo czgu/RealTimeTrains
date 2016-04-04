@@ -93,6 +93,7 @@ void train_route_worker() {
     where_is(location_server, train_id, &position);
     release_all_track(reservation_server, train_id, position.arc);
 
+    driver_completed(scheduler_server, train_id, 0);
     pprintf(COM2, "\033[%d;%dH\033[K[%d]Route end", 35 + line++ % 20, 1, time);
 
 }

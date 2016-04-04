@@ -2,9 +2,8 @@
 #include <terminal_mvc_server.h>
 #include <train_location_server_task.h>
 
-#include <train_route_worker.h>
+#include <train_route_scheduler_server.h>
 #include <train_route_reservation_server.h>
-
 
 #include <train.h>
 #include <syscall.h>
@@ -61,7 +60,7 @@ void train_command_server_task() {
                     break;
                 case CMD_CALIBRATE:
                 case CMD_STOP_TRAIN:
-                case CMD_CALCULATE_PATH:
+                case CMD_MOVE_TRAIN:
                     Reply(sender, 0, 0);
                     rq_push_back(&command_buffer, &request_msg);
                     break;
@@ -91,11 +90,12 @@ void train_command_server_task() {
     }
 }
 
-// Worker does the work
 void train_command_worker_task() {
     int command_server_tid = WhoIs("Command Server");
     int location_server_tid = WhoIs("Location Server");
     int reservation_server = WhoIs("Route Reservation");
+    int scheduler_server = WhoIs("Route Scheduler");
+
     char requestOP = CMD_WORKER_READY;
 
     TERMmsg command;
@@ -151,21 +151,21 @@ void train_command_worker_task() {
         
                     break;
                 }
-                case CMD_CALCULATE_PATH: {
-                    /*
-                    Path path;
+                case CMD_MOVE_TRAIN: {
+                    int mode = command.param[0];
+                    int train = command.param[1];
+                    int src = command.param[2];
+                    int dest = command.param[3];
 
-                    dijkstra_find(train_track + (unsigned int)command.param[0], train_track + (unsigned int)command.param[1], &path, reserved_nodes);
+                    if (mode == 0) {
+                        move_train(scheduler_server, train, &dest, 1, 0);
+                    } else {
+                        int nodes[2];
+                        nodes[0] = src;
+                        nodes[1] = dest;
 
-                    pprintf(COM2, "\033[%d;%dH\033[K", 35, 1);
-                    int i;
-                    for (i = path.path_len - 1; i >= 0; i--) {
-                        pprintf(COM2, "%s (%d) %d -> ", path.nodes[i]->name, path.edges[i], reserved_nodes[path.nodes[i]->id]);
+                        move_train(scheduler_server, train, nodes, 2, mode == 2);
                     }
-                    */
-
-                    int cid = Create(10, train_route_worker);
-                    Send(cid, command.param, sizeof(char) * 2, 0, 0);
                     break;
                 }
                 case CMD_STOP_TRAIN:

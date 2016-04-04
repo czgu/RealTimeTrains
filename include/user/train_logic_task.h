@@ -16,7 +16,7 @@ typedef enum {
     CMD_SENSOR_MODULE_AWAIT,
     CMD_CALIBRATE,
     CMD_STOP_TRAIN,
-    CMD_CALCULATE_PATH
+    CMD_MOVE_TRAIN
 } COMMAND_OP;
 
 void train_command_server_task();

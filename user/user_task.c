@@ -9,6 +9,7 @@
 #include <train_logic_task.h>
 #include <train_location_server_task.h>
 #include <train_route_reservation_server.h>
+#include <train_route_scheduler_server.h>
 
 #include <calibration.h>
 
@@ -39,6 +40,7 @@ void idle_task() {
 
 void bootstrap_user_task() {
     Create(10, train_route_reservation_server);
+    Create(10, train_route_scheduler_server);
 
     Create(TRAIN_LOCATION_SERVER_PRIORITY, train_location_server_task);
 

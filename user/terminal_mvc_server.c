@@ -326,19 +326,42 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             msg->param[3] = dist & 0xFF;
 
             return 0;
-        } else if(strncmp(str, "pa ", 3) == 0) {
-            int src, dest;
+        } else if(strncmp(str, "m", 1) == 0) {
+            int mode, train, src, dest;
+
+            switch(str[1]) {
+                case 's':
+                    mode = 0;
+                    break;
+                case 'm':
+                    mode = 1;
+                    break;
+                case 'c':
+                    mode = 2;
+                    break;
+                default:
+                    return -1;
+                    break;
+            }
 
             char* current_c = str + 3;
-            a2i('0', &current_c, 10, &src);
-            a2i('0', &current_c, 10, &dest);
+            a2i('0', &current_c, 10, &train);
+
+            if (mode == 0) {
+                a2i('0', &current_c, 10, &dest);
+            } else {
+                a2i('0', &current_c, 10, &src);
+                a2i('0', &current_c, 10, &dest);
+            }
             
-            msg->opcode = CMD_CALCULATE_PATH;
-            msg->param[0] = src;
-            msg->param[1] = dest;
+            msg->opcode = CMD_MOVE_TRAIN;
+            msg->param[0] = mode;
+            msg->param[1] = train;
+            msg->param[2] = src;
+            msg->param[3] = dest;
 
             return 0;
-        }
+        }     
     } 
    
     return -1;    

@@ -1,6 +1,9 @@
 #ifndef STRING_H
 #define STRING_H
 
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 
 char c2x( char ch );
 int a2d( char ch );
