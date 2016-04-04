@@ -157,20 +157,18 @@ void train_command_worker_task() {
                     break;
                 }
                 case CMD_MOVE_TRAIN: {
-                    int mode = command.param[0];
+                    int loop = command.param[0];
                     int train = command.param[1];
-                    int src = command.param[2];
-                    int dest = command.param[3];
+                    int num_nodes = command.extra;
 
-                    if (mode == 0) {
-                        move_train(scheduler_server, train, &dest, 1, 0);
-                    } else {
-                        int nodes[2];
-                        nodes[0] = src;
-                        nodes[1] = dest;
-
-                        move_train(scheduler_server, train, nodes, 2, mode == 2);
+                    int nodes[SCHEDULE_DEST_MAX];
+                    int i;
+        
+                    for (i = 0; i < num_nodes; i++) {
+                        nodes[i] = command.param[2 + i];                    
                     }
+
+                    move_train(scheduler_server, train, &nodes, num_nodes, loop);
                     break;
                 }
                 case CMD_STOP_TRAIN:

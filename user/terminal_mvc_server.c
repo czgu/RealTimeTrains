@@ -2,6 +2,7 @@
 
 #include <terminal_gui.h>
 #include <train_logic_task.h>
+#include <train_route_scheduler_server.h>
 
 #include <syscall.h>
 #include <io.h>
@@ -394,17 +395,14 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
 
             return 0;
         } else if(strncmp(str, "m", 1) == 0) {
-            int mode, train, src, dest;
+            int loop, train;
 
             switch(str[1]) {
-                case 's':
-                    mode = 0;
-                    break;
-                case 'm':
-                    mode = 1;
+                case 'v':
+                    loop = 0;
                     break;
                 case 'c':
-                    mode = 2;
+                    loop = 1;
                     break;
                 default:
                     return -1;
@@ -414,18 +412,17 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             char* current_c = str + 3;
             a2i('0', &current_c, 10, &train);
 
-            if (mode == 0) {
-                a2i('0', &current_c, 10, &dest);
-            } else {
-                a2i('0', &current_c, 10, &src);
-                a2i('0', &current_c, 10, &dest);
-            }
-            
             msg->opcode = CMD_MOVE_TRAIN;
-            msg->param[0] = mode;
+            msg->param[0] = loop;
             msg->param[1] = train;
-            msg->param[2] = src;
-            msg->param[3] = dest;
+
+            int num_nodes = 0, node;
+            while ((current_c - str) < str_len && num_nodes < SCHEDULE_DEST_MAX) {
+                a2i('0', &current_c, 10, &node);
+                msg->param[2 + num_nodes] = node;
+                num_nodes ++;           
+            }
+            msg->extra = num_nodes;
 
             return 0;
         }     

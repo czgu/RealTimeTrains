@@ -1,6 +1,8 @@
 #ifndef _TRAIN_ROUTE_SCHEDULER_SERVER_H_
 #define _TRAIN_ROUTE_SCHEDULER_SERVER_H_
 
+#define SCHEDULE_DEST_MAX 5
+
 typedef enum {
     MOVE_TRAIN,
     LOOP_TRAIN,
@@ -13,7 +15,7 @@ typedef struct TrainSchedule {
     short train_id;
     char loop;
 
-    short dest[2];
+    short dest[SCHEDULE_DEST_MAX];
     short dest_len;
     short curr_dest;
 

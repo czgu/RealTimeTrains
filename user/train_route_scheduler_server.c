@@ -13,9 +13,10 @@
 void train_schedule_init(TrainSchedule* ts, int train_id) {
     ts->train_id = train_id;
     ts->loop = 0;
-    
-    ts->dest[0] = 0;
-    ts->dest[1] = 0;
+ 
+    int i;
+    for (i = 0; i < SCHEDULE_DEST_MAX; i++)   
+        ts->dest[i] = 0;
 
     ts->dest_len = 0;
     ts->curr_dest = 0;
@@ -25,8 +26,6 @@ void train_schedule_init(TrainSchedule* ts, int train_id) {
 
 void train_schedule_set_dest(TrainSchedule* ts, int* dest, int dest_len, int loop) {
     int i;
-
-    ASSERT(dest_len <= 2);
 
     for (i = 0; i < dest_len; i++) {
         ts->dest[i] = dest[i];
@@ -61,11 +60,11 @@ void train_route_scheduler_server() {
                 case MOVE_TRAIN: {
                     int train_id = request_msg.param[0];
                     int loop = request_msg.param[1];
-                    int dest_len = MIN(request_msg.param[2], 2);
-                    int dest[2];
+                    int dest_len = MIN(request_msg.extra, SCHEDULE_DEST_MAX);
+                    int dest[SCHEDULE_DEST_MAX];
 
                     for (i = 0; i < dest_len; i++)
-                        dest[i] = request_msg.param[3 + i];
+                        dest[i] = request_msg.param[2 + i];
                            
                     TrainSchedule* ts = train_schedule + (train_id - TRAIN_ID_MIN);
 
@@ -137,11 +136,11 @@ void move_train(int scheduler_server, int train_id, int* nodes, int node_len, in
     msg.opcode = MOVE_TRAIN;
     msg.param[0] = train_id;
     msg.param[1] = loop;
-    msg.param[2] = node_len;
+    msg.extra = node_len;
 
     int i;
     for (i = 0; i < node_len; i++)
-        msg.param[3 + i] = nodes[i];
+        msg.param[2 + i] = nodes[i];
 
     Send(scheduler_server, &msg, sizeof(TERMmsg), 0, 0);
 }
