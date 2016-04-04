@@ -58,8 +58,8 @@ void send_queue_push(Task* receiver, Task* sender) {
     // for safety, may not be necessary
     sender->send_queue_next = 0;
 
-    if (receiver->send_queue_next == 0) {
-        receiver->send_queue_next = sender;
+    if (receiver->send_queue_head == 0) {
+        receiver->send_queue_head = sender;
     } else {
         receiver->send_queue_last->send_queue_next = sender;
     }
@@ -69,16 +69,16 @@ void send_queue_push(Task* receiver, Task* sender) {
 int send_queue_pop(Task* receiver, Task** sender) {
     ASSERT(receiver->state != SEND_BLOCKED);
 
-    if (receiver->send_queue_next == 0) { 
+    if (receiver->send_queue_head == 0) { 
         return -1; // send_queue_empty       
     } else {
         // find the sender
-        *sender = receiver->send_queue_next;
+        *sender = receiver->send_queue_head;
 
         // update the send_queue to find the next element
-        receiver->send_queue_next = receiver->send_queue_next->send_queue_next;
+        receiver->send_queue_head = receiver->send_queue_head->send_queue_next;
 
-        if (receiver->send_queue_next == 0) {
+        if (receiver->send_queue_head == 0) {
             // we just popped the last element, not sure if this is necessary
             receiver->send_queue_last = 0; 
         }
@@ -114,6 +114,7 @@ void scheduler_init(Task_Scheduler* scheduler) {
         scheduler->task_pool[i].state = ZOMBIE;
         scheduler->task_pool[i].priority = 30;
 
+        scheduler->task_pool[i].send_queue_head = 0;
         scheduler->task_pool[i].send_queue_next = 0;
         scheduler->task_pool[i].send_queue_last = 0;
 

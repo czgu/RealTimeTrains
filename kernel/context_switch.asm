@@ -26,7 +26,7 @@ asm_kern_exit:
     ldmfd sp!, {r4-r12, lr}; # restore user space registers
 
     # check if last_request is hardware interrupt
-    ldr r2, [r3, #40];
+    ldr r2, [r3, #32];
     cmp r2, #0;
 
     # if not hardware, put the return value

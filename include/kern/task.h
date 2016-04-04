@@ -15,12 +15,15 @@ typedef struct Task {
     TASK_STATE state; // #24
     unsigned int priority; // #28
 
-    // all task in the linked list should be receive blocked except head
-    struct Task* send_queue_next; // #32
-    // for queue insertion, only set for head
-    struct Task* send_queue_last; // #36
+    Request* last_request; //#32
 
-    Request* last_request; //#40
+    // head of send queue, only set for head
+    struct Task* send_queue_head; // #36
+    // all task in the linked list should be receive blocked except head
+    struct Task* send_queue_next; // #40
+    // for queue insertion, only set for head
+    struct Task* send_queue_last; // #44
+
 } Task;
 
 void split_tid(unsigned int tid, unsigned short* index, unsigned short* generation);
