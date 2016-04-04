@@ -52,7 +52,7 @@ void init_track_display() {
 
 void init_train_display() {
 	pprintf(COM2, "\033[%d;%dH", CSTRAIN_HEADERY, CSTRAINX);
-    PutStr(COM2, "Train\tSpeed\tCurrent arc\tDstance\tN sensr\tError\tDest\tTrack state");
+    PutStr(COM2, "Train\tSpeed\tCurrent arc\tDstance\tN.sensr\tError\tDest\tTrack state");
 }
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {

@@ -221,7 +221,8 @@ void train_location_server_task() {
 
                             if (sensor >= 0) {
                                 lost_train->bitmap |= TRAIN_MODEL_TRACKED;
-                                train_model_init_location(lost_train, time, switches, train_track + (module * 16 + sensor));
+                                train_model_init_location(lost_train, time, switches, 
+                                                          train_track + (module * 16 + sensor));
                             }
                         }
                     }
@@ -248,8 +249,10 @@ void train_location_server_task() {
                             train_model_update_location(train, time, switches);
 
                             if (train->position.stop_node != (void *)0 && train->speed > 0) {
-                                //ASSERTP((((int)train->profile.stop_distance[train->speed]) > 0), "train %d speed %d", train->id, train->speed);
-                                int lookahead = ((int)train->profile.stop_distance[train->speed]) + TRAIN_LOOK_AHEAD_DIST + train->position.dist_travelled + train->position.stop_dist;
+                                int lookahead = ((int)train->profile.stop_distance[train->speed]) 
+                                              + TRAIN_LOOK_AHEAD_DIST 
+                                              + train->position.dist_travelled 
+                                              + train->position.stop_dist;
                                 int dist_to_node;
                                 if (track_ahead_contain_node(
                                         train->position.stop_node, 

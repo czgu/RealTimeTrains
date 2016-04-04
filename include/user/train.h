@@ -12,23 +12,24 @@ typedef struct TrainCalibrationProfile {
     float velocity[15];
     //float calibration_weight[15];
     float stop_distance[15];
-
-    // TODO: add acceleration profile
 } TrainCalibrationProfile;
 
-void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
+#define TRACK_MAX_EDGES_BTW_SENSORS 5
 
-#define TRACK_MAX_EDGES_BTW_SENSORS (5+1)
-
-typedef struct TrainModelPosition {
-    track_edge* arc;
-    track_node* next_sensor;
-
+typedef struct TrainCalibrationWork {
     // dynamic calibration fields
     int num_arcs_passed;
     track_edge* arcs_passed[TRACK_MAX_EDGES_BTW_SENSORS];
     int dist_from_last_sensor;       // running distance from last sensor
     float weight_factors;            // running weighted sum of track weight factors
+} TrainCalibrationWork;
+
+void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
+void train_calibration_work_init(TrainCalibrationWork* work);
+
+typedef struct TrainModelPosition {
+    track_edge* arc;
+    track_node* next_sensor;
 
     int sensor_triggered_time;
 
@@ -66,6 +67,7 @@ typedef struct TrainModel {
 
     TrainModelPosition position;
     TrainCalibrationProfile profile;
+    TrainCalibrationWork calibration_work;
 } TrainModel;
 
 void train_model_init(TrainModel* train, int id);
