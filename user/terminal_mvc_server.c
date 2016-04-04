@@ -5,6 +5,7 @@
 
 #include <syscall.h>
 #include <io.h>
+#include <assert.h>
 
 #include <train.h>
 #include <string.h>
@@ -39,6 +40,7 @@ void terminal_view_server_task() {
             case DRAW_TRACK:
             case DRAW_CMD:
             case DRAW_TRAIN_LOC:
+            case DRAW_TRAIN_SPEED:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -81,10 +83,23 @@ void terminal_view_worker_task() {
     Cursor cs;
     init_screen(&cs);
 
+    // recently triggered sensors to display
     SensorId triggered_sensor_pool[30];
     RQueue triggered_sensors;
     rq_init(&triggered_sensors, 
             triggered_sensor_pool, 30, sizeof(SensorId));
+    
+    // track which trains are displayed in which rows on the terminal
+    // the max number of rows is MAX_DISPLAY_TRAINS
+    // each train prints its stats to a separate row
+    int train_display_next_available_index = 0;
+    // maps to row index in [0, MAX_DISPLAY_TRAINS)
+    char train_display_mapping[TRAIN_ID_MAX - TRAIN_ID_MIN + 1];
+    int i;
+    for(i = 0; i < TRAIN_ID_MAX - TRAIN_ID_MIN + 1; i++) {
+        // initialize to invalid row
+        train_display_mapping[i] = MAX_DISPLAY_TRAINS;
+    }
 
     int view_server_tid = WhoIs("View Server");
 
@@ -156,25 +171,51 @@ void terminal_view_worker_task() {
                     }
                     break;
                 }
+                case DRAW_TRAIN_SPEED: {
+                    int train = draw_msg.param[0];
+                    int speed = draw_msg.param[1];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    if (row >= MAX_DISPLAY_TRAINS) {
+                        // this train has not been assigned a row yet
+                        row = (train_display_next_available_index++) % MAX_DISPLAY_TRAINS;
+                        train_display_mapping[train - TRAIN_ID_MIN] = row;
+                        clear_train_row(&cs, row);
+                        // TODO: clear previous mapping
+                    }
+                    // print train id and speed
+                    print_train_bulk(&cs, row, TRAIN_ID, TRAIN_SPEED, 
+                                     "%d\t%d", train, speed);
+                    break;
+                }
                 case DRAW_TRAIN_LOC: {
                     int train = draw_msg.param[0];
                     int src_node = draw_msg.param[1];
                     int dst_node = draw_msg.param[2];
                     int distance = (draw_msg.param[3] << 8) | draw_msg.param[4];
                     int next_sensor = draw_msg.param[5];
-                    // TODO: assign and cache train row mappings
-                    print_train_bulk(&cs, 0, TRAIN_ID, TRAIN_ID, 
-                                     "%d", train);
-                    print_train_bulk(&cs, 0, TRAIN_ARC, TRAIN_NEXT_SENSOR,
+                    // TODO: print train id on speed update instead
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    if (row >= MAX_DISPLAY_TRAINS) {
+                        // this train has not been assigned a row yet
+                        row = (train_display_next_available_index++) % MAX_DISPLAY_TRAINS;
+                        train_display_mapping[train - TRAIN_ID_MIN] = row;
+                        clear_train_row(&cs, row);
+                        // TODO: clear previous mapping
+                    }
+                    print_train_bulk(&cs, row, TRAIN_ARC, TRAIN_NEXT_SENSOR,
                                      "(%s->%s)\t%d\t%s", 
                                      train_track[src_node].name,
                                      train_track[dst_node].name,
                                      distance,
                                      train_track[next_sensor].name);
-                    //print_train(&cs, draw_msg.param[0], draw_msg.param[1], draw_msg.param[2], draw_msg.param[3], draw_msg.param[4], (draw_msg.param[5] << 8) | draw_msg.param[6]);
                     break;
                 }
-            }    
+            }
         }
     }
 }

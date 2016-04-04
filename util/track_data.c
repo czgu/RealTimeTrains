@@ -17,19 +17,8 @@ static void init_id(track_node* track) {
 void init_track_edge_weights(track_node *track) {
     int i;
     for (i = 0; i < TRACK_MAX; i++) {
-        switch(track[i].type) {
-            case NODE_BRANCH:
-                track[i].edge[DIR_STRAIGHT].weight_factor = 1;
-                track[i].edge[DIR_CURVED].weight_factor = 1;
-                break;
-            case NODE_SENSOR:
-            case NODE_MERGE:
-            case NODE_ENTER:
-                track[i].edge[DIR_AHEAD].weight_factor = 1;
-                break;
-            default:
-                break;
-        }
+        track[i].edge[0].weight_factor = 1;
+        track[i].edge[1].weight_factor = 1;
     }
 }
 

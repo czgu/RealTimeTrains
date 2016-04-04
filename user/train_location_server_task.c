@@ -55,7 +55,7 @@ void train_location_server_secretary_task() {
         }
 
         if (courier_ready && !rq_empty(&request_msg_buffer)) {
-            request_msg = *((TERMmsg *)rq_pop_front(&request_msg_buffer));        
+            request_msg = *((TERMmsg *)rq_pop_front(&request_msg_buffer));
             Reply(courier, &request_msg, sizeof(TERMmsg));
 
             courier_ready = 0;
@@ -67,6 +67,19 @@ void train_location_server_task() {
     Create(TRAIN_LOCATION_SERVER_SECRETARY_PRIORITY, 
            train_location_server_secretary_task);
     Create(TRAIN_LOCATION_TICKER_PRIORITY, train_location_ticker);
+
+    // create courier to send print stuff to view server
+    int view_server = WhoIs("View Server");
+    ASSERTP(view_server > 0, "view server pid %d", view_server);
+    int courier = Create(14, courier_task);
+    int courier_ready = 0;
+    Send(courier, &view_server, sizeof(int), 0, 0);
+
+    // print buffer 
+    TERMmsg print_pool[40];
+    RQueue print_buffer;
+    rq_init(&print_buffer, print_pool, 40, sizeof(TERMmsg));
+    TERMmsg print_msg;
 
     // init train
     int i, t;
@@ -95,7 +108,6 @@ void train_location_server_task() {
 
     }
 
-    // TODO: add option or something to init track a
     // init track
     init_trackb(train_track);
 
@@ -105,8 +117,12 @@ void train_location_server_task() {
     for (;;) {
         int sz = Receive(&sender, &request_msg, sizeof(TERMmsg));
         if (sz >= sizeof(char)) {
-            // Only courier and timer tasks send to this
-            Reply(sender, 0, 0);
+            if (request_msg.opcode == COURIER_NOTIF) {
+                courier_ready = 1;
+            } else {
+            // secretary courier and timer tasks send
+            int s = Reply(sender, 0, 0);
+            ASSERTP(s == 0, "%d %d", s, sender);
             switch(request_msg.opcode) {
                 case LOC_WAIT_SENSOR:
                     wait_module_add(wait_modules + request_msg.param[0], request_msg.param[1], request_msg.extra);
@@ -115,7 +131,8 @@ void train_location_server_task() {
                     int train_index = request_msg.param[0] - TRAIN_ID_MIN;
                     int speed = request_msg.param[1];
                 
-                    if (train_index >= 0 && train_index < num_train && speed >= 0 && speed <= 14) 
+                    if (train_index >= 0 && train_index < num_train 
+                        && speed >= 0 && speed <= 14)
                     {
                         if (speed > 0 && !(train_models[train_index].bitmap & TRAIN_MODEL_ACTIVE)) {
                             active_train_models[num_active_train++] = train_models + train_index;
@@ -129,6 +146,11 @@ void train_location_server_task() {
                         }
                         // set speed in the model
                         train_model_update_speed(train_models + train_index, Time(), switches, speed);
+                        // display train speed
+                        print_msg.opcode = DRAW_TRAIN_SPEED;
+                        print_msg.param[0] = request_msg.param[0];  // train id
+                        print_msg.param[1] = speed;
+                        rq_push_back(&print_buffer, &print_msg);
                     }
                     break;
                 }
@@ -255,8 +277,6 @@ void train_location_server_task() {
                                     train->position.stop_node = (void *)0;
                                     train->position.stop_dist = -1;
                                 }
-
-
                             } 
                         }
                     }
@@ -296,10 +316,17 @@ void train_location_server_task() {
                 pprintf(COM2, "location: %d,%d,%d", request_msg.opcode, request_msg.param[0], request_msg.param[1]);
             }
             */
-        }
-    }
+            } // end-if
+            if (courier_ready > 0 && !rq_empty(&print_buffer)) {
+                print_msg = *((TERMmsg *)rq_pop_front(&print_buffer));
+                Reply(courier, &print_msg, sizeof(TERMmsg));
 
-}
+                courier_ready = 0;
+            }
+        }   // end-if(sz >= sizeof(char))
+    }   // end-for
+
+}   // end-train_location_server_secretary_task
 
 void train_tracer_task() {
     int sender, train_id;
