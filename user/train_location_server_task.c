@@ -252,7 +252,7 @@ void train_location_server_task() {
                                 int lookahead = ((int)train->profile.stop_distance[train->speed]) 
                                               + TRAIN_LOOK_AHEAD_DIST 
                                               + train->position.dist_travelled 
-                                              + train->position.stop_dist;
+                                              + train->position.stop_node_dist;
                                 int dist_to_node;
                                 if (track_ahead_contain_node(
                                         train->position.stop_node, 
@@ -262,7 +262,7 @@ void train_location_server_task() {
                                         &dist_to_node))
                                 {
                                     float dist_left = (float)dist_to_node
-                                        + train->position.stop_dist 
+                                        + train->position.stop_node_dist 
                                         - train->position.dist_travelled 
                                         - train->profile.stop_distance[train->speed];
 
@@ -278,7 +278,7 @@ void train_location_server_task() {
                                     int cid = Create(10, train_timed_stop_task);
                                     Send(cid, instruction, sizeof(int) * 2, 0, 0);
                                     train->position.stop_node = (void *)0;
-                                    train->position.stop_dist = -1;
+                                    train->position.stop_node_dist = -1;
                                 }
                             } 
                         }
@@ -291,7 +291,7 @@ void train_location_server_task() {
                     int dist = (request_msg.param[2] << 8 | request_msg.param[3]);
 
                     train_models[train].position.stop_node = train_track + node;
-                    train_models[train].position.stop_dist = dist;
+                    train_models[train].position.stop_node_dist = dist;
 
                     pprintf(COM2, "\033[%d;%dH", 43, 1);
                     pprintf(COM2, "got %d, %d, %d.", train, node ,dist);
@@ -307,7 +307,7 @@ void train_location_server_task() {
                             reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].speed;
                             break;
                         case 2: // stop dist
-                            reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].position.stop_dist;
+                            reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].position.stop_node_dist;
                             break;
                     }
                     Reply(sender, &reply, sizeof(int));

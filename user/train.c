@@ -65,6 +65,15 @@ void train_calibration_work_init(TrainCalibrationWork* work) {
     }
 }
 
+void train_model_position_init(TrainModelPosition* position) {
+    // useless until the position_known bit is turned on
+    position->stop_node = (void *)0;
+    position->stop_node_dist = -1;
+
+    position->stop_dist = 0;
+    position->stop_time = 0;
+}
+
 void train_model_init(TrainModel* train, int id) {
 	train->id = id;
 	train->speed = 0;
@@ -76,12 +85,9 @@ void train_model_init(TrainModel* train, int id) {
     train->bitmap = 0;
     train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
 
-    // useless until the position_known bit is turned on
-    train->position.stop_node = (void *)0;
-    train->position.stop_dist = -1;
-
     train_calibration_profile_init(&train->profile, id);
     train_calibration_work_init(&train->calibration_work);
+    train_model_position_init(&train->position);
 }
 
 // Train Model
@@ -113,61 +119,83 @@ void train_model_init_location(
 }
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
+    TrainModelPosition* position = &train->position;
+    TrainCalibrationProfile* profile = &train->profile;
+    TrainCalibrationWork* work = &train->calibration_work;
+
     if (train->accel_const != 0) {
         // train is accelerating
         train->velocity = train->velocity + train->accel_const * TRAIN_ACCELERATION_DELTA;
 
         // turn off dynamic calibration if accelerating
-        train->calibration_work.num_arcs_passed = 0;
+        work->num_arcs_passed = 0;
 
         // TODO: I'm not sure how good floating point operations are
-        if (train->accel_const * train->velocity >= train->accel_const * train->profile.velocity[train->speed]) {
+        if (train->accel_const * train->velocity >= train->accel_const * profile->velocity[train->speed]) {
             // turn off acceleration if reached target velocity
             train->accel_const = 0;
-            train->velocity = train->profile.velocity[train->speed];
+            train->velocity = profile->velocity[train->speed];
             pprintf(COM2, "\033[%d;%dH\033[K[%d] (done acceleration)\n\r", 
                 24 + 19, 1, Time());
         }
+
+        // update stopping distance and stopping time
+        float stop_time = train->velocity / TRAIN_ACCELERATION;
+        float stop_dist = train->velocity * stop_time - 0.5 * TRAIN_ACCELERATION * stop_time * stop_time;
+
+        position->stop_time = (int) stop_time;
+        position->stop_dist = (int) stop_dist;
+        ASSERTP(position->stop_time >= 0, "negative stop time %d", (int)(stop_time * 100));
+        ASSERTP(position->stop_dist >= 0, "negative stop dist %d", (int)(stop_dist * 100));
+
+        pprintf(COM2, "\033[%d;%dH\033[K[%d] (dist %d, time %d)\n\r", 
+                24 + 21, 1, Time(), position->stop_dist, position->stop_time);
+
+        if (train->accel_const == 0) {
+            // update stopping distance in profile
+            profile->stop_distance[train->speed] = stop_dist;
+        }
     }
     if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
-        ASSERT(train->position.arc != (void *)0);
-        ASSERT(train->position.next_sensor != (void *)0);
-        float vel_multiplier = 1.0 / train->position.arc->weight_factor;
-        float delta_dist = (time - train->position.updated_time) * train->velocity * vel_multiplier;
+        ASSERT(position->arc != (void *)0);
+        ASSERT(position->next_sensor != (void *)0);
+        float vel_multiplier = 1.0 / position->arc->weight_factor;
+        float delta_dist = (time - position->updated_time) * train->velocity * vel_multiplier;
 
         // if train is lost
-        train->position.estimated_next_sensor_dist -= delta_dist;
-        if (train->position.estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
+        position->estimated_next_sensor_dist -= delta_dist;
+        if (position->estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
             train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
             pprintf(COM2, "\033[%d;%dH\033[K[%d] (train lost, expected %s)\n\r", 
-                24 + 20, 1, Time(), train->position.next_sensor->name);
+                24 + 20, 1, Time(), position->next_sensor->name);
         }
 
-        train->position.dist_travelled += delta_dist;
+        position->dist_travelled += delta_dist;
 
-        train->position.arc = track_next_arc(switches, train->position.arc, &train->position.dist_travelled);
+        position->arc = track_next_arc(switches, position->arc, &position->dist_travelled);
 
         // keep track of the arcs a train passed by between two sensors
-        if (train->position.arc != (void *)0
-            && train->calibration_work.num_arcs_passed > 0      // the train passed by the first arc's sensor
-            && train->position.arc != train->calibration_work.arcs_passed[train->calibration_work.num_arcs_passed - 1] // this is a new arc
-            && train->position.estimated_next_sensor_dist > 0) {    // the train has not passed the second sensor
+        if (position->arc != (void *)0
+            && work->num_arcs_passed > 0      // the train passed by the first arc's sensor
+            && position->arc != work->arcs_passed[work->num_arcs_passed - 1] // this is a new arc
+            && position->estimated_next_sensor_dist > 0) {    // the train has not passed the second sensor
 
-            ASSERT(train->position.arc != (void *)0);
-            ASSERT(train->calibration_work.arcs_passed[0]->src->type == NODE_SENSOR);
-            ASSERTP(train->calibration_work.num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, "%d num_arcs_passed reached limit, passed another arc", train->calibration_work.num_arcs_passed);
+            ASSERT(position->arc != (void *)0);
+            ASSERT(work->arcs_passed[0]->src->type == NODE_SENSOR);
+            ASSERTP(work->num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, 
+                    "%d num_arcs_passed reached limit, passed another arc", work->num_arcs_passed);
 
-            train->calibration_work.arcs_passed[train->calibration_work.num_arcs_passed] = train->position.arc;
-            train->calibration_work.num_arcs_passed = train->calibration_work.num_arcs_passed + 1;
+            work->arcs_passed[work->num_arcs_passed] = position->arc;
+            work->num_arcs_passed = work->num_arcs_passed + 1;
 
-            train->calibration_work.dist_from_last_sensor += train->position.arc->dist;
-            train->calibration_work.weight_factors += train->position.arc->dist * train->position.arc->weight_factor;
+            work->dist_from_last_sensor += position->arc->dist;
+            work->weight_factors += position->arc->dist * position->arc->weight_factor;
         }
 
-        if (train->position.arc == (void *)0)
+        if (position->arc == (void *)0)
             train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
 
-        train->position.updated_time = time;
+        position->updated_time = time;
     }
 }
 
@@ -314,16 +342,18 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 
 //int line = 1;
 void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
-    ASSERTP(train->calibration_work.num_arcs_passed <= TRACK_MAX_EDGES_BTW_SENSORS, "num_arcs_passed exceeded limit, got %d", train->calibration_work.num_arcs_passed);
+    TrainModelPosition* position = &train->position;
+    TrainCalibrationProfile* profile = &train->profile;
+    TrainCalibrationWork* work = &train->calibration_work;
+
+    ASSERTP(work->num_arcs_passed <= TRACK_MAX_EDGES_BTW_SENSORS, 
+            "num_arcs_passed exceeded limit, got %d", 
+            work->num_arcs_passed);
 
     // dynamically calibrate velocity and track
     // We want to wait for the train to accelerate enough after a change of speed before calibration
-    if (train->accel_const == 0 && train->calibration_work.num_arcs_passed > 0) {
+    if (train->accel_const == 0 && work->num_arcs_passed > 0) {
         int i;
-
-        TrainModelPosition* position = &train->position;
-        TrainCalibrationProfile* profile = &train->profile;
-        TrainCalibrationWork* work = &train->calibration_work;
 
         int time_delta = time - position->sensor_triggered_time;    // delta time
         int agg_distance = work->dist_from_last_sensor;         // total distance between sensors
@@ -384,21 +414,21 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
 
     // TODO: calculate error
     train_model_update_location(train, time, switches);
-    int err = (int)train->position.estimated_next_sensor_dist;
+    int err = (int)position->estimated_next_sensor_dist;
 
     pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, err);
 
-    train_model_init_location(train, time, switches, train->position.next_sensor);    
+    train_model_init_location(train, time, switches, position->next_sensor);    
     //train->position.prev_sensor_dist = train->position.estimated_next_sensor_dist;
 
     //train->position.prev_arc = train->position.arc;
     // initialize variables for next round of dynamic calibration
-    train->calibration_work.arcs_passed[0] = train->position.arc;
+    work->arcs_passed[0] = position->arc;
 
-    train->calibration_work.num_arcs_passed = 1;
-    train->calibration_work.dist_from_last_sensor = train->position.arc->dist;
-    train->calibration_work.weight_factors = train->position.arc->dist * train->position.arc->weight_factor;
-    train->position.sensor_triggered_time = time;
+    work->num_arcs_passed = 1;
+    work->dist_from_last_sensor = position->arc->dist;
+    work->weight_factors = position->arc->dist * position->arc->weight_factor;
+    position->sensor_triggered_time = time;
 }
 
 

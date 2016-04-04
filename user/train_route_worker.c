@@ -156,7 +156,7 @@ int execute_route(Route* route, int train_id, int location_server, int reservati
 
             if(status == 1) {
                 while(where_is(location_server, train_id, position) > 0) {
-                    if (position->stop_dist == -1)
+                    if (position->stop_node_dist == -1)
                         break;
                     else
                         Delay(50);
@@ -167,7 +167,7 @@ int execute_route(Route* route, int train_id, int location_server, int reservati
         }
 
         // set stop marker
-        if (position->stop_dist == -1) {
+        if (position->stop_node_dist == -1) {
             track_node* node = route_get_stop_node(route, &stop_pos);
             stop_pos++;
 

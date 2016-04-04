@@ -24,9 +24,6 @@ typedef struct TrainCalibrationWork {
     float weight_factors;            // running weighted sum of track weight factors
 } TrainCalibrationWork;
 
-void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
-void train_calibration_work_init(TrainCalibrationWork* work);
-
 typedef struct TrainModelPosition {
     track_edge* arc;
     track_node* next_sensor;
@@ -34,13 +31,21 @@ typedef struct TrainModelPosition {
     int sensor_triggered_time;
 
     track_node* stop_node;
-    int stop_dist;
+    int stop_node_dist;
 
     float estimated_next_sensor_dist;
 
     float dist_travelled; // distance travelled
     int updated_time;
+
+    // not really position-related, but necessary
+    int stop_dist;          // instantaneous stopping distance
+    int stop_time;          // time the train takes to stop
 } TrainModelPosition;
+
+void train_calibration_profile_init(TrainCalibrationProfile* profile, int id);
+void train_calibration_work_init(TrainCalibrationWork* work);
+void train_model_position_init(TrainModelPosition* position);
 
 #define TRAIN_ID_MIN 58
 #define TRAIN_ID_MAX 72
@@ -56,7 +61,8 @@ typedef struct TrainModel {
 
     int speed_updated_time; // used to calculate acceleration
     float velocity;
-#define TRAIN_ACCELERATION_DELTA 0.02 * TRAIN_LOCATION_UPDATE_TIME_INTERVAL
+#define TRAIN_ACCELERATION 0.02     // we assume that acceleration is approx. constant
+#define TRAIN_ACCELERATION_DELTA (TRAIN_ACCELERATION * TRAIN_LOCATION_UPDATE_TIME_INTERVAL)
     int accel_const;        // -1 for deceleration, 0 for no acceleration, 1 for acceleration
 
 #define TRAIN_MODEL_DIRECTION_FWD 0x1
