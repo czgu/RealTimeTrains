@@ -106,9 +106,9 @@ void print_debug(Cursor* cs, char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
 
-    char output_buffer[200];    // should be big enough?
+    char output_buffer[MAXDEBUGMSGLEN];
     int string_len;
-    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    pretty_format(fmt, va, output_buffer, MAXDEBUGMSGLEN, &string_len);
     va_end(va);
 
     PutStr(COM2, "\033F\033D");                 // move cursor down and scroll down
@@ -122,9 +122,9 @@ void debugf(char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
 
-    char output_buffer[200];    // should be big enough?
+    char output_buffer[MAXDEBUGMSGLEN];
     int string_len;
-    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    pretty_format(fmt, va, output_buffer, MAXDEBUGMSGLEN, &string_len);
     va_end(va);
 
     // save cursor
@@ -150,9 +150,9 @@ void debugc(COLOUR colour, char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
 
-    char output_buffer[200];    // should be big enough?
+    char output_buffer[MAXDEBUGMSGLEN];
     int string_len;
-    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    pretty_format(fmt, va, output_buffer, MAXDEBUGMSGLEN, &string_len);
     va_end(va);
 
     // print debug message
@@ -258,7 +258,8 @@ void clear_train_row(Cursor* cs, int train_row) {
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	
 }
 
-void print_train_bulk(Cursor* cs, int train_row, TRAIN_DISPLAY_HEADER col_start, TRAIN_DISPLAY_HEADER col_end,
+void print_train_bulk(Cursor* cs, int train_row, 
+                      TRAIN_DISPLAY_HEADER col_start, TRAIN_DISPLAY_HEADER col_end,
                       char* fmt, ...) {
     ASSERTP(TRAIN_ID <= col_start && col_start <= TRAIN_TRACK_STATE, 
             "invalid column %d", col_start);

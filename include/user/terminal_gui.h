@@ -20,29 +20,13 @@
 #define MAX_RECENT_SENSORS 10
 
 #define CSTRAINX 1
-//#define CSTRAIN_TITLEY (CSSWITCHY + 11 + 1)     // 16
 #define CSTRAIN_HEADERY (CSSWITCHY + 11 + 1)    // 16
 #define CSTRAIN_BASEY (CSTRAIN_HEADERY + 1)     // 17
-
-/*
-#define CSDEBUGMSGX 1
-#define CSDEBUGMSGY_MIN 28
-#define CSDEBUGMSGY_MAX 43*/
 
 #define CSINPUTX 3
 #define CSINPUTY (CSTRAIN_BASEY + 5 + 1)
 
 #define CSDEBUGY (CSINPUTY + 2);
-
-// deprecated
-/*
-#define CSMSGX 1
-#define CSMSGY 24*/
-
-/*
-#define CSTRAINX 1
-#define CSTRAINY 25*/
-
 
 #include <rqueue.h>
 
@@ -81,6 +65,8 @@ void print_switch(Cursor* cs, char switch_status, int index);
 void print_stats(Cursor* cs, short percent);
 void print_sensor(Cursor* cs, int index, SensorId sensor);
 void print_track(Cursor* cs, int track);
+
+#define MAXDEBUGMSGLEN 200
 void print_debug(Cursor* cs, char* fmt, ...);
 
 // warning: use at your own risk
