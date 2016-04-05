@@ -44,6 +44,7 @@ void terminal_view_server_task() {
             case DRAW_TRAIN_LOC_ERROR:
             case DRAW_TRAIN_SPEED:
             case DRAW_TRAIN_ACCELERATION:
+            case DRAW_TRAIN_DESTINATION:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -199,6 +200,20 @@ void terminal_view_worker_task() {
                     ASSERTP(row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
                     print_train_bulk(&cs, row, TRAIN_ACCEL_STATE,
                                      TRAIN_ACCEL_STATE, "%d", accel);
+                    break;
+                }
+                case DRAW_TRAIN_DESTINATION: {
+                    int train = draw_msg.param[0];
+                    int node = draw_msg.param[1];
+                    int dist = (signed char) draw_msg.param[2];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    ASSERTP(row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
+                    print_train_bulk(&cs, row, 
+                                     TRAIN_DESTINATION, TRAIN_DESTINATION, 
+                                     "%s %d", train_track[node].name, dist);
                     break;
                 }
                 case DRAW_TRAIN_LOC: {

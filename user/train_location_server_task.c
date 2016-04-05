@@ -330,7 +330,12 @@ void train_location_server_task() {
                     train_models[train].position.stop_node = train_track + node;
                     train_models[train].position.stop_node_dist = dist;
 
-                    debugf("got %d, %d, %d.", train, node ,dist);
+                    // send destination to print server
+                    print_msg.opcode = DRAW_TRAIN_DESTINATION;
+                    print_msg.param[0] = request_msg.param[0];  // train id
+                    print_msg.param[1] = node;
+                    print_msg.param[2] = dist;
+                    rq_push_back(&print_buffer, &print_msg);
                     break;
                 }
                 case LOC_QUERY: {
