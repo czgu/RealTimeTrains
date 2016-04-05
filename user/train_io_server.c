@@ -4,6 +4,7 @@
 #include <priority.h>
 
 #include <io.h>
+#include <terminal_gui.h>
 
 void train_input_notifier_task() {
     int server_tid = WhoIs("UART1 Input");
@@ -94,9 +95,9 @@ void train_output_notifier_task() {
         
         Send(server_tid, &msg, sizeof(IOOP), &out, sizeof(char));
 
-        //pprintf(COM2, "\033[%d;%dH", line++, 1);
+        //debugf("\033[%d;%dH", line++, 1);
         //PutStr(COM2, "\033[K");
-        //pprintf(COM2, "write %d to %d", out, write_loc);
+        //debugf("write %d to %d", out, write_loc);
 
         //if (line > 50)
         //    line = 25;

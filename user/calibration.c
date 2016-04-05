@@ -7,6 +7,9 @@
 #include <syscall.h>
 #include <io.h>
 
+// for debugf
+#include <terminal_gui.h>
+
 void calibrate_stop();
 
 void calibrate_stop() {
@@ -91,9 +94,7 @@ void calibrate_stop_time() {
             wait_sensor(loc_server, 3, 14);
             int time3 = Time();
 
-            int line = 30;
-            pprintf(COM2, "\033[%d;%dH", line + trial, 1 + speed * 8);
-            pprintf(COM2, "%d:%d", speed, time3 - time2);
+            debugf("%d:%d", speed, time3 - time2);
 
             Delay(200);
         }
@@ -116,7 +117,6 @@ void calibrate_velocity() {
     int tick = 0;
 
     int tries = 0;
-    int line = 24;
 
     //set_track(command_server_tid, 11, 1);
 
@@ -139,8 +139,7 @@ void calibrate_velocity() {
                 turn ++;
             } else { // turn 1
                 wait_sensor(location_server_tid, 5, 3);
-                pprintf(COM2, "\033[%d;%dH", line + tries, 1 + (speed - 8) * 8);
-                pprintf(COM2, "%d:%d", speed,Time() - tick);
+                debugf("%d:%d", speed, Time() - tick);
                 turn = 0;
                 tries ++;
             }
@@ -155,7 +154,6 @@ void calibrate_velocity() {
         if (speed > command.param[3]) {
             speed = speed - 2;
             increase = 0;
-            line += 15;
         }
         if (speed < command.param[2]) {
             break;
@@ -190,7 +188,7 @@ void calibrate_acceleration_delta() {
 
     int i;
     int time[6];
-    int line = 30;
+
     for (i = 0; i < 10; i++) {
         train_set_speed(loc_server, train_id, train_speed[0]);
 
@@ -223,8 +221,7 @@ void calibrate_acceleration_delta() {
         time[5] = Time();
 
         // print: time 1->2:(ticks):time 2->3
-        pprintf(COM2, "\033[%d;%dH", line + i, 1);
-        pprintf(COM2, "(%d, %d, %d, %d, %d)", 
+        debugf("(%d, %d, %d, %d, %d)", 
                 time[1] - time[0], 
                 time[2] - time[1], 
                 time[3] - time[2], 
@@ -244,8 +241,7 @@ void calibrate_acceleration_move() {
     Receive(&sender, &command, sizeof(TERMmsg));
     Reply(sender, 0, 0);
 
-    pprintf(COM2, "\033[%d;%dH\033[K calib\n\r", 
-        24 + 18, 1);
+    debugf("calib");
     int train_id = command.param[1];
     //int command_server_tid = WhoIs("Command Server");
     int location_server_tid = WhoIs("Location Server");
@@ -258,8 +254,7 @@ void calibrate_acceleration_move() {
     int time2 = Time();
 
     train_set_speed(location_server_tid, train_id, 0);
-    pprintf(COM2, "\033[%d;%dH\033[Kdt: (%d, %d)\n\r", 
-        24 + 19, 1, command.extra, time2 - time1);
+    debugf("dt: (%d, %d)", command.extra, time2 - time1);
 }
 void calibrate_find_train() {
     int sender;

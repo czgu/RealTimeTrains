@@ -7,6 +7,7 @@
 #include <terminal_mvc_server.h>
 
 #include <io.h>
+#include <terminal_gui.h>
 
 #include <train.h>
 #include <string.h>
@@ -14,8 +15,6 @@
 #include <assert.h>
 
 int execute_route(Route* route, int train_id, int location_server, int reservation_server, TrainModelPosition* position);
-
-static int line = 0;
 
 void train_route_worker() {
     char instruction[2];
@@ -26,7 +25,7 @@ void train_route_worker() {
 
     int time = Time(); int tid = MyTid();
 
-    pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start",35 + line++ % 20, 1, time, tid);
+    debugf("[%d,%d]Route start", time, tid);
 
     int track_taken[TRACK_BITMAP_MAX];
     memset(track_taken, 0, TRACK_BITMAP_MAX*sizeof(int));    
@@ -43,7 +42,7 @@ void train_route_worker() {
     train_set_speed(location_server, train_id, 0);
     Delay(300);
     if (where_is(location_server, train_id, &position) <= 0) {
-        pprintf(COM2, "\033[%d;%dH\033[KCan't find train %d. ", 35 + line++ % 20, 1, train_id);
+        debugf("Can't find train %d. ", train_id);
         return;
     }
 
@@ -56,7 +55,7 @@ void train_route_worker() {
     int tries = 0;
 
     while (path_status < 0) {
-        //pprintf(COM2, "\033[%d;%dH\033[K[%d]Compute path. ",35 + line++ % 20, 1, time);
+        //debugf("[%d]Compute path. ", time);
         // turn off destination bit
         //track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
 
@@ -64,16 +63,16 @@ void train_route_worker() {
         dijkstra_find(position.arc->src, train_track + dest_idx, &path, track_taken);
         path_to_route(&path, &route);
         /*
-        pprintf(COM2, "\033[%d;%dH\033[K Path [%d] : ", 35 + line++ % 20, 1, train_id);
+        debugf("Path [%d] : ", train_id);
         int i;
         for (i = 0; i < route.route_len; i++) {
-            pprintf(COM2, "%s (%d) -> ", route.nodes[i].node->name, route.nodes[i].action );
+            debugf("%s (%d) -> ", route.nodes[i].node->name, route.nodes[i].action );
         }
         PutStr(COM2, " END\n\r");
         */
         // Start the actual route finding
         if (route.route_len <= 1) {
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] No path. ", 35 + line ++ % 10, 1, time);
+            debugf("[%d] No path. ", time);
         } else {
             path_status = execute_route(&route, train_id, location_server, reservation_server, &position);
 
@@ -85,7 +84,7 @@ void train_route_worker() {
 
 
         if (tries > 4) {
-            pprintf(COM2, "\033[%d;%dH\033[K[%d]Route find failed", 35 + line++ % 20, 1, time);
+            debugf("[%d]Route find failed", time);
             break;
         }
     }
@@ -94,7 +93,7 @@ void train_route_worker() {
     release_all_track(reservation_server, train_id, position.arc);
 
     driver_completed(scheduler_server, train_id, 0);
-    pprintf(COM2, "\033[%d;%dH\033[K[%d]Route end", 35 + line++ % 20, 1, time);
+    debugf("[%d]Route end", time);
 
 }
 
@@ -104,7 +103,7 @@ int execute_route(Route* route, int train_id, int location_server, int reservati
         release_all_track(reservation_server, train_id, first_arc);
 
     //int time = Time();
-    //pprintf(COM2, "\033[%d;%dH\033[KExecute route begin", 35 + line++ % 20, 1, train_id);
+    //debugf("\033[%d;%dH\033[KExecute route begin", 35 + line++ % 20, 1, train_id);
 
     int current_route = 0;
     int route_len = route->route_len;
@@ -132,7 +131,7 @@ int execute_route(Route* route, int train_id, int location_server, int reservati
         }
 
         if (current_route >= route_len) {
-            // pprintf(COM2, "\033[%d;%dH\033[KCan't find node %s.", 35 + line++ % 20, 1, position->arc->src->name);
+            // debugf("\033[%d;%dH\033[KCan't find node %s.", 35 + line++ % 20, 1, position->arc->src->name);
             return -1; 
         } else if (current_route == route_len - 1) {
             //train_set_speed(location_server, train_id, 0);
@@ -161,7 +160,7 @@ int execute_route(Route* route, int train_id, int location_server, int reservati
                     else
                         Delay(50);
                 }
-                //pprintf(COM2, "\033[%d;%dH\033[KExecute_route done.\n\r", 35 + line++ % 20, 1);
+                //debugf("\033[%d;%dH\033[KExecute_route done.\n\r", 35 + line++ % 20, 1);
                 return 0;
             }
         }
@@ -195,7 +194,7 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 3) { // try kept failing, restart route
-                    //pprintf(COM2, "\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->name);
+                    //debugf("\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->name);
                     return -1;
                 }
                 tries ++;
@@ -212,7 +211,7 @@ int lookahead_node(Route* route, int current, int lookahead, int location_server
         int action = route->nodes[current].action;
         if ((route->nodes[current].bitmap & ROUTE_NODE_ACTION_COMPLETED) == 0 && action > 0) {
             if (action < 3) { // turn switch
-                //pprintf(COM2, "\033[%d;%dH\033[KMake switch %d to %d.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->num, route->nodes[current].action - 1 );
+                //debugf("Make switch %d to %d.", route->nodes[current].node->num, route->nodes[current].action - 1 );
                 track_set_switch(location_server, route->nodes[current].node->num, route->nodes[current].action - 1, 1);
             }
             route->nodes[current].bitmap |= ROUTE_NODE_ACTION_COMPLETED;

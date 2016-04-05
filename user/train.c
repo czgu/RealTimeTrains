@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include <terminal_mvc_server.h>
+#include <terminal_gui.h>
 #include <train_location_server_task.h>
 
 #include <assert.h>
@@ -135,8 +136,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
             // turn off acceleration if reached target velocity
             train->accel_const = 0;
             train->velocity = profile->velocity[train->speed];
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] (done acceleration)\n\r", 
-                24 + 19, 1, Time());
+            debugf("[%d] (done acceleration)", Time());
         }
 
         // update stopping distance and stopping time
@@ -148,8 +148,9 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         ASSERTP(position->stop_time >= 0, "negative stop time %d", (int)(stop_time * 100));
         ASSERTP(position->stop_dist >= 0, "negative stop dist %d", (int)(stop_dist * 100));
 
-        pprintf(COM2, "\033[%d;%dH\033[K[%d] (dist %d, time %d)\n\r", 
-                24 + 21, 1, Time(), position->stop_dist, position->stop_time);
+        /*
+        debugf("[%d] (dist %d, time %d)", 
+                Time(), position->stop_dist, position->stop_time);*/
 
         if (train->accel_const == 0) {
             // update stopping distance in profile
@@ -166,8 +167,8 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         position->estimated_next_sensor_dist -= delta_dist;
         if (position->estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
             train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] (train lost, expected %s)\n\r", 
-                24 + 20, 1, Time(), position->next_sensor->name);
+            debugf("[%d] (train lost, expected %s)", 
+                    Time(), position->next_sensor->name);
         }
 
         position->dist_travelled += delta_dist;
@@ -259,7 +260,7 @@ int track_ahead_contain_node(
     //int time = Time();
     int arc_travelled = 0;
     while (node != current) {
-        //pprintf(COM2, "\033[%d;%dH [%d]search %s to %s.", 40 + line++ % 10, 1, time, current->name, node->name);
+        //debugf("[%d]search %s to %s.", time, current->name, node->name);
         track_edge* next_arc = (void *)0;
         switch (current->type) {
             case NODE_MERGE:
@@ -268,7 +269,7 @@ int track_ahead_contain_node(
                 next_arc = current->edge + DIR_AHEAD;
                 break;
             case NODE_BRANCH: {
-                //pprintf(COM2, "\033[%d;%dH [%d] switches[%d] = %d.", 40 + line++ % 10, 1, time, node->num, switches[node->num]);
+                //debugf("[%d] switches[%d] = %d.", time, node->num, switches[node->num]);
                 next_arc = current->edge + switches[current->num];
                 break;
             }
@@ -289,9 +290,9 @@ int track_ahead_contain_node(
     }
 
     /*
-    pprintf(COM2, "\033[%d;%dH arc_travelled: %d.", 43, 1, arc_travelled);
+    debugf("arc_travelled: %d.", arc_travelled);
     if (node == current && total_arc_dist == 0) {
-        pprintf(COM2, "\033[%d;%dH found total arc_dist: %d", 43, 1, total_arc_dist);
+        debugf("found total arc_dist: %d", total_arc_dist);
         //Delay(30);
         //ASSERT(total_arc_dist > 0);
     }
@@ -310,8 +311,7 @@ void train_model_update_speed(TrainModel* train, int time, short* switches, int 
         train->speed_updated_time = time;
     
         train->accel_const = (train->previous_speed < train->speed)? 1 : -1;
-        pprintf(COM2, "\033[%d;%dH\033[K[%d] (start acceleration)\n\r", 
-            24 + 19, 1, Time());
+        debugf("[%d] (start acceleration)", Time());
     }
 }
 
@@ -378,15 +378,6 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
             train->velocity = profile->velocity[train->speed];
         }
 
-        /*
-        pprintf(COM2, "\033[%d;%dH\033[K[%d] e: %d\n\r", 24 + 21 + (line % 8), 1,
-            Time(), (int)train->position.estimated_next_sensor_dist);
-
-        pprintf(COM2, "\033[%d;%dH\033[K[%d] v: (%d -> %d)\n\r", 
-            24 + 21 + (line % 8), 30, Time(),
-            (int)(velocity_old * 100), 
-            (int)(train->profile.velocity[train->speed] * 100));*/
-        
         // FIXME: Updating the weight factors relative to the actual edge lengths is too hard
         // Instead, update each weight with the average weight
         for (i = 0; i < work->num_arcs_passed; i++) {
@@ -397,26 +388,18 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
                                + profile->velocity[train->speed] * time_delta / agg_distance * 0.1;
 
             /*
-            pprintf(COM2, "\033[%d;%dH\033[K[%d] v: (%d -> %d)\n\r", 
-                24 + 21 + (line++ % 8), 55, Time(),
+            debugf("[%d] v: (%d -> %d)\n\r", 
+                Time(),
                 (int)(arc_weight_old * 100), 
                 (int)(arc->weight_factor * 100));*/
         }
-        /*
-        pprintf(COM2, "\033[%d;%dH\033[K[%d] w: (%d -> %d)\n\r", 
-            24 + 21 + (line % 8), 30, Time(),
-            (int)(arc_weight_old * 100), 
-            (int)(train->position.prev_arc->weight_factor * 100));*/
-
-        //pprintf(COM2, "\033[%d;%dH\033[Kdist: %d\n\r", 24 + 19, 1, train->position.prev_arc->dist);
-        //pprintf(COM2, "\033[%d;%dH\033[Kvel: %d\n\r", 24 + 20, 1, (int)(agg_velocity * 100));
     }
 
     // calculate error
     train_model_update_location(train, time, switches);
     *error = (int)position->estimated_next_sensor_dist;
 
-    //pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, *error);
+    //debugf("error:%d\n\r", *error);
 
     train_model_init_location(train, time, switches, position->next_sensor);    
     //train->position.prev_sensor_dist = train->position.estimated_next_sensor_dist;

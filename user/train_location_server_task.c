@@ -6,6 +6,7 @@
 
 #include <syscall.h>
 #include <io.h>
+#include <terminal_gui.h>
 
 #include <train.h>
 #include <track_data.h>
@@ -286,8 +287,7 @@ void train_location_server_task() {
                                     instruction[1] = train->id;
                                     //ASSERTP(dist_left > 0, " dist_to_node %d, arc_dist %d, dist_travelled %d, stop_dist %d, lookahead %d", (int)dist_to_node, (int)train->position.arc->dist, (int)train->position.dist_travelled, (int)train->profile.stop_distance[train->speed], lookahead);
 
-                                    pprintf(COM2, "\033[%d;%dH", 44, 1);
-                                    pprintf(COM2, "[%d] found %d %d %d %d %d.", Time(), instruction[0], (int)dist_to_node, (int)dist_left, (int)lookahead, (int)(train->position.arc->dist - train->position.dist_travelled));
+                                    debugf("[%d] found %d %d %d %d %d.", Time(), instruction[0], (int)dist_to_node, (int)dist_left, (int)lookahead, (int)(train->position.arc->dist - train->position.dist_travelled));
                                     int cid = Create(10, train_timed_stop_task);
                                     Send(cid, instruction, sizeof(int) * 2, 0, 0);
                                     train->position.stop_node = (void *)0;
@@ -306,8 +306,7 @@ void train_location_server_task() {
                     train_models[train].position.stop_node = train_track + node;
                     train_models[train].position.stop_node_dist = dist;
 
-                    pprintf(COM2, "\033[%d;%dH", 43, 1);
-                    pprintf(COM2, "got %d, %d, %d.", train, node ,dist);
+                    debugf("got %d, %d, %d.", train, node ,dist);
                     break;
                 }
                 case LOC_QUERY: {
@@ -328,8 +327,7 @@ void train_location_server_task() {
             }
             /*
             if (request_msg.opcode != LOC_SENSOR_MODULE_UPDATE) {
-                pprintf(COM2, "\033[%d;%dH", 24 + i++ % 15, 1);
-                pprintf(COM2, "location: %d,%d,%d", request_msg.opcode, request_msg.param[0], request_msg.param[1]);
+                debugf("location: %d,%d,%d", request_msg.opcode, request_msg.param[0], request_msg.param[1]);
             }
             */
             } // end-if
@@ -390,13 +388,12 @@ void train_tracer_task() {
         }
         
         /*
-        pprintf(COM2, "\033[%d;%dH", 25, 1);
 
         if (sz > 0) {
-            pprintf(COM2, "%s %d", position.arc->src->name, (int)position.dist_travelled);
+            debugf("%s %d", position.arc->src->name, (int)position.dist_travelled);
         } else {
-            pprintf(COM2, "[%d]", Time());
-            PutStr(COM2, "Unknown position");
+            debugf("[%d]", Time());
+            debugf(COM2, "Unknown position");
         }        
         */
         // TODO: might want to change this later

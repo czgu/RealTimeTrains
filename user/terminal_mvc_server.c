@@ -134,10 +134,7 @@ void terminal_view_worker_task() {
                 case DRAW_CMD:  {
                     /*
                     // DEBUG ------------------------
-                    pprintf(COM2, "\033[%d;%dH", 24, 1);
-                    pprintf(COM2, "\033[K");
-
-                    pprintf(COM2, "'%d %d %d'", draw_msg.param[0], draw_msg.param[1], draw_msg.param[2]);
+                    debugf("'%d %d %d'", draw_msg.param[0], draw_msg.param[1], draw_msg.param[2]);
                     */
 
                     if (draw_msg.param[0] == CMD_SW) {

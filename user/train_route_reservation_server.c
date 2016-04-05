@@ -3,10 +3,9 @@
 #include <terminal_mvc_server.h>
 
 #include <io.h>
+#include <terminal_gui.h>
 #include <assert.h>
 #include <string.h>
-
-static int line = 0;
 
 int reserve_node(int node_id, int train_id, char* reserved_nodes, int force) {
     if (reserved_nodes[node_id] == 0 || force == 1) {
@@ -21,7 +20,8 @@ int reserve_node(int node_id, int train_id, char* reserved_nodes, int force) {
     } else if (reserved_nodes[node_id] == train_id) {
         return 1;
     } 
-    pprintf(COM2, "\033[%d;%dH\033[K Failed alloc: %d train: %d, owner: %d", 25 + line ++ % 10, 1,  node_id, train_id, reserved_nodes[node_id]);
+    debugf("Failed alloc: %d train: %d, owner: %d", 
+            node_id, train_id, reserved_nodes[node_id]);
     return 0;
 }
 

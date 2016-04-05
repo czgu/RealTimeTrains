@@ -1,6 +1,7 @@
 #include <syscall.h>
 
 #include <terminal_mvc_server.h>
+#include <terminal_gui.h>
 #include <train_route_scheduler_server.h>
 #include <train_route_worker.h>
 
@@ -8,8 +9,6 @@
 #include <string.h>
 
 #include <assert.h>
-
-static int line = 0;
 
 void train_schedule_init(TrainSchedule* ts, int train_id) {
     ts->train_id = train_id;
@@ -72,7 +71,7 @@ void train_route_scheduler_server() {
 
                     train_schedule_set_dest(ts, dest, dest_len, loop);
 
-                    pprintf(COM2, "\033[%d;%dH\033[K[%d] move train %d.", 25 + line ++ % 10, 1, Time(), train_id);
+                    debugf("[%d] move train %d.", Time(), train_id);
 
                     if (ts->status == 0) {
                         create_driver(ts);           
@@ -106,7 +105,7 @@ int create_driver(TrainSchedule* ts) {
     if (ts->dest_len <= 0) {
         return 1;
     }
-    pprintf(COM2, "\033[%d;%dH\033[K[%d] create_driver.", 25 + line ++ % 10, 1, Time());
+    debugf("[%d] create_driver.", Time());
 
     // Create a train driver 
     int train_id = ts->train_id;

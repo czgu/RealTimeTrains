@@ -80,6 +80,7 @@ void print_c() {
     for (i = 0; i < 50; i++) {
         for (j = 0; j < 10000000; j++) {
             int k = i + j;
+            k++;
         }
         bwprintf(COM2, "\033F");    // move cursor to lower left
         bwprintf(COM2, "\033D");    // scroll down (?)
