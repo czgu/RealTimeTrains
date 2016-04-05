@@ -172,6 +172,13 @@ void train_location_server_task() {
                     if (switch_index >= 0 && switch_index <= NUM_TRAIN_SWITCH) {
                         // update switch condition
                         switches[switch_index] = request_msg.param[1];
+
+                        // send switch update for printing
+                        print_msg.opcode = DRAW_CMD;
+                        print_msg.param[0] = CMD_SW;
+                        print_msg.param[1] = switch_index;  // switch index
+                        print_msg.param[2] = request_msg.param[1];  // switch state
+                        rq_push_back(&print_buffer, &print_msg);
                     }
                     break;
                 }
@@ -197,7 +204,13 @@ void train_location_server_task() {
                                 int sensor_idx = train->position.next_sensor->num;
                                 if (module == sensor_idx / 16 && 
                                     (new_bitmap & (0x8000 >> (sensor_idx % 16)))) {
-                                    train_model_next_sensor_triggered(train, time, switches);
+                                    int error;
+                                    train_model_next_sensor_triggered(train, time, switches, &error);
+                                    // send switch update for printing
+                                    print_msg.opcode = DRAW_TRAIN_LOC_ERROR;
+                                    print_msg.param[0] = train->id;
+                                    print_msg.param[1] = error;
+                                    rq_push_back(&print_buffer, &print_msg);
 
                                     // Sensor gets 'consumed'
                                     new_bitmap &= ~(0x8000 >> (sensor_idx % 16));

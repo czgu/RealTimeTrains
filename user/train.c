@@ -341,7 +341,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 }
 
 //int line = 1;
-void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches) {
+void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches, int* error) {
     TrainModelPosition* position = &train->position;
     TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;
@@ -412,11 +412,11 @@ void train_model_next_sensor_triggered(TrainModel* train, int time, short* switc
         //pprintf(COM2, "\033[%d;%dH\033[Kvel: %d\n\r", 24 + 20, 1, (int)(agg_velocity * 100));
     }
 
-    // TODO: calculate error
+    // calculate error
     train_model_update_location(train, time, switches);
-    int err = (int)position->estimated_next_sensor_dist;
+    *error = (int)position->estimated_next_sensor_dist;
 
-    pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, err);
+    //pprintf(COM2, "\033[%d;%dH\033[Kerror:%d\n\r", 24 + 8, 1, *error);
 
     train_model_init_location(train, time, switches, position->next_sensor);    
     //train->position.prev_sensor_dist = train->position.estimated_next_sensor_dist;

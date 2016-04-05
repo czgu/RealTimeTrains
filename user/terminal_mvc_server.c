@@ -40,6 +40,7 @@ void terminal_view_server_task() {
             case DRAW_TRACK:
             case DRAW_CMD:
             case DRAW_TRAIN_LOC:
+            case DRAW_TRAIN_LOC_ERROR:
             case DRAW_TRAIN_SPEED:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
@@ -131,18 +132,17 @@ void terminal_view_worker_task() {
                     break;
                 }
                 case DRAW_CMD:  {
+                    /*
                     // DEBUG ------------------------
                     pprintf(COM2, "\033[%d;%dH", 24, 1);
                     pprintf(COM2, "\033[K");
 
                     pprintf(COM2, "'%d %d %d'", draw_msg.param[0], draw_msg.param[1], draw_msg.param[2]);
-
+                    */
 
                     if (draw_msg.param[0] == CMD_SW) {
                         print_switch(&cs, draw_msg.param[2], draw_msg.param[1]);
                     }
-        
-
                     // print_msg(&cs, draw_msg.param);
                     break;
                 }
@@ -196,9 +196,9 @@ void terminal_view_worker_task() {
                     int dst_node = draw_msg.param[2];
                     int distance = (draw_msg.param[3] << 8) | draw_msg.param[4];
                     int next_sensor = draw_msg.param[5];
-                    // TODO: print train id on speed update instead
                     ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
                             "train id %d out of range", train);
+
                     int row = train_display_mapping[train - TRAIN_ID_MIN];
                     if (row >= MAX_DISPLAY_TRAINS) {
                         // this train has not been assigned a row yet
@@ -213,6 +213,19 @@ void terminal_view_worker_task() {
                                      train_track[dst_node].name,
                                      distance,
                                      train_track[next_sensor].name);
+                    break;
+                }
+                case DRAW_TRAIN_LOC_ERROR: {
+                    int train = draw_msg.param[0];
+                    int error = (signed char)draw_msg.param[1];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    ASSERTP(row < MAX_DISPLAY_TRAINS,
+                            "out of range: %d", row);
+                    print_train_bulk(&cs, row, TRAIN_LOCATION_ERR,
+                                     TRAIN_LOCATION_ERR, "%d", error);
                     break;
                 }
             }

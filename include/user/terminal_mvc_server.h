@@ -22,6 +22,7 @@ typedef enum {
     DRAW_TRACK,
     DRAW_CMD,
     DRAW_TRAIN_LOC,
+    DRAW_TRAIN_LOC_ERROR,
     DRAW_TRAIN_SPEED,
     VIEW_WORKER_READY,
 } VIEW_OP;

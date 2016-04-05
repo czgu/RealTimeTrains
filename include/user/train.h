@@ -91,7 +91,7 @@ int track_ahead_contain_node(track_node* node, short* switches, track_node* curr
 void train_model_update_speed(TrainModel* train, int time, short* switches, int speed);
 void train_model_reverse_direction(TrainModel* train, int time, short* switches);
 
-void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches);
+void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches, int* error);
 
 void train_set_speed(int location_server_tid, int train, int speed);
 
