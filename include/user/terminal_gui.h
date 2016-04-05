@@ -32,9 +32,12 @@
 #define CSINPUTX 3
 #define CSINPUTY (CSTRAIN_BASEY + 5 + 1)
 
-// TODO: remove, deprecated
+#define CSDEBUGY (CSINPUTY + 2);
+
+// deprecated
+/*
 #define CSMSGX 1
-#define CSMSGY 24
+#define CSMSGY 24*/
 
 /*
 #define CSTRAINX 1
@@ -51,13 +54,25 @@ typedef struct SensorId {
     char module, id;
 } SensorId;
 
+typedef enum {
+    NOCOLOUR = 0,
+    BLACK = 30,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE,
+} COLOUR;
+
 void init_screen(Cursor* cs);
 
 // struct Switch* switches, int nswitches);
 
 void print_clr();
 void print_backsp(Cursor* cs);
-void print_msg(Cursor* cs, char* msg);
+//void print_msg(Cursor* cs, char* msg);      // deprecated
 void reset_cursor(Cursor* cs);
 
 // Part-specific
@@ -66,8 +81,14 @@ void print_switch(Cursor* cs, char switch_status, int index);
 void print_stats(Cursor* cs, short percent);
 void print_sensor(Cursor* cs, int index, SensorId sensor);
 void print_track(Cursor* cs, int track);
-// deprecated
-//void print_train(Cursor* cs, int train, int src_type, int src_num, int dest_type, int dest_num, int dist);
+void print_debug(Cursor* cs, char* fmt, ...);
+
+// warning: use at your own risk
+// The function does not know the state of the cursor, so it
+// cannot restore it at the end. This can have concurrency
+// issues with other print statements.
+void debugf(char* fmt, ...);
+void debugc(COLOUR colour, char* fmt, ...);
 
 typedef enum {
     TRAIN_ID = 0,
@@ -82,10 +103,6 @@ typedef enum {
 
 #define MAX_DISPLAY_TRAINS 5
 #define TRAIN_NUM_COLS 8
-
-// For displaying coloured text
-// green = 32, yellow = 33, blue = 34, etc.
-#define TRAIN_COLOUR_CODE_BASE 32
 #define TAB_LENGTH 8
 
 /*

@@ -115,6 +115,7 @@ void pretty_format(char *fmt, va_list va, char* output_buffer, int buffer_size, 
 			}
 		}
 	}
+    output_buffer[sb.len] = 0;
     *out_len = sb.len;
 }
 
@@ -142,4 +143,3 @@ void assert(int cond, char* msg) {
     #endif
 }
 */
-

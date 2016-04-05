@@ -11,7 +11,7 @@
 
 char TRAIN_TAB_STOP[TRAIN_NUM_COLS + 1] = {0, 1, 2, 4, 5, 6, 7, 8, 15};
 
-void init_time() {
+inline void init_time() {
 	PutStr(COM2, "\033[H");					// move cursor to top-left
 	PutStr(COM2, "Time elapsed:");
 }
@@ -29,11 +29,11 @@ void init_switches() {
     
 }
 
-void init_sensors() {
+inline void init_sensors() {
 	pprintf(COM2, "\033[%d;%dH", CSSENSORY - 1, CSSENSORX);
 	PutStr(COM2, "Recent sensors:");
 
-    // initialize scrolling area for sensors
+    // initialize scrolling window for sensors
     pprintf(COM2, "\033[%d;%dr", CSSENSORY, CSSENSORY + MAX_RECENT_SENSORS);
 	
     /*
@@ -45,14 +45,19 @@ void init_sensors() {
 	}*/
 }
 
-void init_track_display() {
+inline void init_track_display() {
     pprintf(COM2, "\033[%d;%dH", CSTRACKY, CSTRACKX);
     PutnStr(COM2, "Track ?", 7);
 }
 
-void init_train_display() {
+inline void init_train_display() {
 	pprintf(COM2, "\033[%d;%dH", CSTRAIN_HEADERY, CSTRAINX);
     PutStr(COM2, "Train\tSpeed\tCurrent arc\tDstance\tN.sensr\tError\tDest\tTrack state");
+}
+
+inline void init_debug_display() {
+    // init scrolling region
+    pprintf(COM2, "\033[%d;r", CSINPUTY + 2);    // define scroll region to the bottom
 }
 
 void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
@@ -65,6 +70,7 @@ void init_screen(Cursor* cs) { //, struct Switch* sws, int nsw) {
 	init_sensors();
     init_track_display();
     init_train_display();
+    init_debug_display();
 
 	pprintf(COM2, "\033[%d;%dH>", CSINPUTY, 1);
 	reset_cursor(cs);		// set cursor to user input position
@@ -95,6 +101,71 @@ void print_stats(Cursor* cs, short percent) {
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
 }
 
+void print_debug(Cursor* cs, char* fmt, ...) {
+    // pretty format input
+    va_list va;
+    va_start(va, fmt);
+
+    char output_buffer[200];    // should be big enough?
+    int string_len;
+    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    va_end(va);
+
+    PutStr(COM2, "\033F\033D");                 // move cursor down and scroll down
+    PutnStr(COM2, output_buffer, string_len);
+
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);     // move cursor back to original position
+}
+
+void debugf(char* fmt, ...) {
+    // pretty format input
+    va_list va;
+    va_start(va, fmt);
+
+    char output_buffer[200];    // should be big enough?
+    int string_len;
+    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    va_end(va);
+
+    // save cursor
+    // hopefully this solves some concurrent print cursor issues,
+    // but competing debug prints will still err
+    //PutStr(COM2, "\0337");
+
+    // print debug message
+    // 1. save cursor               \0337
+    // 2. move cursor to lower left \033F
+    // 3. scroll down               \033D
+    // 4. print message
+    // 5. restore cursor            \0338
+    pprintf(COM2, "\0337\033F\033D%s\0338", output_buffer);
+
+    // restore cursor
+    //PutStr(COM2, "\0338");
+}
+
+void debugc(COLOUR colour, char* fmt, ...) {
+    ASSERTP(BLACK <= colour && colour <= WHITE, "invalid colour %d", colour);
+    // pretty format input
+    va_list va;
+    va_start(va, fmt);
+
+    char output_buffer[200];    // should be big enough?
+    int string_len;
+    pretty_format(fmt, va, output_buffer, 100, &string_len);
+    va_end(va);
+
+    // print debug message
+    // 0. set colour                \033[%dm
+    // 1. save cursor               \0337
+    // 2. move cursor to lower left \033F
+    // 3. scroll down               \033D
+    // 4. print message
+    // 5. restore cursor            \0338
+    // 6. reset colour              \033[0m
+    pprintf(COM2, "\033[%dm\0337\033F\033D%s\0338\033[%dm", 
+            colour, output_buffer, NOCOLOUR);
+}
 
 void print_clr() {
 	pprintf(COM2, "\033[2J");			// clear screen
@@ -105,6 +176,7 @@ void print_backsp(Cursor* cs) {
 	PutStr(COM2, "\033[K");
 }
 
+/*
 void print_msg(Cursor* cs, char* msg) {
     static int i = 0;
 
@@ -116,7 +188,7 @@ void print_msg(Cursor* cs, char* msg) {
     if (++i > 15)
         i = 0;
 
-}
+}*/
 
 void reset_cursor(Cursor* cs) {
 	cs->row = CSINPUTY;
@@ -154,29 +226,6 @@ void print_sensor(Cursor* cs, int index, SensorId sensor) {
             sensor.module + 'A', sensor.id);
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back
 }
-
-/*
-//TODO: need a better way, maybe just pass index of the track is good
-void print_landmark(int type, int num) {
-    switch(type) {
-        case NODE_SENSOR:
-            pprintf(COM2, "%c%d", num / 16 + 'A', num % 16 + 1);
-            break;
-        case NODE_BRANCH:
-            pprintf(COM2, "BR%d", num);
-            break;
-        case NODE_MERGE:
-            pprintf(COM2, "MR%d", num);
-            break;
-        case NODE_ENTER:
-            pprintf(COM2, "EN%d", num);
-            break;
-        case NODE_EXIT:
-            pprintf(COM2, "EX%d", num);
-            break;
-        
-    }
-}*/
 
 void print_track(Cursor* cs, int track) {
     pprintf(COM2, "\033[%d;%dH", CSTRACKY, CSTRACKX);
@@ -236,39 +285,10 @@ void print_train_bulk(Cursor* cs, int train_row, TRAIN_DISPLAY_HEADER col_start,
     int num_tabs = TRAIN_TAB_STOP[col_end + 1] - TRAIN_TAB_STOP[col_start];
     pprintf(COM2, "\033[%dX", TAB_LENGTH * num_tabs);               // clear cols
 
-    pprintf(COM2, "\033[%dm", TRAIN_COLOUR_CODE_BASE + train_row);  // set colour
+    pprintf(COM2, "\033[%dm", GREEN + train_row);  // set colour
     PutnStr(COM2, output_buffer, string_len);
     PutStr(COM2, "\033[0m");                                        // reset colour
 
     // move cursor back to original position
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	
 }
-
-/*
-void print_train_id(Cursor* cs, int train_row, int train_id) {
-    pprintf(COM2, "\033[%d;%dH", CSTRAIN_BASEY + index, CSTRAINX);
-    // set colour
-    pprintf(COM2, "\033[%dm", TRAIN_COLOUR_CODE_BASE + train_row);
-    // clear entire row and print train id
-    pprintf(COM2, "\033[K%d", train_id);
-    // reset colour
-    PutStr(COM2, "\033[0m");
-	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
-}*/
-
-/*
-void print_train(Cursor* cs, int train, int src_type, int src_num, int dest_type, int dest_num, int dist) {
-    //pprintf(COM2, "\033[%d;%dH", CSTRAINY + train - TRAIN_ID_MIN, CSTRAINX);
-    PutStr(COM2, "\033[K"); // clear previous message
-
-    pprintf(COM2, "%d: ", train);
-    print_landmark(src_type, src_num);
-    PutnStr(COM2, " - ", 3);
-    print_landmark(dest_type, dest_num);
-
-    PutnStr(COM2, ", dist: ", 8);
-    pprintf(COM2, "%d", dist);
-
-	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	// move cursor back to original position
-    
-}*/

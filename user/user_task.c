@@ -24,6 +24,7 @@
 #include <bwio.h>
 #include <syscall.h>
 #include <string.h>
+#include <terminal_gui.h>
 
 #include <dijkstra.h>
 #include <track_data.h>
@@ -32,9 +33,9 @@ void empty_task() {
 }
 
 void idle_task() {
-    int i = 0;
+    int k = 0;
     for(;;) {
-        i++;
+        k++;
     }
 }
 
@@ -69,32 +70,21 @@ void print_b() {
 }
 void print_c() {
     //<ESC>[{start};{end}r
-    // enable scrolling
-    //bwprintf(COM2, "\033[10;30r");
-    //bwprintf(COM2, "\033[?30h");
+    // set scrolling region to line 10 to the bottom
+    bwprintf(COM2, "\033[%d;%dHthe sky", 1, 1);             // the top
+    bwprintf(COM2, "\033[%d;%dHa bird", 9, 1);             // delim
+    bwprintf(COM2, "\033[10;r");
     //CSI ? Pm h  
 
-    bwprintf(COM2, "\033[2J\033[H");
-    bwprintf(COM2, "Train\tSpeed\tError");
-    bwprintf(COM2, "\033[%d;%dH", 2, 1);
-    bwprintf(COM2, "ab\t1234567\tab");
-    bwprintf(COM2, "\033[%d;%dH", 3, 1);
-    bwprintf(COM2, "cd\tcd\tcd");
-
-    // try overwriting values in the table
-    bwprintf(COM2, "\033[%d;%dH", 2, 1);    // first row
-    bwprintf(COM2, "\033[I");              // tab forward 1
-    bwprintf(COM2, "\033[8X");
-    bwprintf(COM2, "EL");
-    //bwprintf(COM2, "\033[3g");               // clear
-    //bwprintf(COM2, "\033[0g");              // clear first row, second cell
-
-    //bwprintf(COM2, "\033[%d;%dH", 10, 1);
-    /*
-    int i;
+    int i, j;
     for (i = 0; i < 50; i++) {
-        bwprintf(COM2, "\033[%d;%dHhello world %d\n\r", 10, 1, i);
-    }*/
+        for (j = 0; j < 10000000; j++) {
+            int k = i + j;
+        }
+        bwprintf(COM2, "\033F");    // move cursor to lower left
+        bwprintf(COM2, "\033D");    // scroll down (?)
+        bwprintf(COM2, "brick %d", i);
+    }
     //print_b();
     //bwprintf(COM2, "c end ");
 }
