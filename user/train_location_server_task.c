@@ -146,12 +146,25 @@ void train_location_server_task() {
                             Send(cid, &train_id, sizeof(int), 0, 0);
                         }
                         // set speed in the model
-                        train_model_update_speed(train_models + train_index, Time(), switches, speed);
+                        TrainModel* train = train_models + train_index;
+                        train_model_update_speed(train, Time(), 
+                                                 switches, speed);
                         // display train speed
                         print_msg.opcode = DRAW_TRAIN_SPEED;
-                        print_msg.param[0] = request_msg.param[0];  // train id
+                        print_msg.param[0] = train->id;  // train id
                         print_msg.param[1] = speed;
                         rq_push_back(&print_buffer, &print_msg);
+
+                        // display train acceleration
+                        if (train->accel_const != train->prev_accel) {
+                            //debugf("acceleration draw");
+                            print_msg.opcode = DRAW_TRAIN_ACCELERATION;
+                            print_msg.param[0] = train->id;  // train id
+                            print_msg.param[1] = train->accel_const;
+                            rq_push_back(&print_buffer, &print_msg);
+
+                            train->prev_accel = train->accel_const;
+                        }
                     }
                     break;
                 }
@@ -261,6 +274,17 @@ void train_location_server_task() {
 
                         if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                             train_model_update_location(train, time, switches);
+
+                            // display train acceleration?
+                            if (train->accel_const != train->prev_accel) {
+                                //debugf("acceleration draw 2");
+                                print_msg.opcode = DRAW_TRAIN_ACCELERATION;
+                                print_msg.param[0] = train->id;  // train id
+                                print_msg.param[1] = train->accel_const;
+                                rq_push_back(&print_buffer, &print_msg);
+
+                                train->prev_accel = train->accel_const;
+                            }
 
                             if (train->position.stop_node != (void *)0 && train->speed > 0) {
                                 int lookahead = ((int)train->profile.stop_distance[train->speed]) 

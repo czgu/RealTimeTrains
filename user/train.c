@@ -82,6 +82,7 @@ void train_model_init(TrainModel* train, int id) {
     train->speed_updated_time = 0;
     train->velocity = 0;
     train->accel_const = 0;
+    train->prev_accel = 0;
 
     train->bitmap = 0;
     train->bitmap |= TRAIN_MODEL_DIRECTION_FWD;
@@ -134,9 +135,10 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
         // TODO: I'm not sure how good floating point operations are
         if (train->accel_const * train->velocity >= train->accel_const * profile->velocity[train->speed]) {
             // turn off acceleration if reached target velocity
+            train->prev_accel = train->accel_const;
             train->accel_const = 0;
             train->velocity = profile->velocity[train->speed];
-            debugf("[%d] (done acceleration)", Time());
+            //debugf("[%d] (done acceleration)", Time());
         }
 
         // update stopping distance and stopping time
@@ -310,8 +312,9 @@ void train_model_update_speed(TrainModel* train, int time, short* switches, int 
         train->speed = speed;
         train->speed_updated_time = time;
     
+        train->prev_accel = train->accel_const;
         train->accel_const = (train->previous_speed < train->speed)? 1 : -1;
-        debugf("[%d] (start acceleration)", Time());
+        //debugf("[%d] (start acceleration)", Time());
     }
 }
 

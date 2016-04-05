@@ -26,7 +26,7 @@
 #define CSINPUTX 3
 #define CSINPUTY (CSTRAIN_BASEY + 5 + 1)
 
-#define CSDEBUGY (CSINPUTY + 2);
+#define CSDEBUGSTART (CSINPUTY + 2);
 
 #include <rqueue.h>
 
@@ -79,6 +79,7 @@ void debugc(COLOUR colour, char* fmt, ...);
 typedef enum {
     TRAIN_ID = 0,
     TRAIN_SPEED,
+    TRAIN_ACCEL_STATE,
     TRAIN_ARC,
     TRAIN_DISTANCE_TRAVELLED,
     TRAIN_NEXT_SENSOR,
@@ -88,7 +89,7 @@ typedef enum {
 } TRAIN_DISPLAY_HEADER;
 
 #define MAX_DISPLAY_TRAINS 5
-#define TRAIN_NUM_COLS 8
+#define TRAIN_NUM_COLS 9
 #define TAB_LENGTH 8
 
 /*

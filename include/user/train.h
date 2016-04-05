@@ -64,6 +64,7 @@ typedef struct TrainModel {
 #define TRAIN_ACCELERATION 0.02     // we assume that acceleration is approx. constant
 #define TRAIN_ACCELERATION_DELTA (TRAIN_ACCELERATION * TRAIN_LOCATION_UPDATE_TIME_INTERVAL)
     int accel_const;        // -1 for deceleration, 0 for no acceleration, 1 for acceleration
+    int prev_accel;
 
 #define TRAIN_MODEL_DIRECTION_FWD 0x1
 #define TRAIN_MODEL_ACTIVE 0x2

@@ -43,6 +43,7 @@ void terminal_view_server_task() {
             case DRAW_TRAIN_LOC:
             case DRAW_TRAIN_LOC_ERROR:
             case DRAW_TRAIN_SPEED:
+            case DRAW_TRAIN_ACCELERATION:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -186,6 +187,18 @@ void terminal_view_worker_task() {
                     // print train id and speed
                     print_train_bulk(&cs, row, TRAIN_ID, TRAIN_SPEED, 
                                      "%d\t%d", train, speed);
+                    break;
+                }
+                case DRAW_TRAIN_ACCELERATION: {
+                    int train = draw_msg.param[0];
+                    int accel = (signed char) draw_msg.param[1];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    ASSERTP(row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
+                    print_train_bulk(&cs, row, TRAIN_ACCEL_STATE,
+                                     TRAIN_ACCEL_STATE, "%d", accel);
                     break;
                 }
                 case DRAW_TRAIN_LOC: {
