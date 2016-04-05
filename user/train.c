@@ -120,7 +120,7 @@ void train_model_init_location(
     train_calibration_work_init(&train->calibration_work);
 }
 
-void train_model_update_location(TrainModel* train, int time, short* switches) {
+void train_model_update(TrainModel* train, int time, short* switches) {
     TrainModelPosition* position = &train->position;
     TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;
@@ -159,6 +159,14 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
             profile->stop_distance[train->speed] = stop_dist;
         }
     }
+    train_model_update_location(train, time, switches);
+}
+
+void train_model_update_location(TrainModel* train, int time, short* switches) {
+    TrainModelPosition* position = &train->position;
+    TrainCalibrationProfile* profile = &train->profile;
+    TrainCalibrationWork* work = &train->calibration_work;
+
     if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
         ASSERT(position->arc != (void *)0);
         ASSERT(position->next_sensor != (void *)0);

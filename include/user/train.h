@@ -81,6 +81,7 @@ void train_model_init(TrainModel* train, int id);
 
 // Initialization and helper
 void train_model_init_location(TrainModel* train, int time, short* switches, track_node* sensor_start);
+void train_model_update(TrainModel* train, int time,  short* switches);
 void train_model_update_location(TrainModel* train, int time,  short* switches);
 
 // track helper

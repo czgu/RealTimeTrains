@@ -271,21 +271,19 @@ void train_location_server_task() {
                     
                     for (t = 0; t < num_active_train; t++) {
                         TrainModel* train = active_train_models[t];
+                        train_model_update(train, time, switches);
 
+                        // display train acceleration?
+                        if (train->accel_const != train->prev_accel) {
+                            //debugf("acceleration draw 2");
+                            print_msg.opcode = DRAW_TRAIN_ACCELERATION;
+                            print_msg.param[0] = train->id;  // train id
+                            print_msg.param[1] = train->accel_const;
+                            rq_push_back(&print_buffer, &print_msg);
+
+                            train->prev_accel = train->accel_const;
+                        }
                         if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
-                            train_model_update_location(train, time, switches);
-
-                            // display train acceleration?
-                            if (train->accel_const != train->prev_accel) {
-                                //debugf("acceleration draw 2");
-                                print_msg.opcode = DRAW_TRAIN_ACCELERATION;
-                                print_msg.param[0] = train->id;  // train id
-                                print_msg.param[1] = train->accel_const;
-                                rq_push_back(&print_buffer, &print_msg);
-
-                                train->prev_accel = train->accel_const;
-                            }
-
                             if (train->position.stop_node != (void *)0 && train->speed > 0) {
                                 int lookahead = ((int)train->profile.stop_distance[train->speed]) 
                                               + TRAIN_LOOK_AHEAD_DIST 
