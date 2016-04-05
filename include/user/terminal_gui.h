@@ -85,11 +85,13 @@ typedef enum {
     TRAIN_NEXT_SENSOR,
     TRAIN_LOCATION_ERR,
     TRAIN_DESTINATION,
+    TRAIN_TRACK_ALLOC,
+    TRAIN_TRACK_DEALLOC,
     TRAIN_TRACK_STATE,           // variable number of tabs
 } TRAIN_DISPLAY_HEADER;
 
 #define MAX_DISPLAY_TRAINS 5
-#define TRAIN_NUM_COLS 9
+#define TRAIN_NUM_COLS 11       // number of elements in TRAIN_DISPLAY_HEADER
 #define TAB_LENGTH 8
 
 /*

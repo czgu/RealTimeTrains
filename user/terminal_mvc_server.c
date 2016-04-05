@@ -45,6 +45,8 @@ void terminal_view_server_task() {
             case DRAW_TRAIN_SPEED:
             case DRAW_TRAIN_ACCELERATION:
             case DRAW_TRAIN_DESTINATION:
+            case DRAW_TRAIN_TRACK_ALLOC:
+            case DRAW_TRAIN_TRACK_DEALLOC:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -252,6 +254,38 @@ void terminal_view_worker_task() {
                             "out of range: %d", row);
                     print_train_bulk(&cs, row, TRAIN_LOCATION_ERR,
                                      TRAIN_LOCATION_ERR, "%d", error);
+                    break;
+                }
+                case DRAW_TRAIN_TRACK_ALLOC: {
+                    int train = draw_msg.param[0];
+                    int node = draw_msg.param[1];
+                    int success = draw_msg.param[2];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
+                    print_train_bulk(&cs, row, 
+                                     TRAIN_TRACK_ALLOC, TRAIN_TRACK_ALLOC, 
+                                     "%s %s", 
+                                     train_track[node].name,
+                                     (success == 0)? "F" : "");
+                    break;
+                }
+                case DRAW_TRAIN_TRACK_DEALLOC: {
+                    int train = draw_msg.param[0];
+                    int node = (signed char) draw_msg.param[1];
+                    ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                            "train id %d out of range", train);
+
+                    int row = train_display_mapping[train - TRAIN_ID_MIN];
+                    ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
+
+                    // invalid node-id means dealloc all
+                    char* str = (node > 0)? train_track[node].name : "ALL";
+                    print_train_bulk(&cs, row, 
+                                     TRAIN_TRACK_DEALLOC, TRAIN_TRACK_DEALLOC, 
+                                     "%s", str);
                     break;
                 }
             }

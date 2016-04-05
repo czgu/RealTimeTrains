@@ -40,17 +40,19 @@ void idle_task() {
 }
 
 void bootstrap_user_task() {
+    // Create terminal server first b/c other servers may want to
+    // send to it
+    Create(TERMINAL_VIEW_SERVER_PRIORITY, terminal_view_server_task);
+
     Create(10, train_route_reservation_server);
     Create(10, train_route_scheduler_server);
 
-    Create(TERMINAL_VIEW_SERVER_PRIORITY, terminal_view_server_task);
     Create(TRAIN_LOCATION_SERVER_PRIORITY, train_location_server_task);
 
     Create(TRAIN_COMMAND_SERVER_PRIORITY, train_command_server_task);
 
     Create(TERMINAL_INPUT_LISTENER_PRIORITY, terminal_input_listener_task);
     Create(TRAIN_SENSOR_TASK_PRIORITY, train_sensor_task);
-
 }
 
 void print_b() {

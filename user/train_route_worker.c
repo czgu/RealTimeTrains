@@ -102,7 +102,7 @@ void train_route_worker() {
         for (i = 0; i < route.route_len; i++) {
             debugf("%s (%d) -> ", route.nodes[i].node->name, route.nodes[i].action );
         }
-        PutStr(COM2, " END\n\r");
+        debugf(" END");
 
         // Start the actual route finding
         if (route.route_len <= 1) {

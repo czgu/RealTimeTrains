@@ -1,6 +1,7 @@
 #include <train_route_reservation_server.h>
 #include <syscall.h>
 #include <terminal_mvc_server.h>
+#include <courier_warehouse_task.h>
 
 #include <io.h>
 #include <terminal_gui.h>
@@ -33,6 +34,19 @@ void train_route_reservation_server() {
     char reserved_nodes[TRACK_MAX];
     memset(reserved_nodes, 0, TRACK_MAX*sizeof(char));
 
+    // create courier to send print stuff to view server
+    int view_server = WhoIs("View Server");
+    ASSERTP(view_server > 0, "view server pid %d", view_server);
+    int courier = Create(14, courier_task);         // TODO: change priority?
+    int courier_ready = 0;
+    Send(courier, &view_server, sizeof(int), 0, 0);
+
+    // print buffer 
+    TERMmsg print_pool[40];
+    RQueue print_buffer;
+    rq_init(&print_buffer, print_pool, 40, sizeof(TERMmsg));
+    TERMmsg print_msg;
+
     int sender;
     TERMmsg request_msg;
 
@@ -42,6 +56,9 @@ void train_route_reservation_server() {
         ASSERTP(sender != 0, "%d, unexpected sender value", sender);
         if (sz >= sizeof(char)) {
             switch(request_msg.opcode) {
+                case COURIER_NOTIF:
+                    courier_ready = 1;
+                    break;
                 case RESERVE_NODE: {
                     int node_id = (int)request_msg.param[0];
                     int train_id = (int)request_msg.param[1];
@@ -51,6 +68,14 @@ void train_route_reservation_server() {
 
                     int success = reserve_node(node_id, train_id, reserved_nodes, 0);
                     Reply(sender, &success, sizeof(int));
+                    
+                    // send to print server
+                    print_msg.opcode = DRAW_TRAIN_TRACK_ALLOC;
+                    print_msg.param[0] = train_id;
+                    print_msg.param[1] = node_id;
+                    print_msg.param[2] = success;
+                    rq_push_back(&print_buffer, &print_msg);
+
                     break;
                 }
                 case RELEASE_NODE: {
@@ -64,6 +89,12 @@ void train_route_reservation_server() {
 
                     if (reserved_nodes[node_id] == train_id) {
                         reserve_node(node_id, 0, reserved_nodes, 1);
+
+                        // send to print server
+                        print_msg.opcode = DRAW_TRAIN_TRACK_DEALLOC;
+                        print_msg.param[0] = train_id;
+                        print_msg.param[1] = node_id;
+                        rq_push_back(&print_buffer, &print_msg);
                     }
 
                     //pprintf(COM2, "\033[%d;%dH\033[K Free: %d train: %d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1]);
@@ -86,20 +117,33 @@ void train_route_reservation_server() {
                     if (node_edge == (void *)0)
                         break;
                     // pprintf(COM2, "\033[%d;%dH\033[K release all train: %s to %s", 35 + line ++ % 20, 1, node_edge->src->name, node_edge->dest->name);
-                    Delay(200);
+                    //Delay(200);
 
                     reserve_node(node_edge->src->id, train_id, reserved_nodes, 1);
                     reserve_node(node_edge->dest->id, train_id, reserved_nodes, 1);
+
+                    // send to print server
+                    print_msg.opcode = DRAW_TRAIN_TRACK_DEALLOC;
+                    print_msg.param[0] = train_id;
+                    print_msg.param[1] = -1;                    // -1 means dealloc all
+                    rq_push_back(&print_buffer, &print_msg);
                     break;
                 }
                 case GET_RESERVE_DATA: {
                     Reply(sender, reserved_nodes, TRACK_MAX * sizeof(char));
                     break;
                 }
+            }   // end-switch
+
+            if (courier_ready > 0 && !rq_empty(&print_buffer)) {
+                print_msg = *((TERMmsg *)rq_pop_front(&print_buffer));
+                Reply(courier, &print_msg, sizeof(TERMmsg));
+
+                courier_ready = 0;
             }
-        }
-    }
-}
+        }   // end-if
+    }   // end-for
+}   // end-function
 
 int reserve_track(int reservation_server, int train_id, int track_id) {
     TERMmsg msg;

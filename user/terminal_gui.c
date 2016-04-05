@@ -10,7 +10,7 @@
 #include <train.h>
 
 // defines the tab stops for the train chart
-char TRAIN_TAB_STOP[TRAIN_NUM_COLS + 1] = {0, 1, 2, 3, 5, 6, 7, 8, 9, 16};
+char TRAIN_TAB_STOP[TRAIN_NUM_COLS + 1] = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 20};
 
 inline void init_time() {
 	PutStr(COM2, "\033[H");					// move cursor to top-left
@@ -53,7 +53,7 @@ inline void init_track_display() {
 
 inline void init_train_display() {
 	pprintf(COM2, "\033[%d;%dH", CSTRAIN_HEADERY, CSTRAINX);
-    PutStr(COM2, "Train\tSpeed\tAccel\tCurrent arc\tDstance\tN.sensr\tError\tDest\tTrack state");
+    PutStr(COM2, "Train\tSpeed\tAccel\tCurrent arc\tDstance\tN.sensr\tError\tDest\tAlloc\tDealloc\tTrack state");
 }
 
 inline void init_debug_display() {
