@@ -168,7 +168,7 @@ void train_command_worker_task() {
                         nodes[i] = command.param[2 + i];                    
                     }
 
-                    move_train(scheduler_server, train, &nodes, num_nodes, loop);
+                    move_train(scheduler_server, train, nodes, num_nodes, loop);
                     break;
                 }
                 case CMD_STOP_TRAIN:
