@@ -47,6 +47,7 @@ void terminal_view_server_task() {
             case DRAW_TRAIN_DESTINATION:
             case DRAW_TRAIN_TRACK_ALLOC:
             case DRAW_TRAIN_TRACK_DEALLOC:
+            case DRAW_TRAIN_TRACK_ALLOC_ALL:
                 Reply(sender, 0, 0);
                 rq_push_back(&draw_buffer, &request_msg);
                 break;
@@ -259,7 +260,7 @@ void terminal_view_worker_task() {
                 case DRAW_TRAIN_TRACK_ALLOC: {
                     int train = draw_msg.param[0];
                     int node = draw_msg.param[1];
-                    int success = draw_msg.param[2];
+                    int err = draw_msg.param[2];
                     
                     // sometimes we alloc the track for a fake train
                     if (TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX) {
@@ -269,7 +270,7 @@ void terminal_view_worker_task() {
                                          TRAIN_TRACK_ALLOC, TRAIN_TRACK_ALLOC, 
                                          "%s %s", 
                                          train_track[node].name,
-                                         (success == 0)? "F" : "");
+                                         (err > 0)? "F" : "");
                     }
                     break;
                 }
@@ -289,6 +290,26 @@ void terminal_view_worker_task() {
                         print_train_bulk(&cs, row, 
                                          TRAIN_TRACK_DEALLOC, TRAIN_TRACK_DEALLOC, 
                                          "%s", str);
+                    }
+                    break;
+                }
+                case DRAW_TRAIN_TRACK_ALLOC_ALL: {
+                    int train = draw_msg.param[0];
+                    int num_nodes = draw_msg.param[1];
+                    ASSERTP(0 <= num_nodes && num_nodes <= (5 + 4), "num_nodes %d", num_nodes);
+                    
+                    //int node = (signed char) draw_msg.param[1];
+                    //ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
+                    //        "train id %d out of range", train);
+
+                    // sometimes we alloc the track for a fake train
+                    if (TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX) {
+                        int row = train_display_mapping[train - TRAIN_ID_MIN];
+                        ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, 
+                                "train %d, row out of range: %d", 
+                                train, row);
+
+                        print_train_track_alloc_all(&cs, row, &draw_msg.param[2], num_nodes);
                     }
                     break;
                 }

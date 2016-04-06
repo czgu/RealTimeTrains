@@ -101,5 +101,7 @@ typedef enum {
 void print_train_bulk(Cursor* cs, int train_row, 
                       TRAIN_DISPLAY_HEADER col_start, TRAIN_DISPLAY_HEADER col_end,
                       char* fmt, ...);
+// specialized function
+void print_train_track_alloc_all(Cursor* cs, int train_row, char* nodes, int num_nodes);
 void clear_train_row(Cursor* cs, int train_row);
 #endif

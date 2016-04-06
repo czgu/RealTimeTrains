@@ -7,7 +7,8 @@ typedef enum {
     RESERVE_NODE,
     RELEASE_NODE,
     RELEASE_ALL,
-    GET_RESERVE_DATA
+    GET_RESERVE_DATA,
+    PRINT_TRAIN_ALLOC,
 } ROUTE_OP;
 // Route server
 void train_route_reservation_server();

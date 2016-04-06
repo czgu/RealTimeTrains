@@ -294,3 +294,28 @@ void print_train_bulk(Cursor* cs, int train_row,
     // move cursor back to original position
 	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	
 }
+
+void print_train_track_alloc_all(Cursor* cs, int train_row, char* nodes, int num_nodes) {
+    ASSERTP(0 <= train_row && train_row < MAX_DISPLAY_TRAINS, 
+            "invalid row index %d", train_row);
+    ASSERTP(num_nodes > 0, "num_nodes %d", num_nodes);
+
+    pprintf(COM2, "\033[%d;%dH", CSTRAIN_BASEY + train_row, CSTRAINX);
+    int i;
+    for(i = 0; i < TRAIN_TAB_STOP[TRAIN_TRACK_STATE]; i++) {
+        PutStr(COM2, "\033[I");                                     // tab forward
+    }
+    PutStr(COM2, "\033[K");     // delete to end of line
+
+    pprintf(COM2, "\033[%dm", GREEN + train_row);  // set colour
+
+    for (i = 0; i < num_nodes; i++) {
+        int node_index = nodes[i];
+        ASSERTP(0 <= node_index && node_index < TRACK_MAX, "%d", node_index);
+        pprintf(COM2, "%s, ", train_track[node_index].name);
+    }
+
+    PutStr(COM2, "\033[0m");                                        // reset colour
+    // move cursor back to original position
+	pprintf(COM2, "\033[%d;%dH", cs->row, cs->col);	
+}

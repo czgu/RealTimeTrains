@@ -17,13 +17,14 @@ int reserve_node(int node_id, int train_id, char* reserved_nodes, int force) {
             reserved_nodes[reverse_node->id] = train_id;
         }
 
-        return 1;
+        return 0;
     } else if (reserved_nodes[node_id] == train_id) {
-        return 1;
+        return 0;
     } 
     debugf("Failed alloc: %d train: %d, owner: %d", 
             node_id, train_id, reserved_nodes[node_id]);
-    return 0;
+    // return train to blame
+    return reserved_nodes[node_id];
 }
 
 
@@ -66,14 +67,14 @@ void train_route_reservation_server() {
                     if (node_id < 0 || node_id > TRACK_MAX)
                         break;
 
-                    int success = reserve_node(node_id, train_id, reserved_nodes, 0);
-                    Reply(sender, &success, sizeof(int));
+                    int err = reserve_node(node_id, train_id, reserved_nodes, 0);
+                    Reply(sender, &err, sizeof(int));
                     
                     // send to print server
                     print_msg.opcode = DRAW_TRAIN_TRACK_ALLOC;
                     print_msg.param[0] = train_id;
                     print_msg.param[1] = node_id;
-                    print_msg.param[2] = success;
+                    print_msg.param[2] = err;
                     rq_push_back(&print_buffer, &print_msg);
 
                     break;
@@ -98,6 +99,44 @@ void train_route_reservation_server() {
                     }
 
                     //pprintf(COM2, "\033[%d;%dH\033[K Free: %d train: %d", 25 + line ++ % 10, 1,  request_msg.param[0], request_msg.param[1]);
+                    break;
+                }
+                case PRINT_TRAIN_ALLOC: {
+                    // Print all the nodes that this train owns
+                    Reply(sender, 0, 0);
+                    int train_id = (int)request_msg.param[0];
+
+                    //if (TRAIN_ID_MIN <= train_id && train_id <= TRAIN_ID_MAX) {
+                        // We don't want to print duplicate nodes (ie. reverse),
+                        // so print the node with the lower id
+                        int MAX_NUM_CHARS = 11;          // size of TERMmsg param array + 2 (overwrite extra)
+                        //int MAX_NUM_CHARS = 7;
+                        print_msg.opcode = DRAW_TRAIN_TRACK_ALLOC_ALL;
+                        print_msg.extra = 0;
+                        
+                        int i, k = 2;   // start k at 2 (param[0], param[1] reserved)
+                        for (i = 0; i < TRACK_MAX; i++) {
+                            if (reserved_nodes[i] == train_id) {
+                                track_node* reverse_node = train_track[i].reverse;
+                                if (reverse_node == (void *)0 || reverse_node->id > i) {
+                                    ASSERTP(reverse_node == (void *)0
+                                            || reserved_nodes[reverse_node->id] == train_id,
+                                            "(%s, %s) alloc to %d, %d",
+                                            train_track[i].name, reverse_node->name,
+                                            train_id, reserved_nodes[reverse_node->id]);
+                                    print_msg.param[k] = i;
+                                    k++;
+                                    if (k >= MAX_NUM_CHARS) {
+                                        debugc(MAGENTA, "PRINT_TRAIN_ALLOC maxed num chars");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        print_msg.param[0] = train_id;
+                        print_msg.param[1] = k - 2;     // number of nodes
+                        rq_push_back(&print_buffer, &print_msg);
+                    //}
                     break;
                 }
                 case RELEASE_ALL: {
@@ -153,6 +192,13 @@ int reserve_track(int reservation_server, int train_id, int track_id) {
 
     int ret = 0;
     Send(reservation_server, &msg, sizeof(TERMmsg), &ret, sizeof(int));
+    if (ret > 0) {
+        // ret is the id of the train who owns this node
+        // print all the nodes that train owns
+        msg.opcode = PRINT_TRAIN_ALLOC;
+        msg.param[0] = ret;
+        Send(reservation_server, &msg, sizeof(TERMmsg), 0, 0);
+    }
 
     return ret;
 }

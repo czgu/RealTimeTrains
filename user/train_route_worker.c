@@ -273,7 +273,7 @@ void lookahead_node(
         // if need to reserve
         if (!(route->nodes[current].bitmap & ROUTE_NODE_RESERVED)) {
             int tries = 0;
-            while (reserve_track(reservation_server, train_id, route->nodes[current].node->id) == 0) {
+            while (reserve_track(reservation_server, train_id, route->nodes[current].node->id) > 0) {
                 if (tries == 0) {// first try failed, stop train
                     train_set_speed(location_server, train_id, 0);               
                 }
