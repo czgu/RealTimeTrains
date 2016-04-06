@@ -287,7 +287,6 @@ void terminal_view_worker_task() {
 
                     // sometimes we alloc the track for a fake train
                     if (TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX) {
-                        ASSERTP(0 <= node && node < TRACK_MAX, "invalid node %d", node);
                         int row = train_display_mapping[train - TRAIN_ID_MIN];
                         ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
 
@@ -402,6 +401,34 @@ void terminal_kernel_status_listener_task() {
     }
 }
 
+int parse_track_node(int n) {
+    int m;
+    int r;
+    int divisor = n >= 100 ? 100 : 10;
+
+    m = n / divisor;
+    r = n % divisor;
+    int ret = 0;
+
+    switch (m) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            ret = (m - 1) * 16 + (r - 1);
+            break;
+        case 6:
+            ret = 79 + 2 * r;
+            break;
+        default:
+            ret = n;
+            //ASSERT(0);
+            break;
+    }
+    return ret;
+}
+
 
 // HELPERS
 int parse_command_block(char* str, int str_len, TERMmsg* msg) {
@@ -512,7 +539,7 @@ int parse_command_block(char* str, int str_len, TERMmsg* msg) {
             int num_nodes = 0, node;
             while ((current_c - str) < str_len && num_nodes < SCHEDULE_DEST_MAX) {
                 a2i('0', &current_c, 10, &node);
-                msg->param[2 + num_nodes] = node;
+                msg->param[2 + num_nodes] = parse_track_node(node);
                 num_nodes ++;           
             }
             msg->extra = num_nodes;

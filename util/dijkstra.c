@@ -137,9 +137,10 @@ void dijkstra_find(track_edge* arc, track_node* dest, Path* path, int* reserved_
             id = np->node->edge[i].dest->id;
             alt_dist = np->dist + np->node->edge[i].dist;
 
-            if (np->dist < 150 
+            if (np->dist < 200 
                 && np->node->type == NODE_BRANCH
                 && get_bit(switches, np->node->num) != i) {
+                //ASSERT(0);
                 continue;
             }
 

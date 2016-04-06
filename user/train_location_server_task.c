@@ -240,6 +240,7 @@ void train_location_server_task() {
 
                         // This is for one lost train
                         if (lost_train != (void *)0 && new_bitmap != 0) {
+                            ASSERTP(lost_train->speed != 0, "nonmoving lost train %d", lost_train->id);
                             int sensor = -1;
 
                             // we need 1 sensor, and we should get exact 1 sensor?

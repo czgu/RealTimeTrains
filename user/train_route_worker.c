@@ -42,9 +42,6 @@ void train_route_worker() {
     Receive(&sender, instruction, sizeof(char) * 3);
     Reply(sender, 0, 0);
 
-    int time = Time(); int tid = MyTid();
-
-    debugf("[%d,%d] Route start", time, tid);
     //pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start",35 + line++ % 20, 1, time, tid);
 
     int track_taken[TRACK_BITMAP_MAX];
@@ -52,6 +49,8 @@ void train_route_worker() {
 
     int train_id = instruction[0];
     int dest_idx = instruction[1];
+
+    debugf("Route start train: %d node: %d", train_id, dest_idx);
 
     TrainModelPosition position;
 
@@ -72,13 +71,15 @@ void train_route_worker() {
     int tries = 0;
 
     while (!route_status.completed) {
-        debugf("Compute path %d.", route_status.code);
+        debugf("Compute path %d for %d.", route_status.code, train_id);
         // turn off destination bit
         //track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
         if (route_status.code == 1) {
             //pprintf(COM2, "\033[%d;%dH\033[KReservation prevent %d.\n\r", 35 + line++ % 20, 1, route_status.info);
             bitmap_reserve(track_taken, route_status.info, 1);
         }
+
+        ASSERT(position.arc != (void *)0);
 
         int switches = location_query(location_server, 0, 0);
         dijkstra_find(
@@ -94,7 +95,7 @@ void train_route_worker() {
 
         path_to_route(&path, &route, position.arc);
         
-        char path_str[200]; int s_len = 0;
+        char path_str[400]; int s_len = 0;
         int i, j;
         for (i = 0; i <= route.route_len/5; i++) {
             s_len = 0;
@@ -102,15 +103,18 @@ void train_route_worker() {
                 int k = i * 5 + j;
                 if (k >= route.route_len)
                     break;
-
                 spprintf(path_str, &s_len, "%s (%d, %d) => ", route.nodes[k].node->name, route.nodes[k].action, route.nodes[k].arc_dist);
+                //debugc(YELLOW, "%s", route.nodes[k].node->name);
             }
+            //debugf("%d", s_len);
             debugc(YELLOW, path_str);
         }
+        //ASSERT(dest_idx != 113);
 
         // Start the actual route finding
         if (route.route_len <= 1) {
-            debugf("[%d] No path. ", time);
+            debugf("No path for %d to go to %s.", train_id, train_track[dest_idx].name);
+            break;
         } else {
             execute_route(
                 &route,
@@ -125,9 +129,8 @@ void train_route_worker() {
         }
         tries ++;
 
-
         if (tries > 4) {
-            debugf("[%d]Route find failed", time);
+            debugf("Route find failed for train %d", train_id);
             break;
         }
     }
@@ -138,7 +141,7 @@ void train_route_worker() {
     release_all_track(reservation_server, train_id, position.arc);
 
     driver_completed(scheduler_server, train_id, 0);
-    debugf("Route end %d", route_status.code);
+    debugf("Route end code:%d train:%d", route_status.code, train_id);
 
 }
 
@@ -158,7 +161,7 @@ void execute_route(
         stop_train_at(location_server, train_id, -1, 0);
 
     //int time = Time();
-    debugf("Execute route begin");
+    debugf("Execute route begin train_id:%d", train_id);
 
     int current_route = 0;
     int route_len = route->route_len;
@@ -173,14 +176,15 @@ void execute_route(
             Delay(position->stop_time);
         }
         train_reverse(location_server, train_id);
-        debugf("Reverse train.");
+        debugf("Reverse train %d.", train_id);
         Delay(20);
     }
              
-    train_set_speed(location_server, train_id, 8);
+    //train_set_speed(location_server, train_id, 8);
 
     for (;;) {
         where_is(location_server, train_id, position);
+        ASSERT(position->arc != (void *)0);
 
         for (current_route = (current_route < 10 ? 0 : (current_route - 10)); current_route < route_len; current_route++) {
             if (route->nodes[current_route].node == position->arc->src)
@@ -188,7 +192,7 @@ void execute_route(
         }
 
         if (current_route >= route_len) {
-            debugf("Can't find node %s.", position->arc->src->name);
+            debugf("Train:%d can't find node %s.", train_id,position->arc->src->name);
             RETURN_ROUTE(2, 0, 0);
         } else if (current_route == route_len - 1) {
             //train_set_speed(location_server, train_id, 0);
@@ -249,6 +253,10 @@ void execute_route(
             if (node != (void *)0)
                 stop_train_at(location_server, train_id, node->id, 0);
         }
+        
+        if (position->stop_time == 0) {
+            train_set_speed(location_server, train_id, 8);
+        }
 
         Delay(5);
     }
@@ -278,16 +286,16 @@ void lookahead_node(
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 0) { // try kept failing, restart route
-                    debugf("Reservation fail.");
+                    debugf("Reservation fail for %d at %s.", train_id, route->nodes[current].node->name);
                     RETURN_ROUTE(1, 0, route->nodes[current].node->id);
                 }
                 tries ++;
                 // wait half a second to try again
-                Delay(50);
+                Delay(25);
             }
-            if (tries > 1) {
-                train_set_speed(location_server, train_id, 8);
-            }
+            //if (tries > 1) {
+            //    train_set_speed(location_server, train_id, 8);
+            //}
             route->nodes[current].bitmap |= ROUTE_NODE_RESERVED;
         }
         
@@ -295,7 +303,7 @@ void lookahead_node(
         int action = route->nodes[current].action;
         if ((route->nodes[current].bitmap & ROUTE_NODE_ACTION_COMPLETED) == 0 && action > 0) {
             if (action < 3) { // turn switch
-                debugf("Make switch %d to %d.", route->nodes[current].node->num, route->nodes[current].action - 1 );
+                //debugf("Make switch %d to %d.", route->nodes[current].node->num, route->nodes[current].action - 1 );
                 track_set_switch(
                     location_server,
                     route->nodes[current].node->num,

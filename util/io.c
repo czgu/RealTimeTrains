@@ -144,6 +144,7 @@ void spprintf(char* s, int* len, char *fmt, ...) {
     va_end(va);
 
     *len = curr_len + delta_len;
+    s[*len] = 0;
 }
 
 /*

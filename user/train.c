@@ -187,34 +187,40 @@ void train_model_update_location(TrainModel* train, int time, int switches) {
         position->estimated_next_sensor_dist -= delta_dist;
         if (position->estimated_next_sensor_dist < TRAIN_SENSOR_HIT_TOLERANCE) {
             train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
-            debugf("[%d] (train lost, expected %s)", 
-                    Time(), position->next_sensor->name);
+            debugc(CYAN, "[%d] (train %d lost, expected %s)", 
+                    Time(), train->id, position->next_sensor->name);
         }
 
         position->dist_travelled += delta_dist;
 
-        position->arc = track_next_arc(switches, position->arc, &position->dist_travelled);
+        track_edge* next_arc = track_next_arc(switches, position->arc, &position->dist_travelled);
 
         // keep track of the arcs a train passed by between two sensors
-        if (position->arc != (void *)0
+        if (next_arc != (void *)0
             && work->num_arcs_passed > 0      // the train passed by the first arc's sensor
-            && position->arc != work->arcs_passed[work->num_arcs_passed - 1] // this is a new arc
+            && next_arc != work->arcs_passed[work->num_arcs_passed - 1] // this is a new arc
             && position->estimated_next_sensor_dist > 0) {    // the train has not passed the second sensor
 
-            ASSERT(position->arc != (void *)0);
+            ASSERT(next_arc != (void *)0);
             ASSERT(work->arcs_passed[0]->src->type == NODE_SENSOR);
             ASSERTP(work->num_arcs_passed < TRACK_MAX_EDGES_BTW_SENSORS, 
                     "%d num_arcs_passed reached limit, passed another arc", work->num_arcs_passed);
 
-            work->arcs_passed[work->num_arcs_passed] = position->arc;
+            work->arcs_passed[work->num_arcs_passed] = next_arc;
             work->num_arcs_passed = work->num_arcs_passed + 1;
 
-            work->dist_from_last_sensor += position->arc->dist;
-            work->weight_factors += position->arc->dist * position->arc->weight_factor;
+            work->dist_from_last_sensor += next_arc->dist;
+            work->weight_factors += next_arc->dist * next_arc->weight_factor;
         }
 
-        if (position->arc == (void *)0)
+
+        if (next_arc == (void *)0) {
             train->bitmap &= ~TRAIN_MODEL_POSITION_KNOWN;
+        } else {
+            position->arc = next_arc;
+        }
+
+        ASSERT(position->arc != (void *)0);
 
         position->updated_time = time;
     }
