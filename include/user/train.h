@@ -61,8 +61,11 @@ typedef struct TrainModel {
 
     int speed_updated_time; // used to calculate acceleration
     float velocity;
-#define TRAIN_ACCELERATION 0.02     // we assume that acceleration is approx. constant
+#define TRAIN_ACCELERATION 0.01     // we assume that acceleration is approx. constant
 #define TRAIN_ACCELERATION_DELTA (TRAIN_ACCELERATION * TRAIN_LOCATION_UPDATE_TIME_INTERVAL)
+
+#define TRAIN_DECELERATION (-0.018)     // we assume that acceleration is approx. constant
+#define TRAIN_DECELERATION_DELTA (TRAIN_DECELERATION * TRAIN_LOCATION_UPDATE_TIME_INTERVAL)
     int accel_const;        // -1 for deceleration, 0 for no acceleration, 1 for acceleration
     int prev_accel;
 

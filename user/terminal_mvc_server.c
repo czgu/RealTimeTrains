@@ -211,6 +211,7 @@ void terminal_view_worker_task() {
                     int dist = (signed char) draw_msg.param[2];
                     ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
                             "train id %d out of range", train);
+                    ASSERTP(0 <= node && node < TRACK_MAX, "invalid node %d", node);
 
                     int row = train_display_mapping[train - TRAIN_ID_MIN];
                     ASSERTP(row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
@@ -227,6 +228,9 @@ void terminal_view_worker_task() {
                     int next_sensor = draw_msg.param[5];
                     ASSERTP(TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX,
                             "train id %d out of range", train);
+                    ASSERTP(0 <= src_node && src_node < TRACK_MAX, "invalid node %d", src_node);
+                    ASSERTP(0 <= dst_node && dst_node < TRACK_MAX, "invalid node %d", dst_node);
+                    ASSERTP(0 <= next_sensor && next_sensor < TRACK_MAX, "invalid node %d", next_sensor);
 
                     int row = train_display_mapping[train - TRAIN_ID_MIN];
                     if (row >= MAX_DISPLAY_TRAINS) {
@@ -264,6 +268,7 @@ void terminal_view_worker_task() {
                     
                     // sometimes we alloc the track for a fake train
                     if (TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX) {
+                        ASSERTP(0 <= node && node < TRACK_MAX, "invalid node %d", node);
                         int row = train_display_mapping[train - TRAIN_ID_MIN];
                         ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
                         print_train_bulk(&cs, row, 
@@ -282,6 +287,7 @@ void terminal_view_worker_task() {
 
                     // sometimes we alloc the track for a fake train
                     if (TRAIN_ID_MIN <= train && train <= TRAIN_ID_MAX) {
+                        ASSERTP(0 <= node && node < TRACK_MAX, "invalid node %d", node);
                         int row = train_display_mapping[train - TRAIN_ID_MIN];
                         ASSERTP(0 <= row && row < MAX_DISPLAY_TRAINS, "out of range: %d", row);
 

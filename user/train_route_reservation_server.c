@@ -9,6 +9,8 @@
 #include <string.h>
 
 int reserve_node(int node_id, int train_id, char* reserved_nodes, int force) {
+    ASSERTP(0 <= node_id && node_id < TRACK_MAX, "invalid node %d", node_id);
+    ASSERT(reserved_nodes != (void *)0);
     if (reserved_nodes[node_id] == 0 || force == 1) {
         reserved_nodes[node_id] = train_id;
 
@@ -158,6 +160,8 @@ void train_route_reservation_server() {
                     // pprintf(COM2, "\033[%d;%dH\033[K release all train: %s to %s", 35 + line ++ % 20, 1, node_edge->src->name, node_edge->dest->name);
                     //Delay(200);
 
+                    ASSERT(node_edge->src != (void *)0);
+                    ASSERT(node_edge->dest != (void *)0);
                     reserve_node(node_edge->src->id, train_id, reserved_nodes, 1);
                     reserve_node(node_edge->dest->id, train_id, reserved_nodes, 1);
 

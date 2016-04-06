@@ -126,8 +126,18 @@ void train_model_update(TrainModel* train, int time, int switches) {
     TrainCalibrationWork* work = &train->calibration_work;
 
     if (train->accel_const != 0) {
+        //float acc = 0;
+        float acc_delta = 0;
+        if (train->accel_const > 0) {
+            //acc = TRAIN_ACCELERATION;
+            acc_delta = TRAIN_ACCELERATION_DELTA;
+        } else {
+            //acc = TRAIN_DECELERATION;
+            acc_delta = TRAIN_DECELERATION_DELTA;
+        }
+
         // train is accelerating
-        train->velocity = train->velocity + train->accel_const * TRAIN_ACCELERATION_DELTA;
+        train->velocity = train->velocity + acc_delta;
 
         // turn off dynamic calibration if accelerating
         work->num_arcs_passed = 0;
@@ -142,8 +152,8 @@ void train_model_update(TrainModel* train, int time, int switches) {
         }
 
         // update stopping distance and stopping time
-        float stop_time = train->velocity / TRAIN_ACCELERATION;
-        float stop_dist = train->velocity * stop_time - 0.5 * TRAIN_ACCELERATION * stop_time * stop_time;
+        float stop_time = -1 * train->velocity / TRAIN_DECELERATION;
+        float stop_dist = train->velocity * stop_time + 0.5 * TRAIN_DECELERATION * stop_time * stop_time;
 
         position->stop_time = (int) stop_time;
         position->stop_dist = (int) stop_dist;
