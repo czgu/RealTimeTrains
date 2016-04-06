@@ -164,7 +164,7 @@ void train_model_update(TrainModel* train, int time, short* switches) {
 
 void train_model_update_location(TrainModel* train, int time, short* switches) {
     TrainModelPosition* position = &train->position;
-    TrainCalibrationProfile* profile = &train->profile;
+    //TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;
 
     if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
