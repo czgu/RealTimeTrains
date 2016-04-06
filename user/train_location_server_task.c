@@ -285,7 +285,7 @@ void train_location_server_task() {
                         }
                         if (train->bitmap & TRAIN_MODEL_POSITION_KNOWN) {
                             if (train->position.stop_node != (void *)0 && train->speed > 0) {
-                                int lookahead = ((int)train->profile.stop_distance[train->speed]) 
+                                int lookahead = train->position.stop_dist
                                               + TRAIN_LOOK_AHEAD_DIST 
                                               + train->position.dist_travelled 
                                               + train->position.stop_node_dist;
@@ -300,7 +300,7 @@ void train_location_server_task() {
                                     float dist_left = (float)dist_to_node
                                         + train->position.stop_node_dist 
                                         - train->position.dist_travelled 
-                                        - train->profile.stop_distance[train->speed];
+                                        - train->position.stop_dist;
 
                                     // ASSERT(dist_to_node > 0);
                                     int instruction[2];

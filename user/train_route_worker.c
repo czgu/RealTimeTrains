@@ -44,7 +44,7 @@ void train_route_worker() {
 
     int time = Time(); int tid = MyTid();
 
-    debugf("[%d,%d]Route start", time, tid);
+    debugf("[%d,%d] Route start", time, tid);
     //pprintf(COM2, "\033[%d;%dH\033[K[%d,%d]Route start",35 + line++ % 20, 1, time, tid);
 
     int track_taken[TRACK_BITMAP_MAX];
@@ -59,11 +59,6 @@ void train_route_worker() {
     int location_server = WhoIs("Location Server");
     int reservation_server = WhoIs("Route Reservation");
 
-    /*
-    train_set_speed(location_server, train_id, 0);
-    Delay(300);
-    */
-
     if (where_is(location_server, train_id, &position) <= 0) {
         debugf("Can't find train %d. ", train_id);
         return;
@@ -77,7 +72,7 @@ void train_route_worker() {
     int tries = 0;
 
     while (!route_status.completed) {
-        //pprintf(COM2, "\033[%d;%dH\033[K[%d]Compute path %d.",35 + line++ % 20, 1, time, route_status.code);
+        debugf("Compute path %d.", route_status.code);
         // turn off destination bit
         //track_taken[position.arc->dest->id/sizeof(int)] &= ~(0x1 << (position.arc->dest->id % 32));
         if (route_status.code == 1) {
@@ -86,7 +81,7 @@ void train_route_worker() {
         }
 
         dijkstra_find(
-            position.arc->src, 
+            position.arc, 
             train_track + dest_idx, 
             &path, 
             track_taken);
@@ -95,14 +90,21 @@ void train_route_worker() {
             bitmap_reserve(track_taken, route_status.info, 0);
         }
 
-        path_to_route(&path, &route);
+        path_to_route(&path, &route, position.arc);
+        
+        char path_str[200]; int s_len = 0;
+        int i, j;
+        for (i = 0; i <= route.route_len/5; i++) {
+            s_len = 0;
+            for (j = 0; j < 5; j++) {
+                int k = i * 5 + j;
+                if (k >= route.route_len)
+                    break;
 
-        debugf("Path [%d] : ", train_id);
-        int i;
-        for (i = 0; i < route.route_len; i++) {
-            debugf("%s (%d) -> ", route.nodes[i].node->name, route.nodes[i].action );
+                spprintf(path_str, &s_len, "%s (%d, %d) => ", route.nodes[k].node->name, route.nodes[k].action, route.nodes[k].arc_dist);
+            }
+            debugc(YELLOW, path_str);
         }
-        debugf(" END");
 
         // Start the actual route finding
         if (route.route_len <= 1) {
@@ -116,7 +118,6 @@ void train_route_worker() {
                 &position,
                 &route_status);
 
-            // Release the root except the current node
             train_set_speed(location_server, train_id, 0);
             Delay(250);
         }
@@ -130,6 +131,8 @@ void train_route_worker() {
     }
 
     where_is(location_server, train_id, &position);
+
+    // Release the root except the current node
     release_all_track(reservation_server, train_id, position.arc);
 
     driver_completed(scheduler_server, train_id, 0);
@@ -150,7 +153,7 @@ void execute_route(
         release_all_track(reservation_server, train_id, first_arc);
 
     //int time = Time();
-    //debugf("\033[%d;%dH\033[KExecute route begin", 35 + line++ % 20, 1, train_id);
+    debugf("Execute route begin");
 
     int current_route = 0;
     int route_len = route->route_len;
@@ -160,8 +163,12 @@ void execute_route(
     int stop_pos = 0;
 
     if (route->nodes[current_route].action == 3) {
+        if (position->stop_dist > 0) {
+            train_set_speed(location_server, train_id, 0);
+            Delay(position->stop_time);
+        }
         train_reverse(location_server, train_id);
-        current_route ++;
+        debugf("Reverse train.");
         Delay(20);
     }
              
@@ -176,7 +183,7 @@ void execute_route(
         }
 
         if (current_route >= route_len) {
-            //pprintf(COM2, "\033[%d;%dH\033[KCan't find node %s.", 35 + line++ % 20, 1, position->arc->src->name);
+            debugf("Can't find node %s.", position->arc->src->name);
             RETURN_ROUTE(2, 0, 0);
         } else if (current_route == route_len - 1) {
             //train_set_speed(location_server, train_id, 0);
@@ -240,7 +247,7 @@ void execute_route(
 
         Delay(5);
     }
-    RETURN_ROUTE(255, 0, 0);
+    RETURN_ROUTE(254, 0, 0);
 }
 
 /*
@@ -266,7 +273,7 @@ void lookahead_node(
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 3) { // try kept failing, restart route
-                    //pprintf(COM2, "\033[%d;%dH\033[KReservation fail %s.\n\r", 35 + line++ % 20, 1, route->nodes[current].node->name);
+                    pprintf("Reservation fail %s.");
                     RETURN_ROUTE(1, 0, route->nodes[current].node->id);
                 }
                 tries ++;
@@ -336,7 +343,7 @@ void lookbehind_node(Route* route, int current, int lookbehind, int reservation_
 }
 
 
-void path_to_route(Path* path, Route* route) {
+void path_to_route(Path* path, Route* route, track_edge* curr_arc) {
     int i;
     route->route_len = 0;
     for (i = 0; i < TRACK_MAX; i++) {
@@ -348,8 +355,33 @@ void path_to_route(Path* path, Route* route) {
 
     if (path->path_len == 0)
         return;
+    
+    i = path->path_len - 1;
 
-    for (i = path->path_len - 1; i >= 1; i --) {
+    if (path->nodes[i] == curr_arc->src->reverse) {
+        // initialize reverse
+        // TODO: good enough on most cases, breaks on branch
+        route->nodes[0].node = curr_arc->src;
+        route->nodes[0].action = 3;
+        route->nodes[0].arc_dist = 0;
+
+        route->nodes[1].node = curr_arc->dest->reverse;
+        route->nodes[1].action = 0;
+        route->nodes[1].arc_dist = curr_arc->dist;
+
+        route->route_len = 2;
+    } else if (path->nodes[i] == curr_arc->dest) {
+        route->nodes[0].node = curr_arc->src;
+        route->nodes[0].action = 0;
+        route->nodes[0].arc_dist = curr_arc->dist;
+        
+        route->route_len = 1;
+    } else {
+        ASSERT(0);
+    }
+
+
+    for (; i >= 1; i --) {
         route->nodes[route->route_len].node = path->nodes[i];
         switch(path->edges[i - 1]) { // how to reach the next node
             case 0: //DIRAHEAD/STRAIGHT
@@ -363,9 +395,7 @@ void path_to_route(Path* path, Route* route) {
                 route->nodes[route->route_len].arc_dist = path->nodes[i]->edge[DIR_CURVED].dist;
                 break;
             case 2:
-                //TODO: handle reverse
-                route->nodes[route->route_len].action = 3;
-                route->nodes[route->route_len].arc_dist = 0;
+                ASSERT(0);
                 break;
         } 
         route->route_len++;

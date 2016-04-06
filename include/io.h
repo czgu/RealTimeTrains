@@ -42,5 +42,6 @@ void stringbuffer_putw(StringBuffer *sb, int n, char fc, char *bf );
 void pprintf(int channel, char *format, ... );
 void debug_msg(char* msg);
 void pretty_format(char *fmt, va_list va, char* output_buffer, int out_buffer_size, int* out_len);
+void spprintf(char* s, int* len, char *fmt, ...);
 
 #endif

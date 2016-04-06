@@ -133,6 +133,19 @@ void pprintf(int channel, char *fmt, ... ) {
     PutnStr(channel, output_buffer, string_len);
 }
 
+void spprintf(char* s, int* len, char *fmt, ...) {
+    va_list va;
+
+    int curr_len = *len;
+    int delta_len = 0;
+
+    va_start(va,fmt);
+    pretty_format(fmt, va, s + curr_len, OUTPUT_BUFFER_SIZE, &delta_len);
+    va_end(va);
+
+    *len = curr_len + delta_len;
+}
+
 /*
 void assert(int cond, char* msg) {
     #ifdef _ASSERT

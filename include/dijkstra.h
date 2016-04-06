@@ -48,6 +48,6 @@ void dijkstra_init_heap(MinHeap* heap, NodePair* nodes);
     0 - forward/straight edge reservered
     1 - curve edge reservered
 */
-void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_bitmap);
+void dijkstra_find(track_edge* arc, track_node* dest, Path* path, int* reserved_bitmap);
 
 #endif

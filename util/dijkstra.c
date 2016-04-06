@@ -1,6 +1,8 @@
 #include <dijkstra.h>
 #include <io.h>
 
+#include <assert.h>
+
 inline static void min_heap_swap(MinHeap* heap, int idx1, int idx2) {
     NodePair* temp = heap->nodes[idx1];
     heap->nodes[idx1] = heap->nodes[idx2];
@@ -87,20 +89,24 @@ void dijkstra_init_heap(MinHeap* heap, NodePair* nodes) {
     heap->size = TRACK_MAX;
 }
 
-void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_bitmap) {
+void dijkstra_find(track_edge* arc, track_node* dest, Path* path, int* reserved_bitmap) {
     NodePair nodes[TRACK_MAX];
     MinHeap heap;
     int alt_dist, id, i;    
 
     dijkstra_init_heap(&heap, nodes);
-    min_heap_decrease_key(&heap, nodes[src->id].index, 0);
+
+    ASSERT(arc->src->reverse != 0);
+
+    min_heap_decrease_key(&heap, nodes[arc->src->reverse->id].index, 0);
+    min_heap_decrease_key(&heap, nodes[arc->dest->id].index, 0);
 
     while (heap.size > 0) {
         NodePair* np = min_heap_extract_min(&heap);
 
         //bwprintf(COM2, "top node: %s dist: %d remaining: %d\n\r", np->node->name, np->dist,heap.size);
         // if not reachable
-        if (np->node == dest || np->dist == (0x1 << 30))
+        if (np->node == dest || np->node == dest->reverse || np->dist == (0x1 << 30))
             break;
     
         // Decrease successors
@@ -113,6 +119,7 @@ void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_
         }
 
         // Consider reverse
+        /*
         if (np->node == src) {
             alt_dist = np->dist; //TODO: add some reverse distance?
             id = np->node->reverse->id;
@@ -122,6 +129,7 @@ void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_
                 min_heap_decrease_key(&heap, nodes[id].index, alt_dist);
             }
         }
+        */
 
         // Consider straight edges
         for (i = 0; i < num_edge; i++) {
@@ -145,5 +153,15 @@ void dijkstra_find(track_node* src, track_node* dest, Path* path, int* reserved_
 
             dest = nodes[dest->id].prev;
         }
+    } else if (nodes[dest->reverse->id].dist != (0x1 << 30)) {
+        dest = dest->reverse;
+        while (dest != (void*)0) {
+            path->nodes[path->path_len] = nodes[dest->id].node;
+            path->edges[path->path_len] = nodes[dest->id].prev_edge;
+            path->path_len ++;
+
+            dest = nodes[dest->id].prev;
+        }
+    
     }
 }

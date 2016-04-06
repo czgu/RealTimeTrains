@@ -27,7 +27,7 @@ typedef struct Route {
     short route_len;
 } Route;
 
-void path_to_route(Path* path, Route* route);
+void path_to_route(Path* path, Route* route, track_edge* curr_arc);
 track_edge* route_get_first_arc(Route* route);
 track_node* route_get_stop_node(Route* route, int* pos);
 
