@@ -4,18 +4,19 @@
 
 #include "bqueue.h"
 
-//#include <assert.h>
+#include <assert.h>
 
 void bq_init(BQueue* buffer) {
 	bq_clear(buffer);
 }
 
 char bq_first(BQueue* bq) {
+	ASSERT(bq->size > 0);
 	return bq->buffer[bq->first];
 }
 
 char bq_pop(BQueue* q) {
-	//assert(q->size > 0);
+	ASSERT(q->size > 0);
 	char c = q->buffer[q->first];
 	q->first = (q->first + 1) % CAPACITY;
 	q->size--;
@@ -23,12 +24,13 @@ char bq_pop(BQueue* q) {
 }
 
 char bq_pop_back(BQueue* q) {
+	ASSERT(q->size > 0);
 	q->size--;
 	return q->buffer[(q->first + q->size) % CAPACITY];
 }
 
 int bq_push(BQueue* q, char c) {
-	//assert(size < capacity);
+	ASSERTP(q->size < CAPACITY, "size %d, capacity %d", q->size, CAPACITY);
 	if (q->size >= CAPACITY) {
 		return -1;
 	}
@@ -38,7 +40,7 @@ int bq_push(BQueue* q, char c) {
 	return 0;
 }
 
-int bq_empty(BQueue* q) {
+inline int bq_empty(BQueue* q) {
 	return q->size == 0;
 }
 

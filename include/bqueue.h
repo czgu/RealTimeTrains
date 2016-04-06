@@ -21,7 +21,7 @@ char bq_first(BQueue* buffer);
 char bq_pop(BQueue* buffer);
 char bq_pop_back(BQueue* buffer);
 int bq_push(BQueue* buffer, char c);
-int bq_empty(BQueue* buffer);
+inline int bq_empty(BQueue* buffer);
 void bq_clear(BQueue* buffer);	// clears buffer (sets first = size = 0)
 void bq_dump(BQueue* buffer, char* c);
 

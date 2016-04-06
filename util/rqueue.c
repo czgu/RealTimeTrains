@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-//#include <assert.h>
+#include <assert.h>
 
 void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned int unit_size) {
     q->max_size = max_size;
@@ -16,11 +16,12 @@ void rq_init(RQueue* q, void* buffer, unsigned int max_size, unsigned int unit_s
 }
 
 inline void* rq_first(RQueue* q) {
+	ASSERT(q->size > 0);
 	return (void*)(q->buffer + q->first * q->unit_size);
 }
 
 void* rq_pop_front(RQueue* q) {
-	//assert(q->size > 0);
+	ASSERT(q->size > 0);
     unsigned int addr = q->buffer + q->first * q->unit_size;
 
 	q->first = (q->first + 1) % q->max_size;
@@ -30,10 +31,12 @@ void* rq_pop_front(RQueue* q) {
 }
 
 inline void* rq_pop_back(RQueue* q) {
+	ASSERT(q->size > 0);
     return (void *)(q->buffer + ((--q->size + q->first) % q->max_size) * q->unit_size);
 }
 
 int rq_push_front(RQueue* q, void* p) {
+	ASSERT(q->size < q->max_size);
 	if (q->size >= q->max_size) {
 		return -1;
 	}
@@ -48,6 +51,7 @@ int rq_push_front(RQueue* q, void* p) {
 }
 
 int rq_push_back(RQueue* q, void* p) {
+	ASSERT(q->size < q->max_size);
 	if (q->size >= q->max_size) {
 		return -1;
 	}
@@ -69,5 +73,6 @@ inline void rq_clear(RQueue* q) {
 }
 
 inline void* rq_get(RQueue* q, int index) {
+    ASSERT(q->size > 0);
     return (void *)(q->buffer + ((q->first + index) % q->max_size) * q->unit_size);
 }

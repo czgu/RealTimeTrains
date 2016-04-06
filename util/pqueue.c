@@ -4,18 +4,19 @@
 
 #include <pqueue.h>
 
-//#include <assert.h>
+#include <assert.h>
 
 void pq_init(PQueue* buffer) {
 	pq_clear(buffer);
 }
 
 inline void* pq_first(PQueue* pq) {
+    ASSERT(pq->size > 0);
 	return pq->buffer[pq->first];
 }
 
 inline void* pq_pop(PQueue* q) {
-	//assert(q->size > 0);
+    ASSERT(q->size > 0);
     if (q->size == 0) {
         return 0;
     }
@@ -26,10 +27,12 @@ inline void* pq_pop(PQueue* q) {
 }
 
 inline void* pq_pop_back(PQueue* q) {
+    ASSERT(q->size > 0);
 	return q->buffer[(q->first + --q->size) % PQCAPACITY];
 }
 
 int pq_push(PQueue* q, void* p) {
+    ASSERT(q->size < PQCAPACITY);
 	//assert(size < capacity);
 	if (q->size >= PQCAPACITY) {
 		return -1;
