@@ -154,6 +154,9 @@ void execute_route(
     if (first_arc != (void *)0)
         release_all_track(reservation_server, train_id, first_arc);
 
+    if (position->stop_node_dist != -1)
+        stop_train_at(location_server, train_id, -1, 0);
+
     //int time = Time();
     debugf("Execute route begin");
 
@@ -274,13 +277,13 @@ void lookahead_node(
                 if (tries == 0) {// first try failed, stop train
                     train_set_speed(location_server, train_id, 0);               
                 }
-                else if (tries > 3) { // try kept failing, restart route
-                    debugf("Reservation fail %s.");
+                else if (tries > 0) { // try kept failing, restart route
+                    debugf("Reservation fail.");
                     RETURN_ROUTE(1, 0, route->nodes[current].node->id);
                 }
                 tries ++;
-                // wait a second to try again
-                Delay(100);
+                // wait half a second to try again
+                Delay(50);
             }
             if (tries > 1) {
                 train_set_speed(location_server, train_id, 8);

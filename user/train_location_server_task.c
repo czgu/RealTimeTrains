@@ -322,15 +322,20 @@ void train_location_server_task() {
                     int node = (int)request_msg.param[1];
                     int dist = (request_msg.param[2] << 8 | request_msg.param[3]);
 
-                    train_models[train].position.stop_node = train_track + node;
-                    train_models[train].position.stop_node_dist = dist;
+                    if (node >= 0 && node < TRACK_MAX) {
+                        train_models[train].position.stop_node = train_track + node;
+                        train_models[train].position.stop_node_dist = dist;
 
-                    // send destination to print server
-                    print_msg.opcode = DRAW_TRAIN_DESTINATION;
-                    print_msg.param[0] = request_msg.param[0];  // train id
-                    print_msg.param[1] = node;
-                    print_msg.param[2] = dist;
-                    rq_push_back(&print_buffer, &print_msg);
+                        // send destination to print server
+                        print_msg.opcode = DRAW_TRAIN_DESTINATION;
+                        print_msg.param[0] = request_msg.param[0];  // train id
+                        print_msg.param[1] = node;
+                        print_msg.param[2] = dist;
+                        rq_push_back(&print_buffer, &print_msg);
+                    } else {
+                        train_models[train].position.stop_node = (void *)0;
+                        train_models[train].position.stop_node_dist = -1;
+                    }
                     break;
                 }
                 case LOC_QUERY: {
