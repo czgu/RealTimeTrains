@@ -80,20 +80,20 @@ typedef struct TrainModel {
 void train_model_init(TrainModel* train, int id);
 
 // Initialization and helper
-void train_model_init_location(TrainModel* train, int time, short* switches, track_node* sensor_start);
-void train_model_update(TrainModel* train, int time,  short* switches);
-void train_model_update_location(TrainModel* train, int time,  short* switches);
+void train_model_init_location(TrainModel* train, int time, int switches, track_node* sensor_start);
+void train_model_update(TrainModel* train, int time,  int switches);
+void train_model_update_location(TrainModel* train, int time,  int switches);
 
 // track helper
-track_edge* track_next_arc(short* switches, track_edge* current, float* dist);
-track_node* track_next_sensor_node(short* switches, track_edge* current, float* dist);
-int track_ahead_contain_node(track_node* node, short* switches, track_node* current, int lookahead_dist, int* dist_to_node);
+track_edge* track_next_arc(int switches, track_edge* current, float* dist);
+track_node* track_next_sensor_node(int switches, track_edge* current, float* dist);
+int track_ahead_contain_node(track_node* node, int switches, track_node* current, int lookahead_dist, int* dist_to_node);
 
 
-void train_model_update_speed(TrainModel* train, int time, short* switches, int speed);
-void train_model_reverse_direction(TrainModel* train, int time, short* switches);
+void train_model_update_speed(TrainModel* train, int time, int switches, int speed);
+void train_model_reverse_direction(TrainModel* train, int time, int switches);
 
-void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches, int* error);
+void train_model_next_sensor_triggered(TrainModel* train, int time, int switches, int* error);
 
 void train_set_speed(int location_server_tid, int train, int speed);
 

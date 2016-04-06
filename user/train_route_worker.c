@@ -80,11 +80,13 @@ void train_route_worker() {
             bitmap_reserve(track_taken, route_status.info, 1);
         }
 
+        int switches = location_query(location_server, 0, 0);
         dijkstra_find(
             position.arc, 
             train_track + dest_idx, 
             &path, 
-            track_taken);
+            track_taken,
+            switches);
 
         if (route_status.code == 1) {
             bitmap_reserve(track_taken, route_status.info, 0);
@@ -273,7 +275,7 @@ void lookahead_node(
                     train_set_speed(location_server, train_id, 0);               
                 }
                 else if (tries > 3) { // try kept failing, restart route
-                    pprintf("Reservation fail %s.");
+                    debugf("Reservation fail %s.");
                     RETURN_ROUTE(1, 0, route->nodes[current].node->id);
                 }
                 tries ++;

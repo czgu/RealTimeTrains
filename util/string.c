@@ -183,5 +183,17 @@ char* strncat(char* destination, const char* source, int len) {
     return destination;
 }
 
+inline int get_bit(int map, int pos) {
+    return (map & (0x1 << pos)) == 0 ? 0 : 1;
+}
 
+inline void set_bit(int* map, int pos, int bit) {
+    int temp = *map;
+    if (bit == 0) {
+        temp &= ~(0x1 << pos); 
+    } else {
+        temp |= (0x1 << pos);
+    }
+    *map = temp;
+}
 

@@ -27,4 +27,7 @@ char* strncpy(char *destination, const char* source, int len);
 
 char* strcat (char* destination, const char* source);
 char* strncat (char* destination, const char* source, int len);
+
+inline void set_bit(int* map, int pos, int bit);
+inline int get_bit(int map, int pos);
 #endif

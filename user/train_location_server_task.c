@@ -6,6 +6,7 @@
 
 #include <syscall.h>
 #include <io.h>
+#include <string.h>
 #include <terminal_gui.h>
 
 #include <train.h>
@@ -94,10 +95,7 @@ void train_location_server_task() {
 
     // init switch
     // FIXME: why is this a short
-    short switches[NUM_TRAIN_SWITCH + 1];
-    for (i = 0; i < NUM_TRAIN_SWITCH + 1; i++) {
-        switches[i] = DIR_STRAIGHT;
-    }
+    int switches = 0;
 
     // init sensor
     unsigned short sensor_bitmap[SNLEN] = {0};
@@ -121,9 +119,8 @@ void train_location_server_task() {
             if (request_msg.opcode == COURIER_NOTIF) {
                 courier_ready = 1;
             } else {
+            Reply(sender, 0, 0);
             // secretary courier and timer tasks send
-            int s = Reply(sender, 0, 0);
-            ASSERTP(s == 0, "%d %d", s, sender);
             switch(request_msg.opcode) {
                 case LOC_WAIT_SENSOR:
                     wait_module_add(wait_modules + request_msg.param[0], request_msg.param[1], request_msg.extra);
@@ -185,7 +182,7 @@ void train_location_server_task() {
 
                     if (switch_index >= 0 && switch_index <= NUM_TRAIN_SWITCH) {
                         // update switch condition
-                        switches[switch_index] = request_msg.param[1];
+                        set_bit(&switches, switch_index, request_msg.param[1]);
 
                         // send switch update for printing
                         print_msg.opcode = DRAW_CMD;
@@ -340,7 +337,7 @@ void train_location_server_task() {
                     int reply = 0;
                     switch(request_msg.param[0]) {
                         case 0: // switch
-                            reply = sensor_bitmap[(int)request_msg.param[1]];
+                            reply = switches;
                             break;
                         case 1: // train speed
                             reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].speed;
@@ -349,7 +346,7 @@ void train_location_server_task() {
                             reply = train_models[(int)request_msg.param[1] - TRAIN_ID_MIN].position.stop_node_dist;
                             break;
                     }
-                    Reply(sender, &reply, sizeof(int));
+                    Reply(request_msg.extra, &reply, sizeof(int));
                 }
             }
             /*

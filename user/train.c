@@ -2,7 +2,7 @@
 #include <io.h>
 #include <syscall.h>
 #include <priority.h>
-#include <assert.h>
+#include <string.h>
 
 #include <terminal_mvc_server.h>
 #include <terminal_gui.h>
@@ -96,7 +96,7 @@ void train_model_init(TrainModel* train, int id) {
 void train_model_init_location(
     TrainModel* train, 
     int time, 
-    short* switches, 
+    int switches, 
     track_node* sensor_start) 
 {
     train->bitmap |= TRAIN_MODEL_POSITION_KNOWN;
@@ -120,7 +120,7 @@ void train_model_init_location(
     train_calibration_work_init(&train->calibration_work);
 }
 
-void train_model_update(TrainModel* train, int time, short* switches) {
+void train_model_update(TrainModel* train, int time, int switches) {
     TrainModelPosition* position = &train->position;
     TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;
@@ -162,7 +162,7 @@ void train_model_update(TrainModel* train, int time, short* switches) {
     train_model_update_location(train, time, switches);
 }
 
-void train_model_update_location(TrainModel* train, int time, short* switches) {
+void train_model_update_location(TrainModel* train, int time, int switches) {
     TrainModelPosition* position = &train->position;
     //TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;
@@ -210,7 +210,7 @@ void train_model_update_location(TrainModel* train, int time, short* switches) {
     }
 }
 
-track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
+track_edge* track_next_arc(int switches, track_edge* current, float* dist) {
     while (*dist > current->dist) {
         *dist -= current->dist;
 
@@ -226,7 +226,7 @@ track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
                 if (switch_num >= 153) {
                     switch_num -= (153 - 19);
                 }
-                current = node->edge + switches[switch_num];
+                current = node->edge + get_bit(switches, switch_num);
                 break;
             }
             case NODE_EXIT:
@@ -237,15 +237,15 @@ track_edge* track_next_arc(short* switches, track_edge* current, float* dist) {
     return current;
 }
 
-track_node* track_next_sensor_node(short* switches, track_edge* current, float* dist) {
+track_node* track_next_sensor_node(int switches, track_edge* current, float* dist) {
     *dist = current->dist;
     track_node* node = current->dest;
     while (node->type != NODE_SENSOR) {
         switch (node->type) {
             case NODE_BRANCH: {
                 int switch_num = node->num;
-                *dist += node->edge[switches[switch_num]].dist;
-                node = node->edge[switches[switch_num]].dest;
+                *dist += node->edge[get_bit(switches, switch_num)].dist;
+                node = node->edge[get_bit(switches, switch_num)].dest;
             break;
             }
             case NODE_MERGE:
@@ -262,7 +262,7 @@ track_node* track_next_sensor_node(short* switches, track_edge* current, float* 
 }
 
 int track_ahead_contain_node(
-    track_node* node, short* switches, track_node* current, 
+    track_node* node, int switches, track_node* current, 
     int lookahead_dist, int *dist_to_node) {
 
     int total_arc_dist = 0;
@@ -280,7 +280,7 @@ int track_ahead_contain_node(
                 break;
             case NODE_BRANCH: {
                 //debugf("[%d] switches[%d] = %d.", time, node->num, switches[node->num]);
-                next_arc = current->edge + switches[current->num];
+                next_arc = current->edge + get_bit(switches, current->num);
                 break;
             }
             case NODE_EXIT:
@@ -312,7 +312,7 @@ int track_ahead_contain_node(
     return node == current;   
 }
 
-void train_model_update_speed(TrainModel* train, int time, short* switches, int speed) {
+void train_model_update_speed(TrainModel* train, int time, int switches, int speed) {
     train_model_update_location(train, time, switches);
     
     if (speed != train->speed) {
@@ -326,7 +326,7 @@ void train_model_update_speed(TrainModel* train, int time, short* switches, int 
     }
 }
 
-void train_model_reverse_direction(TrainModel* train, int time, short* switches) {
+void train_model_reverse_direction(TrainModel* train, int time, int switches) {
     train_model_update_location(train, time, switches);
 
     if (train->bitmap & TRAIN_MODEL_DIRECTION_FWD)
@@ -352,7 +352,7 @@ void train_model_reverse_direction(TrainModel* train, int time, short* switches)
 }
 
 //int line = 1;
-void train_model_next_sensor_triggered(TrainModel* train, int time, short* switches, int* error) {
+void train_model_next_sensor_triggered(TrainModel* train, int time, int switches, int* error) {
     TrainModelPosition* position = &train->position;
     TrainCalibrationProfile* profile = &train->profile;
     TrainCalibrationWork* work = &train->calibration_work;

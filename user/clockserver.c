@@ -5,6 +5,9 @@
 #include <bwio.h>
 #include <ts7200.h>
 
+#include <assert.h>
+#include <terminal_gui.h>
+
 void clockserver_init(Wait_Queue* wait_queue) {
     wait_queue_init(wait_queue);
 

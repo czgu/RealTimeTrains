@@ -16,7 +16,7 @@ inline void* pq_first(PQueue* pq) {
 }
 
 inline void* pq_pop(PQueue* q) {
-    ASSERT(q->size > 0);
+    ASSERTP(q->size > 0, "tid:%d", MyTid());
     if (q->size == 0) {
         return 0;
     }
