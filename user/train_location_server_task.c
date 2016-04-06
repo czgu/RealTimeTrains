@@ -227,6 +227,13 @@ void train_location_server_task() {
                                     new_bitmap &= ~(0x8000 >> (sensor_idx % 16));
                                 }
                             } else if (train->speed > 0) {
+                                if (lost_train != (void *)0) {
+                                    // We make the assumption that only one train can be lost
+                                    // at a time. In the event of multiple lost trains, sensor
+                                    // attribution can break.
+                                    debugc(MAGENTA, "multiple lost trains: %d, %d", 
+                                           lost_train->id, train->id);
+                                }
                                 lost_train = train;
                             }
                         }

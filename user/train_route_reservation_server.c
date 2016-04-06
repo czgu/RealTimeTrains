@@ -129,7 +129,7 @@ void train_route_reservation_server() {
                                     print_msg.param[k] = i;
                                     k++;
                                     if (k >= MAX_NUM_CHARS) {
-                                        debugc(MAGENTA, "PRINT_TRAIN_ALLOC maxed num chars");
+                                        debugf("PRINT_TRAIN_ALLOC maxed num chars");
                                         break;
                                     }
                                 }
