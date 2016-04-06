@@ -51,17 +51,8 @@ int rq_push_front(RQueue* q, void* p) {
 }
 
 int rq_push_back(RQueue* q, void* p) {
-	//ASSERTP(q->size < q->max_size, "[%d] size %d, capacity %d", MyTid(), q->size, q->max_size);
+	ASSERTP(q->size < q->max_size, "[%d] size %d, capacity %d", MyTid(), q->size, q->max_size);
 	if (q->size >= q->max_size) {
-        // TODO: remove and replace with ASSERTP for demo
-        // flush contents of buffer and fail
-        Halt(2);        // turn off interrupts
-        int i;
-        for(i = 0; i < q->size; i++) {
-            char c = *(char*)rq_get(q, i);
-            bwputc(COM2, c);
-        }
-        Halt(1);
 		return -1;
 	}
 
