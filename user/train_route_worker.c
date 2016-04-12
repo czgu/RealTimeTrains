@@ -60,6 +60,7 @@ void train_route_worker() {
 
     if (where_is(location_server, train_id, &position) <= 0) {
         debugf("Can't find train %d. ", train_id);
+        driver_completed(scheduler_server, train_id, 0);
         return;
     }
 
@@ -103,7 +104,7 @@ void train_route_worker() {
                 int k = i * 5 + j;
                 if (k >= route.route_len)
                     break;
-                spprintf(path_str, &s_len, "%s (%d, %d) => ", route.nodes[k].node->name, route.nodes[k].action, route.nodes[k].arc_dist);
+                spprintf(path_str, &s_len, "%s(%d) => ", route.nodes[k].node->name, route.nodes[k].action, route.nodes[k].arc_dist);
                 //debugc(YELLOW, "%s", route.nodes[k].node->name);
             }
             //debugf("%d", s_len);
@@ -263,6 +264,28 @@ void execute_route(
     RETURN_ROUTE(254, 0, 0);
 }
 
+void set_merge_reversible(track_node* curr, track_node* prev, int location_server) {
+    if (curr->type == NODE_MERGE) {
+        track_node* reverse_branch = curr->reverse;
+        track_node* prev_node = prev->reverse;
+
+        if (reverse_branch->edge[DIR_STRAIGHT].dest == prev_node) {
+            track_set_switch(
+                location_server,
+                curr->num,
+                DIR_STRAIGHT, 1);
+        } else if (reverse_branch->edge[DIR_CURVED].dest == prev_node) {
+            track_set_switch(
+                location_server,
+                curr->num,
+                DIR_CURVED, 1);
+        } else {
+            //ASSERT(0);
+        }
+    }
+
+}
+
 /*
     int current - furthest node that has being reserved and executed
     int lookahead - lookahead distance, quit after first time it reaches negative
@@ -308,6 +331,12 @@ void lookahead_node(
                     location_server,
                     route->nodes[current].node->num,
                     route->nodes[current].action - 1, 1);
+            } else if (action == 4 && current > 0) {
+                set_merge_reversible(route->nodes[current].node, route->nodes[current - 1].node, location_server);
+
+                track_node* next = route->nodes[current].node->edge[DIR_AHEAD].dest;
+                if (next != (void *)0)
+                    set_merge_reversible(next, route->nodes[current].node, location_server);
             }
             route->nodes[current].bitmap |= ROUTE_NODE_ACTION_COMPLETED;
         }
@@ -401,6 +430,7 @@ void path_to_route(Path* path, Route* route, track_edge* curr_arc) {
                 if (path->nodes[i]->type == NODE_BRANCH) {
                     route->nodes[route->route_len].action = 1;
                 }
+
                 route->nodes[route->route_len].arc_dist = path->nodes[i]->edge[DIR_AHEAD].dist;
                 break;
             case 1:
@@ -413,6 +443,7 @@ void path_to_route(Path* path, Route* route, track_edge* curr_arc) {
         } 
         route->route_len++;
     }
+           
     route->nodes[route->route_len].node = path->nodes[i];
     route->nodes[route->route_len].action = 4;
 
